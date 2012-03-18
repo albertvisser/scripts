@@ -1,0 +1,3 @@
+#! /bin/bash
+cd ~/filefindr
+python afrift_single.pyw $1

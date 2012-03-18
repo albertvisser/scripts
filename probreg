@@ -1,0 +1,3 @@
+#! /bin/bash
+cd ~/probreg
+python pr_start.pyw

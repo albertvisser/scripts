@@ -1,0 +1,25 @@
+#! /bin/bash
+
+echo check local repos on `date` > /tmp/hg_local_changes
+set changes = 'No'
+for name in apropos cobtools doctree filefindr htmledit jvsdoe leesjcl logviewer notetree probreg tcmdrkeys xmledit
+do
+    cd ~/$name
+    if hg outgoing > dev:null; then
+        set changes = 'Yes'
+        echo changes detected for $name
+        echo $name >> /tmp/hg_local_changes
+        echo --local: >> /tmp/hg_local_changes
+        hg tip >> /tmp/hg_local_changes
+        cd ~/hg_repos/$name
+        echo --hg_repos: >> /tmp/hg_local_changes
+        hg tip >> /tmp/hg_local_changes
+        echo '' >> /tmp/hg_local_changes
+    fi
+done
+if [ '$changes' = 'Yes' ]
+then
+    echo for details see /tmp/hg_local_changes
+else
+    echo no local changes
+fi

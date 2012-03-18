@@ -1,0 +1,3 @@
+#! /bin/bash
+cd ~/htmledit
+python htmleditor.py $1

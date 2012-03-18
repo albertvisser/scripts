@@ -1,0 +1,8 @@
+# use glob syntax.
+syntax: glob
+
+*.bak
+*~
+*pyc
+*.swp
+oude_bin/*

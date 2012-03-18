@@ -1,0 +1,3 @@
+#! /bin/bash
+cd ~/apropos
+python apo_start.pyw
