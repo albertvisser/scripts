@@ -3,7 +3,7 @@
 echo check local repos on `date` > /tmp/hg_local_changes
 echo '' >> /tmp/hg_local_changes
 set changes = 'No'
-for name in apropos bin cobtools doctree filefindr htmledit jvsdoe leesjcl logviewer nginx-config notetree probreg rst2html-web tcmdrkeys xmledit
+for name in apropos cobtools doctree filefindr htmledit jvsdoe leesjcl logviewer notetree probreg rst2html-web tcmdrkeys xmledit
 do
     cd ~/$name
     hg status --quiet > /tmp/hg_st_$name
@@ -24,6 +24,32 @@ do
             hg tip >> /tmp/hg_local_changes
             cd ~/hg_repos/$name
             echo --hg_repos: >> /tmp/hg_local_changes
+            hg tip >> /tmp/hg_local_changes
+            echo '' >> /tmp/hg_local_changes
+        fi
+    fi
+done
+for name in bin nginx-config
+do
+    cd ~/$name
+    hg status --quiet > /tmp/hg_st_$name
+    if [ -s /tmp/hg_st_$name ]
+    then
+        echo uncommitted changes for $name
+        echo uncommitted changes in `pwd` >> /tmp/hg_local_changes
+        set changes = 'Yes'
+        cat /tmp/hg_local_changes /tmp/hg_st_$name > /tmp/hg_local
+        mv /tmp/hg_local /tmp/hg_local_changes
+        echo '' >> /tmp/hg_local_changes
+    else
+        if hg outgoing > /tmp/hgout; then
+            set changes = 'Yes'
+            echo outgoing changes for $name
+            echo outgoing changes for $name >> /tmp/hg_local_changes
+            echo --local: >> /tmp/hg_local_changes
+            hg tip >> /tmp/hg_local_changes
+            cd ~/hg_private/$name
+            echo --hg_private: >> /tmp/hg_local_changes
             hg tip >> /tmp/hg_local_changes
             echo '' >> /tmp/hg_local_changes
         fi
