@@ -15,6 +15,7 @@ do
         cat /tmp/hg_local_changes /tmp/hg_st_$name > /tmp/hg_local
         mv /tmp/hg_local /tmp/hg_local_changes
         echo '' >> /tmp/hg_local_changes
+        echo '' >> /tmp/hg_local_changes
     else
         if hg outgoing > /tmp/hgout; then
             set changes = 'Yes'
@@ -40,6 +41,7 @@ do
         set changes = 'Yes'
         cat /tmp/hg_local_changes /tmp/hg_st_$name > /tmp/hg_local
         mv /tmp/hg_local /tmp/hg_local_changes
+        echo '' >> /tmp/hg_local_changes
         echo '' >> /tmp/hg_local_changes
     else
         if hg outgoing > /tmp/hgout; then
