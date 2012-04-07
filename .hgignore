@@ -6,3 +6,5 @@ syntax: glob
 *pyc
 *.swp
 oude_bin/*
+doe
+opera-widget*
