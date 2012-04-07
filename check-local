@@ -3,14 +3,14 @@
 echo check local repos on `date` > /tmp/hg_local_changes
 echo '' >> /tmp/hg_local_changes
 set changes = 'No'
-for name in apropos cobtools doctree filefindr htmledit jvsdoe leesjcl logviewer notetree probreg rst2html-web tcmdrkeys xmledit
+for name in apropos bin cobtools doctree filefindr htmledit jvsdoe leesjcl logviewer nginx-config notetree probreg rst2html-web tcmdrkeys xmledit
 do
     cd ~/$name
     hg status --quiet > /tmp/hg_st_$name
     if [ -s /tmp/hg_st_$name ]
     then
         echo uncommitted changes for $name
-        echo `pwd` >> /tmp/hg_local_changes
+        echo uncommitted changes in `pwd` >> /tmp/hg_local_changes
         set changes = 'Yes'
         cat /tmp/hg_local_changes /tmp/hg_st_$name > /tmp/hg_local
         mv /tmp/hg_local /tmp/hg_local_changes
@@ -19,7 +19,7 @@ do
         if hg outgoing > /tmp/hgout; then
             set changes = 'Yes'
             echo outgoing changes for $name
-            echo $name >> /tmp/hg_local_changes
+            echo outgoing changes for $name >> /tmp/hg_local_changes
             echo --local: >> /tmp/hg_local_changes
             hg tip >> /tmp/hg_local_changes
             cd ~/hg_repos/$name
