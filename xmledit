@@ -1,3 +1,3 @@
 #! /bin/bash
 cd ~/xmledit
-python xmleditor.py $1
+python xmleditor.py "$1"
