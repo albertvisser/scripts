@@ -1,0 +1,10 @@
+#! /bin/sh
+
+cd ~/rstblog/venv
+bin/run-rstblog build avisser.bitbucket.org
+cd avisser.bitbucket.org/_build
+hg addremove
+hg ci -m 'updated'
+hg push
+cd ~/hg_repos/avisser.bitbucket.org
+hg push

@@ -24,11 +24,23 @@ A collection of simple (mostly bash) scripts I put together. Most of these are s
 `morefromdos.py`
     Python script to change Windows line endings to Unix ones for all Python files in a directory. Takes one argument: the directory name. Without an argument, works in the current working directory.
 
+`notetree`
+    starts up Doctree's predecessor
+
 `permit.py`
     Python script to change file and directory permissions after copying over from Windows. Argument works like the previous one (except for all files instead of just .py ones). I wrote and used these scripts when I copied my old CGI apps over from Windows to Linux.
 
 `probreg`
     starts up my 'probreg' application from a standard location. takes no arguments.
+
+`push-bb`
+    script to check selected central repos for uncommitted changes and push to bitbucket when not present
+
+`push-local`
+    script to check local repos for uncommitted changes and push to central when not present
+
+`rstbb`
+    script to update rstblog source and push to central and bitbucket
 
 `sort_file.py`
     copy of a Python script I wrote on Windows to sort a (text) file from within Total Commander. Takes one argument: the file to sort.
