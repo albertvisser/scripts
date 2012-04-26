@@ -1,0 +1,16 @@
+#! /bin/bash
+
+name=~/Downloads/SciTE/gscite$1.tgz
+#~ echo $name
+if [ -e $name ]
+then
+    tar -zxf $name -C /temp
+    sudo cp /temp/gscite/SciTE /usr/bin
+    sudo cp /temp/gscite/*.properties /usr/share/scite
+    sudo cp /temp/gscite/*.html /usr/share/scite
+    sudo cp /temp/gscite/*.png /usr/share/scite
+    sudo cp /temp/gscite/*.jpg /usr/share/scite
+    rm /temp/gscite -r
+else
+    echo $name does not exist
+fi
