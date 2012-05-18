@@ -1,7 +1,7 @@
 #! /bin/bash
 
-echo push to bitbucket report on `date` > /tmp/hg_local_changes
-echo '' >> /tmp/hg_local_changes
+echo push to bitbucket report on `date` >> /tmp/hg_pushbb.log
+echo '' >> /tmp/hg_pushbb_log
 set changes = 'No'
 
 #for name in apropos cobtools doctree filefindr htmledit jvsdoe leesjcl logviewer notetree probreg rst2html-web tcmdrkeys xmledit
@@ -11,12 +11,12 @@ do
     hg status --quiet > /tmp/hg_st_$name
     if [ -s /tmp/hg_st_$name ]
     then
-        echo $name not pushed: uncommitted changes >> /tmp/hg_push.log
+        echo $name not pushed: uncommitted changes >> /tmp/hg_pushbb.log
         set changes = 'Yes'
     else
         if hg outgoing > /tmp/hgout; then
             hg push --remotecmd update
-            echo $name: pushing to bitbucket >> /tmp/hg_push.log
+            echo $name: pushing to bitbucket >> /tmp/hg_pushbb.log
             set changes = 'Yes'
         fi
     fi
@@ -27,12 +27,12 @@ do
     hg status --quiet > /tmp/hg_st_$name
     if [ -s /tmp/hg_st_$name ]
     then
-        echo $name not pushed: uncommitted changes >> /tmp/hg_push.log
+        echo $name not pushed: uncommitted changes >> /tmp/hg_pushbb.log
         set changes = 'Yes'
     else
         if hg outgoing > /tmp/hgout; then
             hg push --remotecmd update
-            echo $name: pushing to bitbucket >> /tmp/hg_push.log
+            echo $name: pushing to bitbucket >> /tmp/hg_pushbb.log
             set changes = 'Yes'
         fi
     fi
@@ -41,5 +41,5 @@ if [ '$changes' = 'No' ]
 then
     echo nothing to report
 else
-    echo for details see /tmp/hg_push.log
+    echo for details see /tmp/hg_pushbb.log
 fi
