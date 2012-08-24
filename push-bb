@@ -1,11 +1,11 @@
 #! /bin/bash
 
-echo push to bitbucket report on `date` >> /tmp/hg_pushbb.log
-echo '' >> /tmp/hg_pushbb_log
+echo push to bitbucket report on `date` > /tmp/hg_pushbb.log
+echo '' >> /tmp/hg_pushbb.log
 set changes = 'No'
 
-#for name in apropos cobtools doctree filefindr htmledit jvsdoe leesjcl logviewer notetree probreg rst2html-web tcmdrkeys xmledit
-for name in apropos doctree filefindr htmledit probreg xmledit
+#for name in  cobtools jvsdoe leesjcl notetree tcmdrkeys
+for name in apropos doctree filefindr htmledit logviewer probreg rst2html-web xmledit
 do
     cd ~/hg_repos/$name
     hg status --quiet > /tmp/hg_st_$name
@@ -14,11 +14,16 @@ do
         echo $name not pushed: uncommitted changes >> /tmp/hg_pushbb.log
         set changes = 'Yes'
     else
-        if hg outgoing > /tmp/hgout; then
-            hg push --remotecmd update
+        hg tip > ~/hg_repos/${name}_newtip
+        if cmp -s ~/hg_repos/${name}_newtip ~/hg_repos/${name}_tip; then
+            echo $name not pushed: no pending changes >> /tmp/hg_pushbb.log
+        else
+            hg push
+            cp ~/hg_repos/${name}_newtip ~/hg_repos/${name}_tip
             echo $name: pushing to bitbucket >> /tmp/hg_pushbb.log
             set changes = 'Yes'
         fi
+        rm ~/hg_repos/${name}_newtip
     fi
 done
 for name in bin nginx-config
@@ -30,11 +35,16 @@ do
         echo $name not pushed: uncommitted changes >> /tmp/hg_pushbb.log
         set changes = 'Yes'
     else
-        if hg outgoing > /tmp/hgout; then
-            hg push --remotecmd update
+        hg tip > ~/hg_repos/${name}_newtip
+        if cmp -s ~/hg_repos/${name}_newtip ~/hg_repos/${name}_tip; then
+            echo $name not pushed: no pending changes >> /tmp/hg_pushbb.log
+        else
+            hg push
+            cp ~/hg_repos/${name}_newtip ~/hg_repos/${name}_tip
             echo $name: pushing to bitbucket >> /tmp/hg_pushbb.log
             set changes = 'Yes'
         fi
+        rm ~/hg_repos/${name}_newtip
     fi
 done
 if [ '$changes' = 'No' ]

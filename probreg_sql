@@ -1,0 +1,3 @@
+#! /bin/bash
+cd ~/probreg
+python prsql_start.pyw

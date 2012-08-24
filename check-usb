@@ -1,0 +1,38 @@
+#! /bin/bash
+
+echo check usb repos on `date` > /tmp/hg_usb_changes
+echo '' >> /tmp/hg_usb_changes
+set changes = 'No'
+for name in apropos cobtools doctree filefindr htmledit jvsdoe leesjcl notetree probreg rst2html-web tcmdrkeys xmledit
+do
+    cd /media/KINGSTON/$name
+    hg status --quiet > /tmp/hg_st_$name
+    if [ -s /tmp/hg_st_$name ]
+    then
+        echo uncommitted changes for $name
+        echo uncommitted changes in `pwd` >> /tmp/hg_usb_changes
+        set changes = 'Yes'
+        cat /tmp/hg_usb_changes /tmp/hg_st_$name > /tmp/hg_usb
+        mv /tmp/hg_usb /tmp/hg_usb_changes
+        echo '' >> /tmp/hg_usb_changes
+        echo '' >> /tmp/hg_usb_changes
+    else
+        if hg outgoing > /tmp/hgout; then
+            set changes = 'Yes'
+            echo outgoing changes for $name
+            echo outgoing changes for $name >> /tmp/hg_usb_changes
+            echo --local: >> /tmp/hg_usb_changes
+            hg tip >> /tmp/hg_usb_changes
+            cd ~/hg_repos/$name
+            echo --hg_repos: >> /tmp/hg_usb_changes
+            hg tip >> /tmp/hg_usb_changes
+            echo '' >> /tmp/hg_usb_changes
+        fi
+    fi
+done
+if [ '$changes' = 'No' ]
+then
+    echo no local changes
+else
+    echo for details see /tmp/hg_usb_changes
+fi
