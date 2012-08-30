@@ -1,0 +1,14 @@
+# simple configuration for fabric arcstuff function.
+# start each line with a file pattern, optionally continue with a description (preceded by a #)
+# use section headers to indicate common root directories
+
+[/home/albert]
+apropos/apropos.ini     # apropos data file
+doctree/MyMan.ini       # doctree data file
+probreg/issues_eigen_tools.ini
+rst2html-web/settings*.yml
+www/magiokis/pl/*
+*.properties
+python.api
+*.xpm
+
