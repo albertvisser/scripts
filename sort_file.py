@@ -1,5 +1,5 @@
-#! C:/python25/python
-# -*- coding: latin-1 -*-
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
 import sys
 import os
 
