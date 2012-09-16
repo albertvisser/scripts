@@ -11,9 +11,17 @@ A collection of simple (mostly bash) scripts I put together. Most of these are s
 
     starts up the former's single file version. So one argument is required: the filename.
 
+**arcstuff.ini.example**
+
+    example ini file for ``fab arcstuff`` command
+
 **a-propos**
 
     starts up my 'apropos' application. I had to rename it because there appeared to be a system tool by that name. No arguments.
+
+**binfab**
+
+    execute ``fab`` using fabfile in this directory
 
 **check-local**
 
@@ -42,13 +50,17 @@ A collection of simple (mostly bash) scripts I put together. Most of these are s
 
     *arcstuff*: reads entries from a config file (called ``arcstuff.ini``, example present) to build an archive containing backups of selected data files.
 
+**fabsrv**
+
+    execute ``fab`` using fabfile in nginx-config directory (for server configuration stuff)
+
 **htmledit**
 
     starts up my tree-based html editor. Takes one argument: the filename.
 
 **install-scite**
 
-    script to install SciTE in the location proposed by the docs
+    script to install SciTE in the location proposed by the docs. A fabfile version is also present (and will probably replace this)
 
 **morefromdos.py**
 
@@ -82,6 +94,10 @@ A collection of simple (mostly bash) scripts I put together. Most of these are s
 
     the same for repose on my usb drive
 
+**readme.rst**
+
+    this file
+
 **rstbb**
 
     script to update rstblog source and push to central and bitbucket
@@ -103,3 +119,4 @@ Requirements
 
 - a Linux/Unix based OS
 - Python
+- fabric (where applicable)

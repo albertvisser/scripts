@@ -1,0 +1,2 @@
+#! /bin/bash
+fab -f ~/bin/fabfile.py $1 $2 $3 $4
