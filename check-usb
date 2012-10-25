@@ -17,11 +17,23 @@ do
         echo '' >> /tmp/hg_usb_changes
         echo '' >> /tmp/hg_usb_changes
     else
+        set inorout = 'No'
         if hg outgoing > /tmp/hgout; then
             set changes = 'Yes'
+            set inourout = 'Yes'
             echo outgoing changes for $name
             echo outgoing changes for $name >> /tmp/hg_usb_changes
-            echo --local: >> /tmp/hg_usb_changes
+            echo --usb out: >> /tmp/hg_usb_changes
+        fi
+        if hg incoming > /tmp/hgin; then
+            cd /media/KINGSTON/$name
+            set changes = 'Yes'
+            set inourout = 'Yes'
+            echo incoming changes for $name
+            echo incoming changes for $name >> /tmp/hg_usb_changes
+            echo --usb in: >> /tmp/hg_usb_changes
+        fi
+        if [ '$changes' = 'Yes' ]; then
             hg tip >> /tmp/hg_usb_changes
             cd ~/hg_repos/$name
             echo --hg_repos: >> /tmp/hg_usb_changes
