@@ -4,6 +4,8 @@ from fabric.api import local, sudo
 """collection of shortcut functions for common tasks like
 
 . installing a new version of SciTE
+. archiving a predefined set of files
+. managing mongodb (start/stop/restart server and repair)
 """
 
 def install_scite(version):
@@ -66,4 +68,18 @@ def arcstuff(*names):
                 path = os.path.join(prepend, line) if prepend else line
                 command = '{} {}'.format(command, path.strip())
         local(command)
+
+def start_mongo():
+	local('sudo service mongodb start')
+
+def stop_mongo():
+	local('sudo service mongodb stop')
+
+def restart_mongo():
+	local('sudo service mongodb restart')
+
+def repair_mongo():
+	local('sudo rm /var/lib/mongodb/mongodb.lock')
+	local('sudo mongod --dbpath /var/lib/mongodb/ --repair')
+	local('sudo chmod 777 /var/lib/mongodb')
 
