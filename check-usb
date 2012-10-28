@@ -2,47 +2,48 @@
 
 echo check usb repos on `date` > /tmp/hg_usb_changes
 echo '' >> /tmp/hg_usb_changes
-set changes = 'No'
+changes='No'
 for name in apropos cobtools doctree filefindr htmledit jvsdoe leesjcl notetree probreg rst2html-web tcmdrkeys xmledit
 do
     cd /media/KINGSTON/$name
     hg status --quiet > /tmp/hg_st_$name
     if [ -s /tmp/hg_st_$name ]
     then
+        echo '' >> /tmp/hg_st_$name
         echo uncommitted changes for $name
         echo uncommitted changes in `pwd` >> /tmp/hg_usb_changes
-        set changes = 'Yes'
+        changes='Yes'
         cat /tmp/hg_usb_changes /tmp/hg_st_$name > /tmp/hg_usb
         mv /tmp/hg_usb /tmp/hg_usb_changes
+    fi
+    inorout='No'
+    if hg outgoing > /tmp/hgout; then
+        changes='Yes'
+        inorout='Yes'
+        echo outgoing changes for $name
+        echo outgoing changes for $name >> /tmp/hg_usb_changes
+        echo --usb out: >> /tmp/hg_usb_changes
+    fi
+    if hg incoming > /tmp/hgin; then
+        changes='Yes'
+        inorout='Yes'
+        echo incoming changes for $name
+        echo incoming changes for $name >> /tmp/hg_usb_changes
+        echo --usb in: >> /tmp/hg_usb_changes
+    fi
+    if [ "$inorout" = "Yes" ]
+    then
+        hg tip >> /tmp/hg_usb_changes
+        cd ~/hg_repos/$name
+        echo --hg_repos: >> /tmp/hg_usb_changes
+        hg tip >> /tmp/hg_usb_changes
+        cd ~/$name
+        echo --local: >> /tmp/hg_usb_changes
+        hg tip >> /tmp/hg_usb_changes
         echo '' >> /tmp/hg_usb_changes
-        echo '' >> /tmp/hg_usb_changes
-    else
-        set inorout = 'No'
-        if hg outgoing > /tmp/hgout; then
-            set changes = 'Yes'
-            set inourout = 'Yes'
-            echo outgoing changes for $name
-            echo outgoing changes for $name >> /tmp/hg_usb_changes
-            echo --usb out: >> /tmp/hg_usb_changes
-        fi
-        if hg incoming > /tmp/hgin; then
-            cd /media/KINGSTON/$name
-            set changes = 'Yes'
-            set inourout = 'Yes'
-            echo incoming changes for $name
-            echo incoming changes for $name >> /tmp/hg_usb_changes
-            echo --usb in: >> /tmp/hg_usb_changes
-        fi
-        if [ '$changes' = 'Yes' ]; then
-            hg tip >> /tmp/hg_usb_changes
-            cd ~/hg_repos/$name
-            echo --hg_repos: >> /tmp/hg_usb_changes
-            hg tip >> /tmp/hg_usb_changes
-            echo '' >> /tmp/hg_usb_changes
-        fi
     fi
 done
-if [ '$changes' = 'No' ]
+if [ "$changes" = "No" ]
 then
     echo no local changes
 else

@@ -2,7 +2,7 @@
 
 echo push to bitbucket report on `date` > /tmp/hg_pushbb.log
 echo '' >> /tmp/hg_pushbb.log
-set changes = 'No'
+changes='No'
 
 #for name in  cobtools jvsdoe leesjcl notetree tcmdrkeys
 for name in apropos doctree filefindr htmledit logviewer probreg rst2html-web xmledit
@@ -12,7 +12,7 @@ do
     if [ -s /tmp/hg_st_$name ]
     then
         echo $name not pushed: uncommitted changes >> /tmp/hg_pushbb.log
-        set changes = 'Yes'
+        changes='Yes'
     else
         hg tip > ~/hg_repos/${name}_newtip
         if cmp -s ~/hg_repos/${name}_newtip ~/hg_repos/${name}_tip; then
@@ -21,7 +21,7 @@ do
             hg push
             cp ~/hg_repos/${name}_newtip ~/hg_repos/${name}_tip
             echo $name: pushing to bitbucket >> /tmp/hg_pushbb.log
-            set changes = 'Yes'
+            changes='Yes'
         fi
         rm ~/hg_repos/${name}_newtip
     fi
@@ -33,7 +33,7 @@ do
     if [ -s /tmp/hg_st_$name ]
     then
         echo $name not pushed: uncommitted changes >> /tmp/hg_pushbb.log
-        set changes = 'Yes'
+        changes 'Yes'
     else
         hg tip > ~/hg_repos/${name}_newtip
         if cmp -s ~/hg_repos/${name}_newtip ~/hg_repos/${name}_tip; then
@@ -42,12 +42,12 @@ do
             hg push
             cp ~/hg_repos/${name}_newtip ~/hg_repos/${name}_tip
             echo $name: pushing to bitbucket >> /tmp/hg_pushbb.log
-            set changes = 'Yes'
+            changes='Yes'
         fi
         rm ~/hg_repos/${name}_newtip
     fi
 done
-if [ '$changes' = 'No' ]
+if [ "$changes" = "No" ]
 then
     echo nothing to report
 else

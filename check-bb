@@ -2,7 +2,7 @@
 
 echo check hg_repos on `date` > /tmp/hg_changes
 echo '' >> /tmp/hg_changes
-set changes = 'No'
+changes='No'
 #for name in  cobtools jvsdoe leesjcl notetree tcmdrkeys
 for name in apropos doctree filefindr htmledit logviewer probreg rst2html-web xmledit
 do
@@ -14,7 +14,7 @@ do
         cat /tmp/hg_changes /tmp/hg_st_$name > /tmp/hg_cent
         mv /tmp/hg_cent /tmp/hg_changes
         echo '' >> /tmp/hg_changes
-        set changes = 'Yes'
+        changes='Yes'
     else
         hg tip > /tmp/${name}_tip
         if cmp -s /tmp/${name}_tip ~/hg_repos/${name}_tip; then
@@ -22,7 +22,7 @@ do
         else
             echo outgoing changes for $name
             echo $name: outgoing changes in `pwd` >> /tmp/hg_changes
-            set changes = 'Yes'
+            changes='Yes'
         fi
     fi
 done
@@ -37,7 +37,7 @@ do
         cat /tmp/hg_changes /tmp/hg_st_$name > /tmp/hg_cent
         mv /tmp/hg_cent /tmp/hg_changes
         echo '' >> /tmp/hg_changes
-        set changes = 'Yes'
+        changes='Yes'
     else
         hg tip > /tmp/${name}_tip
         if cmp -s /tmp/${name}_tip ~/hg_repos/${name}_tip; then
@@ -45,12 +45,12 @@ do
         else
             echo outgoing changes for $name
             echo $name: outgoing changes in `pwd` >> /tmp/hg_changes
-            set changes = 'Yes'
+            changes='Yes'
         fi
     fi
 done
 
-if [ '$changes' = 'No' ]
+if [ "$changes" = "No" ]
 then
     echo no local changes
 else
