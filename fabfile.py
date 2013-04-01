@@ -6,6 +6,8 @@ from fabric.api import local, sudo
 . installing a new version of SciTE
 . archiving a predefined set of files
 . managing mongodb (start/stop/restart server and repair)
+. copying a file from the local to the webserver www directory
+. helper functions for (py)gettext internationalization
 """
 
 def install_scite(version):
@@ -70,16 +72,63 @@ def arcstuff(*names):
         local(command)
 
 def start_mongo():
-	local('sudo service mongodb start')
+    "start mongo database server"
+    local('sudo service mongodb start')
 
 def stop_mongo():
-	local('sudo service mongodb stop')
+    "stop mongo database server"
+    local('sudo service mongodb stop')
 
 def restart_mongo():
-	local('sudo service mongodb restart')
+    "restart mongo db"
+    local('sudo service mongodb restart')
 
 def repair_mongo():
-	local('sudo rm /var/lib/mongodb/mongodb.lock')
-	local('sudo mongod --dbpath /var/lib/mongodb/ --repair')
-	local('sudo chmod 777 /var/lib/mongodb')
+    "repair mongo db"
+    local('sudo rm /var/lib/mongodb/mongodb.lock')
+    local('sudo mongod --dbpath /var/lib/mongodb/ --repair')
+    local('sudo chmod 777 /var/lib/mongodb')
 
+def wwwcopy(name):
+    "copy indicated file from ~/www to /var/www"
+    local('sudo cp ~/www/nginx-root/{0} /var/www/{0}'.format(name))
+
+def gettext(sourcefile):
+    """internalization: gather strings from file
+
+    verzamel gemarkeerde symbolen in het aangegeven source file
+    en schrijf ze weg in een bestand genaamd messages.pot
+    """
+    local("pygettext {}".format(sourcefile))
+
+def poedit(language_code):
+    """internalization: edit translations in language file
+
+    bewerkt het aangegeven language file met poedit
+    """
+    fnaam = "{}.po".format(language_code)
+    if not os.path.exists(fnaam):
+        local('poedit')
+    else:
+        local("poedit {}".format(fnaam))
+
+def place(language_code, appname, locatie=""):
+    """internalization: make translation usable
+
+    plaats het gecompileerde language file zodat het gebruikt kan worden
+    gebruik <locatie> als de locale directory niet direct onder de huidige zit
+    """
+    loc = 'locale'
+    if locatie:
+        loc = os.path.join(locatie, loc)
+    loc = os.path.abspath(loc)
+    if not os.path.exists(loc):
+        os.mkdir(loc)
+    loc = os.path.join(loc, language_code)
+    if not os.path.exists(loc):
+        os.mkdir(loc)
+    loc = os.path.join(loc, 'LC_MESSAGES')
+    if not os.path.exists(loc):
+        os.mkdir(loc)
+    local('msgfmt {}.po -o {}'.format(language_code, os.path.join(loc,
+        appname + '.mo')))

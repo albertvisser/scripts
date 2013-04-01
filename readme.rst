@@ -11,6 +11,10 @@ A collection of simple (mostly bash) scripts I put together. Most of these are s
 
     starts up the former's single file version. So one argument is required: the filename.
 
+**afrift_multi**
+
+    starts up the former's multi file version with arguments taken from a list (like Double Commander provides them)
+
 **arcstuff.ini.example**
 
     example ini file for ``fab arcstuff`` command
@@ -21,7 +25,7 @@ A collection of simple (mostly bash) scripts I put together. Most of these are s
 
 **binfab**
 
-    execute ``fab`` using fabfile in this directory
+    execute ``fab`` (fabric) using fabfile in this directory
 
 **check-local**
 
@@ -38,6 +42,10 @@ A collection of simple (mostly bash) scripts I put together. Most of these are s
 
     script to check if there are changes to repositories on my USB drive that aren't synched with my central ones (the ones that push to BitBucket). No arguments.
 
+**chmodrecursive**
+
+    in copying my server trees from Windows the file permissions were fucked up. So i wrote this script to set them right.
+
 **doctree**
 
     starts up my docs/notes organiser (QT version) from a standard location. No arguments.
@@ -46,13 +54,22 @@ A collection of simple (mostly bash) scripts I put together. Most of these are s
 
     collection of special functions. Currently contains the following:
 
-    *install_scite*: upgrade SciTE to the specified version (after downloading). Supposed to replace the bash script that does the same (does a better job taking the calling argument)
+    a function to upgrade SciTE to the specified version (after downloading). Supposed to replace the bash script that does the same (does a better job taking the calling argument)
 
-    *arcstuff*: reads entries from a config file (called ``arcstuff.ini``, example present) to build an archive containing backups of selected data files.
+    a function that reads entries from a config file (called ``arcstuff.ini``, example present) to build an archive containing backups of selected data files.
+
+    some functions that can be used to control a mongodb database server
+
+    a function to copy html files into the nginx server root
+
+    a couple of functions to help with the internalization of source files
 
 **fabsrv**
 
-    execute ``fab`` using fabfile in nginx-config directory (for server configuration stuff)
+    execute ``fab`` (fabric) using fabfile in nginx-config directory (for server configuration stuff)
+
+**hotkeys**
+
 
 **htmledit**
 
@@ -64,7 +81,7 @@ A collection of simple (mostly bash) scripts I put together. Most of these are s
 
 **morefromdos.py**
 
-    Python script to change Windows line endings to Unix ones for all Python files in a directory. Takes one argument: the directory name. Without an argument, works in the current working directory.
+    Python script to change Windows line endings to Unix ones for all Python files in a directory. Takes two arguments: a directory name and an extension. Without an argument, works in the current working directory. Without an extension specified, works on Python source files (extension .py).
 
 **notetree**
 
@@ -93,6 +110,10 @@ A collection of simple (mostly bash) scripts I put together. Most of these are s
 **push-usb**
 
     the same for repose on my usb drive
+
+**pushthru **
+
+    script to push directly from a specified local repo to bitbucket
 
 **readme.rst**
 
