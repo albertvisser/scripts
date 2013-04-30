@@ -1,2 +1,2 @@
 #! /bin/bash
-python ~/htmledit/htmleditor.py $1
+python3 ~/htmledit/htmleditor.py $1
