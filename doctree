@@ -1,3 +1,3 @@
 #! /bin/bash
 cd ~/doctree
-python dt_start_qt.pyw
+python3 dt_start.pyw
