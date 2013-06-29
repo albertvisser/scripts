@@ -5,7 +5,7 @@ echo '' >> /tmp/hg_usb_changes
 changes='No'
 for name in apropos cobtools doctree filefindr htmledit jvsdoe leesjcl notetree probreg rst2html-web tcmdrkeys xmledit
 do
-    cd /media/KINGSTON/$name
+    cd /media/albert/KINGSTON/$name
     hg status --quiet > /tmp/hg_st_$name
     if [ -s /tmp/hg_st_$name ]
     then
