@@ -89,9 +89,10 @@ def repair_mongo():
     local('sudo mongod --dbpath /var/lib/mongodb/ --repair')
     local('sudo chmod 777 /var/lib/mongodb')
 
-def wwwcopy(name):
-    "copy indicated file from ~/www to /var/www"
-    local('sudo cp ~/www/nginx-root/{0} /var/www/{0}'.format(name))
+def wwwcopy(*names):
+    "copy indicated file(s) from ~/www to /var/www"
+    for name in names:
+        local('sudo cp ~/www/nginx-root/{0} /var/www/{0}'.format(name))
 
 def gettext(sourcefile):
     """internalization: gather strings from file
