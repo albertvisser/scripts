@@ -1,0 +1,27 @@
+#! /bin/bash
+# check for changes in repos with no local (working) version
+
+echo check nonlocal repos on `date` > /tmp/hg_repo_changes
+echo '' >> /tmp/hg_repo_changes
+changes='No'
+for name in absentie actiereg doctool magiokis pythoneer
+do
+    cd ~/hg_repos/$name
+    hg status --quiet > /tmp/hg_st_$name
+    if [ -s /tmp/hg_st_$name ]
+    then
+        echo uncommitted changes for $name
+        echo uncommitted changes in `pwd` >> /tmp/hg_repo_changes
+        changes='Yes'
+        cat /tmp/hg_repo_changes /tmp/hg_st_$name > /tmp/hg_repo
+        mv /tmp/hg_repo /tmp/hg_repo_changes
+        echo '' >> /tmp/hg_repo_changes
+        echo '' >> /tmp/hg_repo_changes
+    fi
+done
+if [ "$changes" = "No" ]
+then
+    echo no local changes
+else
+    echo for details see /tmp/hg_repo_changes
+fi
