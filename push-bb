@@ -5,7 +5,7 @@ echo '' >> /tmp/hg_pushbb.log
 changes='No'
 
 #for name in  cobtools jvsdoe leesjcl notetree tcmdrkeys
-for name in apropos doctree filefindr htmledit logviewer probreg rst2html-web xmledit
+for name in apropos doctree filefindr htmledit logviewer probreg rst2html xmledit
 do
     cd ~/hg_repos/$name
     hg status --quiet > /tmp/hg_st_$name

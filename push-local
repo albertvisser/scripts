@@ -2,7 +2,7 @@
 
 echo push-local report on `date` > /tmp/hg_push.log
 echo '' > /tmp/hg_push.log
-for name in apropos bin cobtools doctree filefindr htmledit jvsdoe leesjcl logviewer nginx-config notetree probreg rst2html-web tcmdrkeys xmledit
+for name in apropos bin cobtools doctree filefindr htmledit jvsdoe leesjcl logviewer nginx-config notetree probreg rst2html tcmdrkeys xmledit
 do
     cd ~/$name
     hg status --quiet > /tmp/hg_st_$name

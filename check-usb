@@ -3,7 +3,7 @@
 echo check usb repos on `date` > /tmp/hg_usb_changes
 echo '' >> /tmp/hg_usb_changes
 changes='No'
-for name in apropos cobtools doctree filefindr htmledit jvsdoe leesjcl notetree probreg rst2html-web tcmdrkeys xmledit
+for name in apropos cobtools doctree filefindr htmledit jvsdoe leesjcl notetree probreg rst2html tcmdrkeys xmledit
 do
     cd /media/albert/KINGSTON/$name
     hg status --quiet > /tmp/hg_st_$name

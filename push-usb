@@ -2,7 +2,7 @@
 
 echo push-local report on `date` > /tmp/hg_pushusb.log
 echo '' > /tmp/hg_pushusb.log
-for name in apropos cobtools doctree filefindr htmledit jvsdoe leesjcl notetree probreg rst2html-web tcmdrkeys xmledit
+for name in apropos cobtools doctree filefindr htmledit jvsdoe leesjcl notetree probreg rst2html tcmdrkeys xmledit
 do
     cd ~/$name
     hg status --quiet > /tmp/hg_st_$name
