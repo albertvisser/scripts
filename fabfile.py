@@ -1,6 +1,7 @@
+from __future__ import print_function
 import os
 import datetime
-from fabric.api import local, sudo
+from fabric.api import *
 """collection of shortcut functions for common tasks like
 
 . installing a new version of SciTE
@@ -9,6 +10,10 @@ from fabric.api import local, sudo
 . copying a file from the local to the webserver www directory
 . helper functions for (py)gettext internationalization
 """
+server_root = '/usr/share/nginx/html'
+apache_root = '/var/www'
+
+today = datetime.datetime.today()
 
 def install_scite(version):
     """upgrade SciTE. argument: version number as used in filename
@@ -19,7 +24,7 @@ def install_scite(version):
         return
     local('tar -zxf {}'.format(filename))
     local('sudo cp gscite/SciTE /usr/bin')
-    local('sudo cp gscite/*.properties /usr/share/scite')
+    local('sudo cp gscite/*.properties /etc/scite') # /usr/share/scite')
     local('sudo cp gscite/*.html /usr/share/scite')
     local('sudo cp gscite/*.png /usr/share/scite')
     local('sudo cp gscite/*.jpg /usr/share/scite')
@@ -90,9 +95,22 @@ def repair_mongo():
     local('sudo chmod 777 /var/lib/mongodb')
 
 def wwwcopy(*names):
-    "copy indicated file(s) from ~/www to /var/www"
+    "copy indicated file(s) from ~/www/nginx-root to real nginx root"
     for name in names:
-        local('sudo cp ~/www/nginx-root/{0} /var/www/{0}'.format(name))
+        local('sudo cp ~/www/nginx-root/{0} {1}/{0}'.format(name, server_root))
+
+def wwwedit(*names):
+    "edit indicated file(s) in ~/www/nginx-root"
+    for name in names:
+        local('scite ~/www/nginx-root/{0}'.format(name))
+
+def wwwedit_apache(name):
+    "edit indicated file in apache root as-if edited directly"
+    local('cp {1}/{0} /tmp/{0}'.format(name, apache_root))
+    ## get('{1}/{0} /tmp'.format(name, apache_root))
+    local('scite /tmp/{0}'.format(name))
+    local('sudo cp /tmp/{0} {1}/{0}'.format(name, apache_root))
+    ## put('/tmp/{0} {1}'.format(name, apache_root), use_sudo=True)
 
 def gettext(sourcefile):
     """internalization: gather strings from file
@@ -133,3 +151,4 @@ def place(language_code, appname, locatie=""):
         os.mkdir(loc)
     local('msgfmt {}.po -o {}'.format(language_code, os.path.join(loc,
         appname + '.mo')))
+
