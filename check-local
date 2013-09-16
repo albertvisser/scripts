@@ -3,7 +3,7 @@
 echo check local repos on `date` > /tmp/hg_local_changes
 echo '' >> /tmp/hg_local_changes
 changes='No'
-for name in apropos cobtools doctree filefindr htmledit jvsdoe leesjcl logviewer notetree probreg rst2html-web tcmdrkeys xmledit
+for name in apropos cobtools doctree filefindr htmledit jvsdoe leesjcl logviewer notetree probreg rst2html tcmdrkeys xmledit
 do
     cd ~/$name
     hg status --quiet > /tmp/hg_st_$name
@@ -16,18 +16,20 @@ do
         mv /tmp/hg_local /tmp/hg_local_changes
         echo '' >> /tmp/hg_local_changes
         echo '' >> /tmp/hg_local_changes
+    fi
+    if hg outgoing > /tmp/hgout; then
+        changes='Yes'
+        echo outgoing changes for $name
+        echo outgoing changes for $name >> /tmp/hg_local_changes
+        echo --local: >> /tmp/hg_local_changes
+        hg tip >> /tmp/hg_local_changes
+        cd ~/hg_repos/$name
+        echo --hg_repos: >> /tmp/hg_local_changes
+        hg tip >> /tmp/hg_local_changes
+        echo '' >> /tmp/hg_local_changes
     else
-        if hg outgoing > /tmp/hgout; then
-            changes='Yes'
-            echo outgoing changes for $name
-            echo outgoing changes for $name >> /tmp/hg_local_changes
-            echo --local: >> /tmp/hg_local_changes
-            hg tip >> /tmp/hg_local_changes
-            cd ~/hg_repos/$name
-            echo --hg_repos: >> /tmp/hg_local_changes
-            hg tip >> /tmp/hg_local_changes
-            echo '' >> /tmp/hg_local_changes
-        fi
+        echo no outgoing changes for $name
+#        echo no outgoing changes for $name >> /tmp/hg_local_changes
     fi
 done
 for name in bin nginx-config
@@ -43,18 +45,20 @@ do
         mv /tmp/hg_local /tmp/hg_local_changes
         echo '' >> /tmp/hg_local_changes
         echo '' >> /tmp/hg_local_changes
+    fi
+    if hg outgoing > /tmp/hgout; then
+        changes='Yes'
+        echo outgoing changes for $name
+        echo outgoing changes for $name >> /tmp/hg_local_changes
+        echo --local: >> /tmp/hg_local_changes
+        hg tip >> /tmp/hg_local_changes
+        cd ~/hg_private/$name
+        echo --hg_private: >> /tmp/hg_local_changes
+        hg tip >> /tmp/hg_local_changes
+        echo '' >> /tmp/hg_local_changes
     else
-        if hg outgoing > /tmp/hgout; then
-            changes='Yes'
-            echo outgoing changes for $name
-            echo outgoing changes for $name >> /tmp/hg_local_changes
-            echo --local: >> /tmp/hg_local_changes
-            hg tip >> /tmp/hg_local_changes
-            cd ~/hg_private/$name
-            echo --hg_private: >> /tmp/hg_local_changes
-            hg tip >> /tmp/hg_local_changes
-            echo '' >> /tmp/hg_local_changes
-        fi
+        echo no outgoing changes for $name
+#        echo no outgoing changes for $name >> /tmp/hg_local_changes
     fi
 done
 if [ "$changes" = "No" ]
