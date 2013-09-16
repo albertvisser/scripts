@@ -152,3 +152,40 @@ def place(language_code, appname, locatie=""):
     local('msgfmt {}.po -o {}'.format(language_code, os.path.join(loc,
         appname + '.mo')))
 
+def _read_ini(repo_root):
+    paths = []
+    with open(os.path.join(repo_root, 'paths.conf')) as _in:
+        in_section = False
+        for line in _in:
+            if line.startswith('#'):
+                continue
+            if in_section:
+                src, dest = line.strip().split('=')
+                paths.append((src, dest))
+            if line.startswith('['):
+                if line.strip() == '[paths]':
+                    in_section = True
+                elif in_section:
+                    in_section = False
+    return paths
+
+def repocheck(*names):
+    """check for modifications in non-version controlled local/working versions
+
+    uses the `reposync` compare routine
+    """
+    ## sys.path.append('/home/albert/hg_repos/reposync')
+
+    nonlocal_repos = ['absentie', 'doctool', 'magiokis', 'pythoneer']
+    if not names:
+        names = nonlocal_repos
+    for name in names:
+        if name not in nonlocal_repos:
+            print('{}: use check_local for this project'.format(name))
+            continue
+        repo_root = os.path.join('/home/albert', 'hg_repos', name)
+        paths = [y for (x, y) in _read_ini(repo_root)]
+        for path in paths:
+            with lcd(path), settings(hide('running', 'warnings'), warn_only=True):
+                local('/bin/sh repo compare')
+
