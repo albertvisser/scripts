@@ -30,13 +30,13 @@ A collection of simple (mostly bash) scripts I put together. Most of these are s
 **check-local**
 
     script to check if there are changes to local repositories that aren't synched with my central ones (the ones that push to BitBucket). No arguments.
-    relies on the `hg` subcommands `status` and `outgoing`
+    relies on the *hg* subcommands ``status`` and ``outgoing``
 
 **check-bb**
 
     script to check if there are changes to central repositories that aren't synched with the remote (BitBucket) ones. No arguments.
     Currently this script only checks for uncommitted changes because outgoing would be "expensive".
-    It should probably be replaced with a working version of `push-bb`
+    It should probably be replaced with a working version of ``push-bb``
 
 **check-usb**
 
@@ -44,7 +44,7 @@ A collection of simple (mostly bash) scripts I put together. Most of these are s
 
 **chmodrecursive**
 
-    in copying my server trees from Windows the file permissions were fucked up. So i wrote this script to set them right.
+    in copying my server trees from Windows the file permissions were fucked up. So I wrote this script to set them right.
 
 **doctree**
 
