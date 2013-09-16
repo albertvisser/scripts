@@ -189,3 +189,194 @@ def repocheck(*names):
             with lcd(path), settings(hide('running', 'warnings'), warn_only=True):
                 local('/bin/sh repo compare')
 
+def _check(context='local', push='no'):
+    """vergelijkt mercurial repositories met elkaar
+
+    context geeft aan welke: lokale working versie met lokale centrale versie,
+    lokale centrale versie met bitbucket versie of usb versie met centrale versie
+    push geeft aan of er ook gepushed moet worden (working naar centraal, centraal
+    naar bitbucket of centraal naar usb) en moet indien van toepassing
+    expliciet als 'yes' worden opgegeven (in het geval van usb wordt feitelijk
+    gepulled, push vanuit usb moet altijd per repo apart)
+    """
+    bb_repos = ['apropos', 'doctree', 'filefindr', 'htmledit', 'logviewer',
+        'probreg', 'rst2html', 'xmledit']
+    non_bb_repos = ['actiereg', 'cobtools', 'jvsdoe', 'leesjcl', 'notetree',
+        'tcmdrkeys']
+    private_repos = ['bin', 'nginx-config']
+    all_repos = bb_repos + private_repos + non_bb_repos
+    # repos die geen locale working versie hebben
+    non_local_repos = ['absentie', 'doctool', 'magiokis', 'pythoneer']
+    bb = context == 'bb'
+    usb = context == 'usb'
+    if context == 'local':
+        root, outfile = '/home/albert', '/tmp/hg_local_changes'
+    elif bb:
+        root, outfile = '/home/albert/hg_repos', '/tmp/hg_changes'
+    elif usb:
+        root, outfile = '/media/albert/KINGSTON', '/tmp/hg_usb_changes'
+    else:
+        print('wrong context for this routine')
+        return
+
+    changes = False
+    with open(outfile, 'w') as _out, settings(hide('running', 'warnings'),
+            warn_only=True):
+        print('check {} repos on {}\n\n'.format(context, today), file=_out)
+        for name in all_repos:
+            stats = []
+            if bb and name in non_bb_repos:
+                continue
+            if bb and name in private_repos:
+                pwd = os.path.join(root.replace('repos', 'private'), name)
+            else:
+                pwd = os.path.join(root, name)
+            tmp = '/tmp/hg_st_{}'.format(name)
+            uncommitted = outgoing = incoming = False
+            with lcd(pwd):
+                result = local('hg status --quiet', capture=True)
+            test = result.stdout
+            if test.strip():
+                stats.append('uncommitted changes')
+                print('\nuncommitted changes in {}'.format(pwd), file=_out)
+                uncommitted = True
+                _out.write(test + '\n')
+            if bb:
+                tmpfile = os.path.join('/tmp', '{}_tip'.format(name))
+                tipfile = os.path.join(root, '{}_tip'.format(name))
+                with lcd(pwd):
+                    local('hg tip > {}'.format(tmpfile))
+                with open(tmpfile) as _in1, open(tipfile) as _in2:
+                    buf1 = _in1.read()
+                    buf2 = _in2.read()
+                outgoing = buf1 != buf2
+                if outgoing:
+                    stats.append('outgoing changes')
+                    print('outgoing changes for {}'.format(name), file=_out)
+                    _out.write("--local:\n")
+                    _out.write(buf1 + "\n")
+                    _out.write("-- bb:\n")
+                    _out.write(buf2 + "\n")
+            else:
+                with lcd(pwd):
+                    result = local('hg outgoing', capture=True)
+                outgoing = result.succeeded
+                if outgoing:
+                    changes = True
+                    stats.append('outgoing changes')
+                    print('\noutgoing changes for {}'.format(name), file=_out)
+                    _out.write(result.stdout + '\n')
+                if usb:
+                    with lcd(pwd):
+                        result = local('hg incoming', capture=True)
+                    incoming = result.succeeded
+                    if incoming:
+                        changes = True
+                        stats.append('incoming changes')
+                        print('\nincoming changes for {}'.format(name), file=_out)
+                        _out.write(result.stdout + '\n')
+            if stats:
+                print(' and '.join(stats) + ' for {}'.format(name))
+            else:
+                print('no changes for {}'.format(name))
+            if uncommitted or outgoing or incoming: changes = True
+            if push != 'yes':
+                continue
+            command = ''
+            if not usb:
+                if outgoing:
+                    command = 'hg push' if bb else 'hg push --remotecmd update'
+            else:
+                if incoming and not uncommitted and not outgoing:
+                    command = 'hg pull --update'
+            if command:
+                with lcd(pwd):
+                    result = local(command)
+                    if result.succeeded:
+                        _out.write(result.stdout + '\n')
+                        if bb:
+                            with lcd(pwd):
+                                local('hg tip > {}'.format(tipfile))
+    print()
+    if changes:
+        print('for details see {}'.format(outfile))
+    else:
+        print('no changes')
+
+def check_local():
+    """compare hg repositories: working vs "central"
+    """
+    _check()
+
+def check_bb():
+    """compare hg repositories: "central" vs BitBucket
+    """
+    _check('bb')
+
+def check_usb():
+    """compare hg repositories: "central" vs usb stick
+    """
+    _check('usb')
+
+def push_local():
+    """push from working to "central"
+    """
+    _check(push='yes')
+
+def push_bb():
+    """push from "central" to BitBucket
+    """
+    _check('bb', push='yes')
+
+def push_usb():
+    """push from "central" to usb stick (implemented as a pull)
+    """
+    _check('usb', push='yes')
+
+def pull_usb():
+    """not implemented yet: push from usb to "central"
+    """
+
+def pull_local():
+    """not implemented yet: push from "central" to working
+    """
+
+def pushthru(*names):
+    """push from working to "central" and on to bitbucket if possible
+
+    either name specific repos or check all
+    for the time being this routine does not utilize the _check function,
+    but I think maybe it should
+    """
+    ## print(_check.locals())
+    bb_repos = ['apropos', 'doctree', 'filefindr', 'htmledit', 'logviewer',
+        'probreg', 'rst2html', 'xmledit']
+    private_repos = ['bin', 'nginx-config']
+    all_repos = bb_repos + private_repos
+    if not names:
+        names = all_repos
+    for name in names:
+        if name not in all_repos:
+            print('{} not pushed: is not on bitbucket'.format(name))
+            continue
+        with settings(hide('running', 'warnings'), warn_only=True):
+            with lcd(os.path.join('~', name)):
+                result = local('hg outgoing', capture=True)
+            if result.failed:
+                print('{}: no changes'.format(name))
+                continue
+            print('{}: pushing to central'.format(name))
+            with lcd(os.path.join('~', name)):
+                result = local('hg push --remotecmd update', capture=True)
+            if result.failed:
+                print('pushing failed:')
+                print(result.stderr)
+                continue
+            print('{}: pushing to bitbucket'.format(name))
+            path = '~/hg_private' if name in private_repos else '~/hg_repos'
+            with lcd(os.path.join(path, name)):
+                result = local('hg push', capture=True)
+            if result.failed:
+                print('pushing failed:')
+                print(result.stderr)
+
