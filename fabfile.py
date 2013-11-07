@@ -199,8 +199,8 @@ def _check(context='local', push='no'):
     expliciet als 'yes' worden opgegeven (in het geval van usb wordt feitelijk
     gepulled, push vanuit usb moet altijd per repo apart)
     """
-    bb_repos = ['apropos', 'doctree', 'filefindr', 'hotkeys', 'htmledit',
-        'logviewer', 'probreg', 'rst2html', 'xmledit']
+    bb_repos = ['apropos', 'bitbucket', 'doctree', 'filefindr', 'hotkeys',
+        'htmledit', 'logviewer', 'probreg', 'rst2html', 'xmledit']
     non_bb_repos = ['actiereg', 'cobtools', 'jvsdoe', 'leesjcl', 'notetree']
     private_repos = ['bin', 'nginx-config']
     all_repos = bb_repos + private_repos + non_bb_repos
@@ -228,8 +228,14 @@ def _check(context='local', push='no'):
                 continue
             if bb and name in private_repos:
                 pwd = os.path.join(root.replace('repos', 'private'), name)
+            elif name == 'bitbucket':
+                if bb:
+                    pwd = os.path.join(root, 'avisser.bitbucket.org')
+                else:
+                    pwd = os.path.join(root, 'www', name)
             else:
                 pwd = os.path.join(root, name)
+
             tmp = '/tmp/hg_st_{}'.format(name)
             uncommitted = outgoing = incoming = False
             with lcd(pwd):
