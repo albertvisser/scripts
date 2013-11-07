@@ -199,10 +199,9 @@ def _check(context='local', push='no'):
     expliciet als 'yes' worden opgegeven (in het geval van usb wordt feitelijk
     gepulled, push vanuit usb moet altijd per repo apart)
     """
-    bb_repos = ['apropos', 'doctree', 'filefindr', 'htmledit', 'logviewer',
-        'probreg', 'rst2html', 'xmledit']
-    non_bb_repos = ['actiereg', 'cobtools', 'jvsdoe', 'leesjcl', 'notetree',
-        'tcmdrkeys']
+    bb_repos = ['apropos', 'doctree', 'filefindr', 'hotkeys', 'htmledit',
+        'logviewer', 'probreg', 'rst2html', 'xmledit']
+    non_bb_repos = ['actiereg', 'cobtools', 'jvsdoe', 'leesjcl', 'notetree']
     private_repos = ['bin', 'nginx-config']
     all_repos = bb_repos + private_repos + non_bb_repos
     # repos die geen locale working versie hebben
@@ -287,7 +286,7 @@ def _check(context='local', push='no'):
                 if outgoing:
                     command = 'hg push' if bb else 'hg push --remotecmd update'
             else:
-                if incoming and not uncommitted and not outgoing:
+                if incoming: #  and not uncommitted and not outgoing:
                     command = 'hg pull --update'
             if command:
                 with lcd(pwd):
