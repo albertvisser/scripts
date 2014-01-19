@@ -1,5 +1,6 @@
 from __future__ import print_function
 import os
+import shutil
 import datetime
 from fabric.api import *
 """collection of shortcut functions for common tasks like
@@ -104,6 +105,12 @@ def wwwedit(*names):
     for name in names:
         local('scite ~/www/nginx-root/{0}'.format(name))
 
+def wwwsites():
+    "update mydomains database and localhost/sites.html from /etc/hosts"
+    with lcd('~/www/django/mydomains'):
+        local('python check_hosts.py')
+    wwwcopy('sites.html')
+
 def wwwedit_apache(name):
     "edit indicated file in apache root as-if edited directly"
     local('cp {1}/{0} /tmp/{0}'.format(name, apache_root))
@@ -151,6 +158,23 @@ def place(language_code, appname, locatie=""):
         os.mkdir(loc)
     local('msgfmt {}.po -o {}'.format(language_code, os.path.join(loc,
         appname + '.mo')))
+
+def startproject(name):
+    """start a new software project in a standardized way
+    """
+    loc = '/home/albert/{}'.format(name)
+    if os.path.exists(loc):
+        print('sorry, this project name is already in use')
+        return
+    shutil.copytree('/home/albert/projects/skeleton', loc)
+    os.rename(os.path.join(loc, 'projectname'), os.path.join(loc, name))
+    tests_file = os.path.join(loc, 'tests', name + '_tests.py')
+    os.rename(os.path.join(loc, 'tests', 'projectname_tests.py'), tests_file)
+    with open(tests_file) as _in:
+        data = _in.read()
+    with open(tests_file, 'w') as _out:
+        _out.write(data.replace('projectname', name))
+
 
 def _read_ini(repo_root):
     paths = []
@@ -201,11 +225,14 @@ def _check(context='local', push='no'):
     """
     bb_repos = ['apropos', 'bitbucket', 'doctree', 'filefindr', 'hotkeys',
         'htmledit', 'logviewer', 'probreg', 'rst2html', 'xmledit']
-    non_bb_repos = ['actiereg', 'cobtools', 'jvsdoe', 'leesjcl', 'notetree']
+    non_bb_repos = ['actiereg', 'albums', 'cobtools', 'jvsdoe', 'leesjcl',
+        'myprojects', 'notetree']
     private_repos = ['bin', 'nginx-config']
     all_repos = bb_repos + private_repos + non_bb_repos
     # repos die geen locale working versie hebben
     non_local_repos = ['absentie', 'doctool', 'magiokis', 'pythoneer']
+    # django repos hebben een andere local root
+    django_repos = ('actiereg', 'albums', 'myprojects')
     bb = context == 'bb'
     usb = context == 'usb'
     if context == 'local':
@@ -233,6 +260,8 @@ def _check(context='local', push='no'):
                     pwd = os.path.join(root, 'avisser.bitbucket.org')
                 else:
                     pwd = os.path.join(root, 'www', name)
+            elif name in django_repos:
+                pwd = os.path.join(root, 'www', 'django', name)
             else:
                 pwd = os.path.join(root, name)
 
