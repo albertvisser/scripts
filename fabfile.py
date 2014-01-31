@@ -232,6 +232,8 @@ def _check(context='local', push='no'):
     naar bitbucket of centraal naar usb) en moet indien van toepassing
     expliciet als 'yes' worden opgegeven (in het geval van usb wordt feitelijk
     gepulled, push vanuit usb moet altijd per repo apart)
+    voor correcte werking m.b.t. pushen naar bitbucket moet voor elke repo een file
+    <reponame>_tip aanwezig zijn met daarin de output van commando hg_tip
     """
     bb = context == 'bb'
     usb = context == 'usb'
