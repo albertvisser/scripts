@@ -13,6 +13,16 @@ from fabric.api import *
 """
 server_root = '/usr/share/nginx/html'
 apache_root = '/var/www'
+bb_repos = ['actiereg', 'albums', 'apropos', 'bitbucket', 'doctree',
+    'filefindr', 'hotkeys', 'htmledit', 'logviewer', 'myprojects', 'probreg',
+    'rst2html', 'xmledit']
+non_bb_repos = ['cobtools', 'jvsdoe', 'leesjcl', 'notetree']
+private_repos = ['bin', 'nginx-config']
+all_repos = bb_repos + private_repos + non_bb_repos
+# repos die geen locale working versie hebben
+non_local_repos = ['absentie', 'doctool', 'magiokis', 'pythoneer']
+# django repos hebben een andere local root
+django_repos = ['actiereg', 'albums', 'myprojects']
 
 today = datetime.datetime.today()
 
@@ -223,16 +233,6 @@ def _check(context='local', push='no'):
     expliciet als 'yes' worden opgegeven (in het geval van usb wordt feitelijk
     gepulled, push vanuit usb moet altijd per repo apart)
     """
-    bb_repos = ['apropos', 'bitbucket', 'doctree', 'filefindr', 'hotkeys',
-        'htmledit', 'logviewer', 'probreg', 'rst2html', 'xmledit']
-    non_bb_repos = ['actiereg', 'albums', 'cobtools', 'jvsdoe', 'leesjcl',
-        'myprojects', 'notetree']
-    private_repos = ['bin', 'nginx-config']
-    all_repos = bb_repos + private_repos + non_bb_repos
-    # repos die geen locale working versie hebben
-    non_local_repos = ['absentie', 'doctool', 'magiokis', 'pythoneer']
-    # django repos hebben een andere local root
-    django_repos = ('actiereg', 'albums', 'myprojects')
     bb = context == 'bb'
     usb = context == 'usb'
     if context == 'local':
@@ -260,7 +260,7 @@ def _check(context='local', push='no'):
                     pwd = os.path.join(root, 'avisser.bitbucket.org')
                 else:
                     pwd = os.path.join(root, 'www', name)
-            elif name in django_repos:
+            elif name in django_repos and 'hg_repos' not in root:
                 pwd = os.path.join(root, 'www', 'django', name)
             else:
                 pwd = os.path.join(root, name)
@@ -383,9 +383,6 @@ def pushthru(*names):
     but I think maybe it should
     """
     ## print(_check.locals())
-    bb_repos = ['apropos', 'doctree', 'filefindr', 'htmledit', 'logviewer',
-        'probreg', 'rst2html', 'xmledit']
-    private_repos = ['bin', 'nginx-config']
     all_repos = bb_repos + private_repos
     if not names:
         names = all_repos
