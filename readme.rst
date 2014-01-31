@@ -15,7 +15,7 @@ A collection of simple (mostly bash) scripts I put together. Most of these are s
 
     starts up the former's multi file version with arguments taken from a list (like Double Commander provides them)
 
-**arcstuff.ini.example**
+**arcstuff.conf.example**
 
     example ini file for ``fab arcstuff`` command
 
@@ -26,21 +26,6 @@ A collection of simple (mostly bash) scripts I put together. Most of these are s
 **binfab**
 
     execute ``fab`` (fabric) using fabfile in this directory
-
-**check-local**
-
-    script to check if there are changes to local repositories that aren't synched with my central ones (the ones that push to BitBucket). No arguments.
-    relies on the *hg* subcommands ``status`` and ``outgoing``
-
-**check-bb**
-
-    script to check if there are changes to central repositories that aren't synched with the remote (BitBucket) ones. No arguments.
-    Currently this script only checks for uncommitted changes because outgoing would be "expensive".
-    It should probably be replaced with a working version of ``push-bb``
-
-**check-usb**
-
-    script to check if there are changes to repositories on my USB drive that aren't synched with my central ones (the ones that push to BitBucket). No arguments.
 
 **chmodrecursive**
 
@@ -64,20 +49,23 @@ A collection of simple (mostly bash) scripts I put together. Most of these are s
 
     a couple of functions to help with the internalization of source files
 
+    functions replacing the check- and push-scripts mentioned below
+
 **fabsrv**
 
     execute ``fab`` (fabric) using fabfile in nginx-config directory (for server configuration stuff)
 
 **hotkeys**
 
+    starts my viewer for keyboard shortcuts in various applications
 
 **htmledit**
 
     starts up my tree-based html editor. Takes one argument: the filename.
 
-**install-scite**
+**iview**
 
-    script to install SciTE in the location proposed by the docs. A fabfile version is also present (and will probably replace this)
+    starts up IrfanView under Wine. takes no arguments.
 
 **morefromdos.py**
 
@@ -99,29 +87,9 @@ A collection of simple (mostly bash) scripts I put together. Most of these are s
 
     the same for the version using sqlite. also takes no arguments.
 
-**push-bb**
-
-    script to check selected central repos for uncommitted changes and push to bitbucket when not present and not committed before. Uses `hg tip` to save the new tip for comparison.
-
-**push-local**
-
-    script to check local repos for uncommitted changes and push to central when not present
-
-**push-usb**
-
-    the same for repose on my usb drive
-
-**pushthru **
-
-    script to push directly from a specified local repo to bitbucket
-
 **readme.rst**
 
     this file
-
-**rstbb**
-
-    script to update rstblog source and push to central and bitbucket
 
 **sort_file.py**
 
@@ -141,3 +109,44 @@ Requirements
 - a Linux/Unix based OS
 - Python
 - fabric (where applicable)
+- Mercurial (for the check and push scripts)
+
+
+scripts that were replaced by functions in the fabfile:
+-------------------------------------------------------
+
+**check-local**
+
+    script to check if there are changes to local repositories that aren't synched with my central ones (the ones that push to BitBucket). No arguments.
+    relies on the *hg* subcommands ``status`` and ``outgoing``
+
+**check-bb**
+
+    script to check if there are changes to central repositories that aren't synched with the remote (BitBucket) ones. No arguments.
+    Currently this script only checks for uncommitted changes because outgoing would be "expensive".
+    It should probably be replaced with a working version of ``push-bb``
+
+**check-usb**
+
+    script to check if there are changes to repositories on my USB drive that aren't synched with my central ones (the ones that push to BitBucket). No arguments.
+
+**push-bb**
+
+    script to check selected central repos for uncommitted changes and push to bitbucket when not present and not committed before. Uses `hg tip` to save the new tip for comparison.
+
+**push-local**
+
+    script to check local repos for uncommitted changes and push to central when not present
+
+**push-usb**
+
+    the same for repose on my usb drive
+
+**pushthru **
+
+    script to push directly from a specified local repo to bitbucket
+
+**rstbb**
+
+    script to update rstblog source and push to central and bitbucket
+
