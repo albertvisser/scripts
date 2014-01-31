@@ -1,0 +1,2 @@
+#! /bin/bash
+wine /home/albert/.wine/drive_c/IrfanView/i_view32.exe

@@ -23,6 +23,7 @@ all_repos = bb_repos + private_repos + non_bb_repos
 non_local_repos = ['absentie', 'doctool', 'magiokis', 'pythoneer']
 # django repos hebben een andere local root
 django_repos = ['actiereg', 'albums', 'myprojects']
+cherrypy_repos = ['logviewer', 'rst2html']
 
 today = datetime.datetime.today()
 
@@ -262,10 +263,14 @@ def _check(context='local', push='no'):
                     pwd = os.path.join(root, 'avisser.bitbucket.org')
                 else:
                     pwd = os.path.join(root, 'www', name)
-            elif name in django_repos and 'hg_repos' not in root:
-                pwd = os.path.join(root, 'www', 'django', name)
-            else:
+            elif name in django_repos and not bb:
+                pwd = os.path.join(root, 'www', 'django')
+            elif name in cherrypy_repos and not bb:
+                pwd = os.path.join(root, 'www', 'cherrypy')
+            elif name in private_repos:
                 pwd = os.path.join(root, name)
+            else:
+                pwd = os.path.join(root, 'projects', name)
 
             tmp = '/tmp/hg_st_{}'.format(name)
             uncommitted = outgoing = incoming = False

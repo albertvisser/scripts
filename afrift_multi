@@ -7,4 +7,4 @@ with open(parmfile, 'w') as _out:
     for arg in sys.argv[1:]:
         arg = arg.replace("\ ", " ")
         _out.write(arg + "\n")
-subprocess.call(['python3', '/home/albert/filefindr/afrift_multi.pyw', parmfile])
+subprocess.call(['python3', '/home/albert/projects/filefindr/afrift_multi.pyw', parmfile])

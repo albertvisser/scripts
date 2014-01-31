@@ -1,2 +1,2 @@
 #! /bin/bash
-python3 ~/xmledit/xmleditor.py "$1"
+python3 ~/projects/xmledit/xmleditor.py "$1"
