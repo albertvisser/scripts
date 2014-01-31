@@ -1,8 +1,0 @@
-#! /bin/sh
-
-cd ~/www/bitbucket
-hg addremove
-hg ci -m 'updated'
-hg push
-cd ~/hg_repos/avisser.bitbucket.org
-hg push
