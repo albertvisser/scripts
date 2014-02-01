@@ -264,9 +264,9 @@ def _check(context='local', push='no'):
                 else:
                     pwd = os.path.join(root, 'www', name)
             elif name in django_repos and not bb:
-                pwd = os.path.join(root, 'www', 'django')
+                pwd = os.path.join(root, 'www', 'django', name)
             elif name in cherrypy_repos and not bb:
-                pwd = os.path.join(root, 'www', 'cherrypy')
+                pwd = os.path.join(root, 'www', 'cherrypy', name)
             elif name in private_repos:
                 pwd = os.path.join(root, name)
             else:
