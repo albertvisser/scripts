@@ -267,10 +267,10 @@ def _check(context='local', push='no'):
                 pwd = os.path.join(root, 'www', 'django', name)
             elif name in cherrypy_repos and not bb:
                 pwd = os.path.join(root, 'www', 'cherrypy', name)
-            elif name in private_repos:
-                pwd = os.path.join(root, name)
-            else:
+            elif name not in private_repos and not bb:
                 pwd = os.path.join(root, 'projects', name)
+            else:
+                pwd = os.path.join(root, name)
 
             tmp = '/tmp/hg_st_{}'.format(name)
             uncommitted = outgoing = incoming = False
@@ -342,7 +342,7 @@ def _check(context='local', push='no'):
     if changes:
         print('for details see {}'.format(outfile))
     else:
-        print('no changes')
+        print('no change details')
 
 def check_local():
     """compare hg repositories: working vs "central"
