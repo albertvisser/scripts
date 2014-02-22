@@ -267,7 +267,7 @@ def _check(context='local', push='no'):
                 pwd = os.path.join(root, 'www', 'django', name)
             elif name in cherrypy_repos and not bb:
                 pwd = os.path.join(root, 'www', 'cherrypy', name)
-            elif name not in private_repos and not bb:
+            elif name not in private_repos and not bb and not usb:
                 pwd = os.path.join(root, 'projects', name)
             else:
                 pwd = os.path.join(root, name)
