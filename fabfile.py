@@ -408,25 +408,25 @@ def pushthru(*names):
             with settings(hide('running', 'warnings'), warn_only=True):
                 with lcd(localpath):
                     result = local('hg outgoing', capture=True)
+                _out.write(result.stdout + "\n")
                 if result.failed:
-                    logline = '{} - hg outgoing failed (no changes?)'.format(name)
+                    logline = '{} - hg outgoing failed'.format(name)
                     _out.write(logline + "\n")
-                    _out.write(result.stdout + "\n")
                     _out.write(result.stderr + "\n")
                 else:
                     with lcd(localpath):
                         result = local('hg push --remotecmd update', capture=True)
+                    _out.write(result.stdout + "\n")
                     if result.failed:
                         logline = '{} - pushing failed'.format(name)
                         _out.write(logline + "\n")
-                        _out.write(result.stdout + "\n")
                         _out.write(result.stderr + "\n")
                         continue
                 with lcd(centralpath):
                     result = local('hg push', capture=True)
+                _out.write(result.stdout + "\n")
                 if result.failed:
                     logline = '{} - pushing to bitbucket failed'.format(name)
                     _out.write(logline + "\n")
-                    _out.write(result.stdout + "\n")
                     _out.write(result.stderr + "\n")
     print('ready, output in /tmp/pushthru_log')
