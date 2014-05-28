@@ -394,6 +394,7 @@ def pushthru(*names):
             localpath = os.path.join('~', 'projects', name)
             centralpath = os.path.join('~', 'hg_repos', name)
             if name in private_repos:
+                localpath = os.path.join('~', name)
                 centralpath = centralpath.replace('repos', 'private')
             elif name in django_repos:
                 localpath = localpath.replace('projects', os.path.join('www',
