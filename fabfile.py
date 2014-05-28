@@ -402,6 +402,7 @@ def pushthru(*names):
                 localpath = localpath.replace('projects', os.path.join('www',
                     'cherrypy'))
             elif name ==  'bitbucket':
+                localpath = localpath.replace('projects', 'www')
                 centralpath = centralpath.replace(name, 'avisser.bitbucket.org')
             with settings(hide('running', 'warnings'), warn_only=True):
                 with lcd(localpath):
