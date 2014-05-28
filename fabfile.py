@@ -384,28 +384,47 @@ def pushthru(*names):
     all_repos = bb_repos + private_repos
     if not names:
         names = all_repos
-    for name in names:
-        if name not in all_repos:
-            print('{} not pushed: is not on bitbucket'.format(name))
-            continue
-        with settings(hide('running', 'warnings'), warn_only=True):
-            with lcd(os.path.join('~', name)):
-                result = local('hg outgoing', capture=True)
-            if result.failed:
-                print('{}: no changes'.format(name))
+    with open('/tmp/pushthru_log', 'w') as _out:
+        for name in names:
+            if name not in all_repos:
+                logline = '{} not pushed: is not on bitbucket'.format(name)
+                print(logline)
+                _out.write(logline + "\n")
                 continue
-            print('{}: pushing to central'.format(name))
-            with lcd(os.path.join('~', name)):
-                result = local('hg push --remotecmd update', capture=True)
-            if result.failed:
-                print('pushing failed:')
-                print(result.stderr)
-                continue
-            print('{}: pushing to bitbucket'.format(name))
-            path = '~/hg_private' if name in private_repos else '~/hg_repos'
-            with lcd(os.path.join(path, name)):
-                result = local('hg push', capture=True)
-            if result.failed:
-                print('pushing failed:')
-                print(result.stderr)
-
+            localpath = os.path.join('~', 'projects', name)
+            centralpath = os.path.join('~', 'hg_repos', name)
+            if name in private_repos:
+                centralpath = centralpath.replace('repos', 'private')
+            elif name in django_repos:
+                localpath = localpath.replace('projects', os.path.join('www',
+                    'django'))
+            elif name in cherrypy_repos:
+                localpath = localpath.replace('projects', os.path.join('www',
+                    'cherrypy'))
+            elif name ==  'bitbucket':
+                centralpath = centralpath.replace(name, 'avisser.bitbucket.org')
+            with settings(hide('running', 'warnings'), warn_only=True):
+                with lcd(localpath):
+                    result = local('hg outgoing', capture=True)
+                if result.failed:
+                    logline = '{} - hg outgoing failed (no changes?)'.format(name)
+                    _out.write(logline + "\n")
+                    _out.write(result.stdout + "\n")
+                    _out.write(result.stderr + "\n")
+                else:
+                    with lcd(localpath):
+                        result = local('hg push --remotecmd update', capture=True)
+                    if result.failed:
+                        logline = '{} - pushing failed'.format(name)
+                        _out.write(logline + "\n")
+                        _out.write(result.stdout + "\n")
+                        _out.write(result.stderr + "\n")
+                        continue
+                with lcd(centralpath):
+                    result = local('hg push', capture=True)
+                if result.failed:
+                    logline = '{} - pushing to bitbucket failed'.format(name)
+                    _out.write(logline + "\n")
+                    _out.write(result.stdout + "\n")
+                    _out.write(result.stderr + "\n")
+    print('ready, output in /tmp/pushthru_log')
