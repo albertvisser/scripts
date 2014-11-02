@@ -3,6 +3,7 @@ import os
 import shutil
 import datetime
 from fabric.api import *
+from settings import *
 """collection of shortcut functions for common tasks like
 
 . installing a new version of SciTE
@@ -11,19 +12,6 @@ from fabric.api import *
 . copying a file from the local to the webserver www directory
 . helper functions for (py)gettext internationalization
 """
-server_root = '/usr/share/nginx/html'
-apache_root = '/var/www'
-bb_repos = ['actiereg', 'albums', 'apropos', 'bitbucket', 'doctree',
-    'filefindr', 'hotkeys', 'htmledit', 'logviewer', 'myprojects', 'probreg',
-    'rst2html', 'xmledit']
-non_bb_repos = ['cobtools', 'jvsdoe', 'leesjcl', 'notetree']
-private_repos = ['bin', 'nginx-config']
-all_repos = bb_repos + private_repos + non_bb_repos
-# repos die geen locale working versie hebben
-non_local_repos = ['absentie', 'doctool', 'magiokis', 'pythoneer']
-# django repos hebben een andere local root
-django_repos = ['actiereg', 'albums', 'myprojects']
-cherrypy_repos = ['logviewer', 'rst2html']
 
 today = datetime.datetime.today()
 
