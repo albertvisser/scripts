@@ -30,6 +30,40 @@ def install_scite(version):
     local('sudo cp gscite/*.jpg /usr/share/scite')
     local('rm gscite -r')
 
+def build_scite(version):
+    """(re)build SciTE. argument: version number as used in filename
+
+    standard binary is 32-bit and my system is 64-bit, so I need this now
+    """
+    filename = os.path.abspath('Downloads/SciTE/scite{}.tgz'.format(version))
+    if not os.path.exists(filename):
+        print('{} does not exist'.format(filename))
+        return
+    logfile = '/tmp/scite_build.log'
+    with open(logfile, 'w') as _out:
+        with settings(hide('running', 'warning'), warn_only=True):
+            with lcd('/tmp'):
+                local('tar -zxf {}'.format(filename))
+            with lcd('/tmp/scintilla/gtk'):
+                result = local('make', capture=True)
+            _out.write(result.stdout + "\n")
+            if result.failed:
+                err = 'make scintilla failed'
+            else:
+                with lcd('/tmp/scite/gtk'):
+                    err = ''
+                    result = local('make', capture=True)
+                    _out.write(result.stdout + "\n")
+                    if result.failed:
+                        err = 'make scite failed'
+                    else:
+                        result = local('sudo make install', capture=True)
+                        _out.write(result.stdout + "\n")
+                        if result.failed:
+                            err = 'make install failed'
+    if err:
+        print('{}, see {}'.format(err, logfile))
+
 def arcstuff(*names):
     """backup selected files indicated in a .conf file
 

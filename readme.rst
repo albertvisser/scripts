@@ -39,9 +39,13 @@ A collection of simple (mostly bash) scripts I put together. Most of these are s
 
     collection of special functions. Currently contains the following:
 
-    a function to upgrade SciTE to the specified version (after downloading). Supposed to replace the bash script that does the same (does a better job taking the calling argument)
+    a function to upgrade SciTE to the specified version (after downloading).
 
-    a function that reads entries from a config file (called ``arcstuff.ini``, example present) to build an archive containing backups of selected data files.
+    a function to (re)build SciTE to the specified version (after downloading).
+    I needed this after upgrading my system to 64-bit, since the download binary is 32-bit.
+
+    a function that reads entries from a config file (called ``arcstuff.ini``,
+    example present) to build an archive containing backups of selected data files.
 
     some functions that can be used to control a mongodb database server
 
