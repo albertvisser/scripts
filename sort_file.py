@@ -1,11 +1,22 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
-print('start')
+"""sort a given (text) file, line by line, alphabetically
+
+depending on the value of the second parameter, the resulting file is either saved
+in the same directory as the original (with the affix "sorted") or in the system's
+temporary directory
+"""
 import sys
 import os
+TMP = '/tmp'
+if sys.platform.startswith('win'):
+    TMP = "C:\\Windows\Temp"
 
-def main(fn):
-    fnew = '_sorted'.join(os.path.splitext(fn))
+def main(fn, tmp=False):
+    if tmp:
+        fnew = os.path.join(TMP, os.path.basename(fn))
+    else:
+        fnew = '_sorted'.join(os.path.splitext(fn))
     with open(fn) as _in, open(fnew, "w") as _out:
         regels = _in.readlines()
         regels.sort()
