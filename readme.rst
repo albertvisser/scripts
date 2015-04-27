@@ -49,9 +49,11 @@ A collection of simple (mostly bash) scripts I put together. Most of these are s
 
     some functions that can be used to control a mongodb database server
 
-    a function to copy html files into the nginx server root
+    a function to copy html files into the nginx server root and one to subsequently edit it, same for doing this with the apache server root
 
     a couple of functions to help with the internalization of source files
+
+    a function to set up a Python source tree in a standardized way
 
     functions replacing the check- and push-scripts mentioned below
 
@@ -61,15 +63,15 @@ A collection of simple (mostly bash) scripts I put together. Most of these are s
 
 **hotkeys**
 
-    starts my viewer for keyboard shortcuts in various applications
+    starts my viewer for keyboard shortcuts in various applications. No arguments.
 
 **htmledit**
 
-    starts up my tree-based html editor. Takes one argument: the filename.
+    starts up my tree-based html editor. Takes one optional argument: the filename.
 
 **iview**
 
-    starts up IrfanView under Wine. takes no arguments.
+    starts up IrfanView under Wine. Takes no arguments.
 
 **morefromdos.py**
 
@@ -77,27 +79,40 @@ A collection of simple (mostly bash) scripts I put together. Most of these are s
 
 **notetree**
 
-    starts up Doctree's predecessor
+    starts up Doctree's predecessor. No arguments.
 
 **permit.py**
 
-    Python script to change file and directory permissions after copying over from Windows. Argument works like with ''morefromdos.py'' except for all files instead of just .py ones. I wrote and used these scripts when I copied my old CGI apps over from Windows to Linux.
+    Python script to change file and directory permissions after copying over from Windows. Argument works like with ''morefromdos.py'' except for all files instead of just .py ones. I wrote and used these scripts when I copied my old CGI apps over from Windows to Linux. Basically a nicer version of *chmodrecursive.py*.
 
 **probreg**
 
-    starts up my 'probreg' application from a standard location. takes no arguments.
+    starts up my 'probreg' application from a standard location. Takes no arguments.
 
 **probreg_sql**
 
-    the same for the version using sqlite. also takes no arguments.
+    the same for the version using sqlite. Also takes no arguments.
 
 **readme.rst**
 
-    this file
+    this file.
+
+** settings.py**
+
+    Configuration values for the fabfile in this directory, mostly for the mercurial
+repo stuff.
+
+** sort_and_compare.py**
+
+    Compare two textfiles after sorting them first. Arguments: two existing file names.
 
 **sort_file.py**
 
-    copy of a Python script I wrote on Windows to sort a (text) file from within Total Commander. Takes one argument: the file to sort.
+    copy of a Python script I wrote on Windows to sort a (text) file from within Total Commander. Takes one argument: the file to sort. Ask for one if you omit it.The result is stored in the same directory under a different name, but can also be saved in a temporary location if appropriately called (as in *sort_and_compare.py*)
+
+**sortxml.py**
+
+    Reorders an XML file according to a common attribute of the sub-topmost elements. Projected to be part of a sort_and_compare script like the one above for text files, as such it is meant for data-like XML applications which is not the most clever use of XML in my opinion. I should know, I'm guilty of having done this myself quite a lot... in fact, that's what I started this for.
 
 **totalcmd**
 
@@ -105,14 +120,14 @@ A collection of simple (mostly bash) scripts I put together. Most of these are s
 
 **xmledit**
 
-    starts up my tree-based xml editor. Takes one argument: the filename.
+    starts up my tree-based xml editor. Takes one (optional) argument: the filename.
 
 Requirements
 ------------
 
-- a Linux/Unix based OS
+- a Linux/Unix based OS (although the Python scripts should be cross-platform)
 - Python
-- fabric (where applicable)
+- Fabric (where applicable)
 - Mercurial (for the check and push scripts)
 
 
