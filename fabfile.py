@@ -9,6 +9,7 @@ from settings import *
 . installing a new version of SciTE
 . archiving a predefined set of files
 . managing mongodb (start/stop/restart server and repair)
+. managing posgresql (start/stop/restart server and repair)
 . copying a file from the local to the webserver www directory
 . helper functions for (py)gettext internationalization
 """
@@ -119,7 +120,7 @@ def stop_mongo():
     local('sudo service mongodb stop')
 
 def restart_mongo():
-    "restart mongo db"
+    "restart mongo database server"
     local('sudo service mongodb restart')
 
 def repair_mongo():
@@ -127,6 +128,18 @@ def repair_mongo():
     local('sudo rm /var/lib/mongodb/mongodb.lock')
     local('sudo mongod --dbpath /var/lib/mongodb/ --repair')
     local('sudo chmod 777 /var/lib/mongodb')
+
+def start_pg():
+    "start postgresql database server"
+    local('sudo service postgresql start')
+
+def stop_pg():
+    "stop postgresql database server"
+    local('sudo service postgresql stop')
+
+def restart_pg():
+    "restart postgresql database server"
+    local('sudo service postgresql restart')
 
 def wwwcopy(*names):
     "copy indicated file(s) from ~/www/nginx-root to real nginx root"
@@ -339,7 +352,8 @@ def _check(context='local', push='no'):
             command = ''
             if not usb:
                 if outgoing:
-                    command = 'hg push' if bb else 'hg push --remotecmd update'
+                    command = 'hg push' # if bb else 'hg push --remotecmd update'
+                    # remotecmd werkt niet zo maar geen idee hoe dan wel
             else:
                 if incoming: #  and not uncommitted and not outgoing:
                     command = 'hg pull --update'
