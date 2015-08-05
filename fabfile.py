@@ -4,6 +4,9 @@ import shutil
 import datetime
 from fabric.api import *
 from settings import *
+from pathlib import Path
+from collections import defaultdict
+
 """collection of shortcut functions for common tasks like
 
 . installing a new version of SciTE
@@ -42,7 +45,7 @@ def build_scite(version):
         return
     logfile = '/tmp/scite_build.log'
     with open(logfile, 'w') as _out:
-        with settings(hide('running', 'warning'), warn_only=True):
+        with settings(hide('running', 'warnings'), warn_only=True):
             with lcd('/tmp'):
                 local('tar -zxf {}'.format(filename))
             with lcd('/tmp/scintilla/gtk'):
@@ -64,6 +67,8 @@ def build_scite(version):
                             err = 'make install failed'
     if err:
         print('{}, see {}'.format(err, logfile))
+    else:
+        print('ready, see {}'.format(logfile))
 
 def arcstuff(*names):
     """backup selected files indicated in a .conf file
