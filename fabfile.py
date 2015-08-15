@@ -4,8 +4,13 @@ import shutil
 import datetime
 from fabric.api import *
 from settings import *
-from pathlib import Path
+## from pathlib import Path # toch maar niet gebruikt vanwege unicode errors bij write
 from collections import defaultdict
+import csv
+import functools
+import logging
+logging.basicConfig(filename="/home/albert/bin/log/fabfile_log", level=logging.DEBUG,
+    format='%(asctime)s %(message)s')
 
 """collection of shortcut functions for common tasks like
 
@@ -18,6 +23,9 @@ from collections import defaultdict
 """
 
 today = datetime.datetime.today()
+
+def _log(message):
+    logging.info(message)
 
 def install_scite(version):
     """upgrade SciTE. argument: version number as used in filename
@@ -471,3 +479,105 @@ def pushthru(*names):
                     _out.write(logline + "\n")
                     _out.write(result.stderr + "\n")
     print('ready, output in /tmp/pushthru_log')
+
+
+def _make_repolist(path):
+    """turn the repo log into a history
+
+    input: pathname to the repository
+    output: dictionary containing the history
+    """
+    ## logging.info('processing {}'.format(item))
+    with settings(hide('running', 'warnings'), warn_only=True):
+        with lcd(path):
+            result = local('hg log -v', capture=True)
+            data = result.stdout
+    outdict = defaultdict(dict)
+    in_description = False
+    for line in data.split('\n'):
+        line = line.strip()
+        words = line.split()
+        if line == '':
+            in_description = False
+        elif in_description:
+            outdict[key]['desc'].append(line)
+        elif words[0] == 'changeset:':
+            key, _ = words[1].split(':', 1)
+            key = int(key)
+        elif words[0] == 'date:':
+            outdict[key]['date'] = ' '.join(words[1:])
+        elif words[0] == 'files:':
+            outdict[key]['files'] = words[1:]
+        elif words[0] == 'description:':
+            in_description = True
+            outdict[key]['desc'] = []
+    return outdict
+
+def _make_repo_ovz(outdict, outfile):
+    """write the history to a file
+
+    input: history in the form of a dictionary, output filename
+    output: the specified file as written to disk
+    """
+    with open(outfile, "w") as _out:
+        for key in sorted(outdict.keys()):
+            _out.write('{}: {}\n'.format(outdict[key]['date'],
+                '\n'.join(outdict[key]['desc'])))
+            try:
+                for item in outdict[key]['files']:
+                    _out.write('    {}\n'.format(item))
+            except KeyError:
+                pass
+
+def _make_repocsv(outdict, outfile):
+    """turn the repo history into a comma delimited file
+
+    input: history in the form of a dictionary, output filename
+    output: the specified file as written to disk
+    """
+    def listnn(count):
+        return count * [""]
+    date_headers, desc_headers = [" \\ date"], ["filename \\ description"]
+    in_changeset_dict = defaultdict(functools.partial(listnn, len(outdict.keys())))
+    for key in sorted(outdict.keys()):
+        date_headers.append(outdict[key]['date'])
+        desc = "\n".join(outdict[key]['desc'])
+        if ',' in desc or ';' in desc:
+            desc = '"{}"'.format(desc)
+        desc_headers.append(desc)
+        try:
+            filelist = outdict[key]['files']
+        except KeyError:
+            continue
+        for item in filelist:
+            if '/' not in item: item = './' + item
+            in_changeset_dict[item][int(key)] = "x"
+    with open(outfile, "wb") as _out:
+        writer = csv.writer(_out)
+        writer.writerow(date_headers)
+        writer.writerow(desc_headers)
+        for key in sorted(in_changeset_dict):
+            out = [key] + in_changeset_dict[key]
+            writer.writerow(out)
+
+def _repos_overzicht(name, path):
+    if not os.path.isdir(path): return
+    if '.hg' not in os.listdir(path): return
+    print('processing repository: {}'.format(name))
+    outdict = _make_repolist(path)
+    ## outfile = os.path.join(root, ".overzicht", "{}.repo_ovz".format(name))
+    ## _make_repo_ovz(outdict, outfile)
+    outfile = os.path.join(os.path.dirname(path), ".overzicht", "{}.csv".format(name))
+    _make_repocsv(outdict, outfile)
+
+def repos_overzicht(*names):
+    """Try to build a history file
+    from a repository log - meant to help me decide on tags or versions
+    """
+    root = '/home/albert/hg_repos'
+    if not names:
+        names = [x for x in os.listdir(root)]
+    for item in names:
+        path = os.path.join(root, item)
+        _repos_overzicht(item, path)
+
