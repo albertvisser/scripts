@@ -12,4 +12,8 @@ non_bb_repos = ['cobtools', 'jvsdoe', 'leesjcl']
 private_repos = ['bin', 'nginx-config']
 all_repos = bb_repos + private_repos + non_bb_repos
 # repos die geen locale working versie hebben
-non_local_repos = ['absentie', 'doctool', 'magiokis', 'pythoneer']
+non_deploy_repos = ['absentie', 'doctool', 'magiokis', 'pythoneer']
+# ik mis nu de repos voor magiokis-cherry, -django en -php omdat er een naam/directory
+# verschil is tussen de working en de central repos is
+# daarom was ik begonnen met een ander soort mapping in settings_newer.py
+# maar dat is best een ingrijpende aanpassing
