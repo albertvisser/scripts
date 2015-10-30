@@ -5,7 +5,9 @@ import datetime
 from fabric.api import *
 from settings import *
 ## from pathlib import Path # toch maar niet gebruikt vanwege unicode errors bij write
-from collections import defaultdict
+import collections
+import re
+import glob
 import csv
 import functools
 import logging
@@ -233,35 +235,6 @@ def startproject(name):
         data = _in.read()
     with open(tests_file, 'w') as _out:
         _out.write(data.replace('projectname', name))
-
-def repocheck(*names):
-    """check for modifications in non-version controlled local/working versions
-
-    uses the `reposync` status routine
-    """
-    ## sys.path.append('/home/albert/hg_repos/reposync')
-
-    nonlocal_repos = ['absentie', 'doctool', 'magiokis', 'pythoneer']
-    if not names:
-        names = nonlocal_repos
-    filelist, difflist = [], []
-    for name in names:
-        if name not in nonlocal_repos:
-            print('{}: use check_local for this project'.format(name))
-            continue
-        filelist.append('changed files for {}:'.format(name))
-        repo_root = os.path.join('/home/albert', 'hg_repos', name)
-        with lcd(repo_root):
-            result = local('./repo status', capture=True)
-        filelist.append(result.stdout.split('details', 1)[0])
-        with open('/tmp/reposync_status') as _in:
-            difflist.extend(_in.readlines())
-    with open('/tmp/reposync_status_all', 'w') as _out:
-        for line in difflist:
-            _out.write(line)
-    for item in filelist:
-        print(item)
-    print('see /tmp/reposync_status_all for details')
 
 def _check(context='local', push='no'):
     """vergelijkt mercurial repositories met elkaar
@@ -492,7 +465,7 @@ def _make_repolist(path):
         with lcd(path):
             result = local('hg log -v', capture=True)
             data = result.stdout
-    outdict = defaultdict(dict)
+    outdict = collections.defaultdict(dict)
     in_description = False
     for line in data.split('\n'):
         line = line.strip()
@@ -538,7 +511,7 @@ def _make_repocsv(outdict, outfile):
     def listnn(count):
         return count * [""]
     date_headers, desc_headers = [" \\ date"], ["filename \\ description"]
-    in_changeset_dict = defaultdict(functools.partial(listnn, len(outdict.keys())))
+    in_changeset_dict = collections.defaultdict(functools.partial(listnn, len(outdict.keys())))
     for key in sorted(outdict.keys()):
         date_headers.append(outdict[key]['date'])
         desc = "\n".join(outdict[key]['desc'])
@@ -580,4 +553,197 @@ def repos_overzicht(*names):
     for item in names:
         path = os.path.join(root, item)
         _repos_overzicht(item, path)
+#
+# routines for repos that are not kept intact when deployed (e.g. plain cgi websites)
+#
+def _get_mapping(proj):
+    project_path = os.path.join(projects_base, proj)
+    mapping_file = os.path.join(project_path, 'paths.conf')
+    ## print(project_path)
+    ## print(mapping_file)
+    # read directory mapping
+    path_map = []
+    with open(mapping_file) as _in:
+        for line in _in:
+            ## print(line.strip())
+            try:
+                in_repo, in_deploy = line.strip().split('=')
+            except ValueError as e:
+                ## print(e)
+                continue
+            ## print(in_repo, in_deploy)
+            path_map.append((in_repo, os.path.join(project_path, in_repo),
+                os.path.expanduser(in_deploy)))
+            ## print(path_map)
+        ## print(path_map)
+    ## print(path_map)
+    ## return 'gargl'
+    return path_map
 
+def _get_files(proj):
+    project_path = os.path.join(projects_base, proj)
+    tracked, ignored = [], []
+    with lcd(project_path):
+        result = local('hg manifest', capture=True)
+        tracked = result.stdout.split('\n')
+        ## tracked.append(result.stderr)
+    with open(os.path.join(project_path, '.hgignore')) as _in:
+        subincludes = []
+        syntax = 'regexp'
+        for line in _in:
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+            if line.startswith('syntax:'):
+                syntax = line.replace('syntax:', '').strip()
+                continue
+            if line.startswith('subinclude:'):
+                subincludes.append(line)
+            ignored.append((line, syntax))
+        # TODO: process subincludes
+        return tracked, ignored
+
+def _get_next(last, gen):
+    ended = False
+    try:
+        last = next(gen)
+    except StopIteration:
+        ended = True
+    return ended, last
+
+def _check_ignored(name, tracked, ignored, path):
+    if name in tracked:
+        return False
+    for pattern, syntax in ignored:
+        all_files = glob.glob(os.path.join(path, pattern))
+        if syntax == 'regexp' and re.match(pattern, name):
+            return True
+        elif syntax == 'glob' and os.path.join(path, name) in all_files:
+            return True
+    return False
+
+def _check_project(proj):
+    project_path = os.path.join(projects_base, proj)
+    # make inventory
+    tracked, ignored = _get_files(project_path)
+    inserts, deletes, changed = [], [], []
+    difflist, results = [], []
+    for subdir, repo_path, deploy_path in _get_mapping(proj):
+        # ignoring subdirectories for now
+        repofiles = (x for x in sorted(os.listdir(repo_path))
+            if os.path.isfile(os.path.join(repo_path, x)))
+        deployfiles = (x for x in sorted(os.listdir(deploy_path))
+            if os.path.isfile(os.path.join(deploy_path, x)))
+        keeps = []
+        ended1, old = _get_next('', repofiles)
+        ended2, new = _get_next('', deployfiles)
+        while not ended1 and not ended2:
+            if old > new:
+                ## print('old>new', old, new, subdir, repo_path, deploy_path)
+                if not _check_ignored(new, tracked, ignored, deploy_path):
+                    inserts.append(os.path.join(subdir, new))
+                ended2, new = _get_next(new, deployfiles)
+            else:
+                if _check_ignored(old, tracked, ignored, repo_path):
+                    continue
+                if old < new:
+                    ## print('old<new', old, new, subdir, repo_path, deploy_path)
+                    if not _check_ignored(old, tracked, ignored, repo_path):
+                        deletes.append(os.path.join(subdir, old))
+                    ended1, old = _get_next(old, repofiles)
+                else:
+                    ## print('old=new', old, new, subdir, repo_path, deploy_path)
+                    if not _check_ignored(old, tracked, ignored, repo_path):
+                        keeps.append((old, new))
+                    ended1, old = _get_next(old, repofiles)
+                    ended2, new = _get_next(new, deployfiles)
+        # we have our inserts and deletes, no check for changes
+        for old, new in keeps:
+            oldname = os.path.join(repo_path, old)
+            newname = os.path.join(deploy_path, new)
+            print(repo_path, old, deploy_path, new)
+            with settings(hide('running', 'warnings'), warn_only=True):
+                result = local('diff {} {}'.format(oldname, newname), capture=True)
+                if result.failed:
+                    changed.append(os.path.join(subdir, old))
+                    difflist.append('< ' + oldname)
+                    difflist.append('> ' + newname)
+                    difflist.append(result.stdout)
+                    difflist.append(result.stderr)
+    if deletes:
+        results.append('files in repo, not in deploy - possible removals')
+        for name in deletes:
+            results.append('    {}'.format(name))
+    if inserts:
+        results.append('files in deploy, not in repo - possible additions')
+        for name in inserts:
+            results.append('    {}'.format(name))
+    if changed:
+        results.append('common files that are different - probable changes')
+        for name in changed:
+            results.append('    {}'.format(name))
+    return results, difflist
+
+def _build_add_command(proj, name):
+    # this also presumes one level under the directory
+    dirname, filename = os.path.split(name)
+    for subdir, repo_path, deploy_path in _get_mapping(proj):
+        if dirname == subdir:
+            item = os.path.join(deploy_path, filename)
+            shutil.copyfile(item, os.path.join(repo_path, filename))
+            command = 'hg add {}'.format(name)
+            break
+    return command
+
+def _build_remove_command(proj, name):
+    # this also presumes one level under the directory
+    dirname, filename = os.path.split(name)
+    for subdir, repo_path, deploy_path in _get_mapping(proj):
+        if dirname == subdir:
+            command = 'hg remove {}'.format(name)
+            break
+    return command
+
+def _build_commit_command(proj, namelist, message=""):
+    # this also presumes one level under the directory
+    if message == '':
+        return 'Abort: empty commit message'
+    if namelist and len(namelist[0]) == 1: # a single string was supplied
+        namelist = [namelist]
+    command = 'hg commit {} -m "{}"'.format(" ".join(namelist), message)
+    return command
+
+def repocheck(*names):
+    """check for modifications in repositories that are spread over various deploy
+    locations (mainly plain cgi web applications)
+    """
+    if not names:
+        names = non_deploy_repos
+    results, output = [], []
+    for name in names:
+        if name not in non_deploy_repos:
+            print('{}: use check_local for this project'.format(name))
+            continue
+        filelist, difflist = _check_project(name)
+        ## filelist.append('changed files for {}:'.format(name))
+        ## repo_root = os.path.join('/home/albert', 'hg_repos', name)
+        ## with lcd(repo_root):
+            ## result = local('./repo status', capture=True)
+        ## filelist.append(result.stdout.split('details', 1)[0])
+        ## with open('/tmp/reposync_status') as _in:
+            ## difflist.extend(_in.readlines())
+        ## filelist.append('changed files for {}:'.format(name))
+        if filelist:
+            output.append('possible changes for {}'.format(name))
+            results.append('=== project: {} ==='.format(name))
+            results.extend(filelist)
+            results.extend(difflist)
+        else:
+            output.append('no changes for {}'.format(name))
+    with open('/tmp/reposync_status_all', 'w') as _out:
+        for line in results:
+            print(line, file=_out)
+    for item in output:
+        print(item)
+    if results:
+        print('see /tmp/reposync_status_all for details')
