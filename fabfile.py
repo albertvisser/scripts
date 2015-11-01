@@ -276,11 +276,14 @@ def _check(context='local', push='no'):
                 else:
                     pwd = os.path.join(root, 'www', name)
             elif name in django_repos and not bb:
-                pwd = os.path.join(root, 'www', 'django', name)
+                proj = name.split('-')[0] if name.startswith('magiokis') else name
+                pwd = os.path.join(root, 'www', 'django', proj)
             elif name in cherrypy_repos and not bb:
-                pwd = os.path.join(root, 'www', 'cherrypy', name)
+                proj = name.split('-')[0] if name.startswith('magiokis') else name
+                pwd = os.path.join(root, 'www', 'cherrypy', proj)
             elif name not in private_repos and not bb and not usb:
-                pwd = os.path.join(root, 'projects', name)
+                proj = name.replace('-', '_') if name.startswith('magiokis') else name
+                pwd = os.path.join(root, 'projects', proj)
             else:
                 pwd = os.path.join(root, name)
 
@@ -453,7 +456,6 @@ def pushthru(*names):
                     _out.write(result.stderr + "\n")
     print('ready, output in /tmp/pushthru_log')
 
-
 def _make_repolist(path):
     """turn the repo log into a history
 
@@ -559,34 +561,24 @@ def repos_overzicht(*names):
 def _get_mapping(proj):
     project_path = os.path.join(projects_base, proj)
     mapping_file = os.path.join(project_path, 'paths.conf')
-    ## print(project_path)
-    ## print(mapping_file)
     # read directory mapping
     path_map = []
     with open(mapping_file) as _in:
         for line in _in:
-            ## print(line.strip())
             try:
                 in_repo, in_deploy = line.strip().split('=')
             except ValueError as e:
-                ## print(e)
                 continue
-            ## print(in_repo, in_deploy)
             path_map.append((in_repo, os.path.join(project_path, in_repo),
                 os.path.expanduser(in_deploy)))
-            ## print(path_map)
-        ## print(path_map)
-    ## print(path_map)
-    ## return 'gargl'
     return path_map
 
 def _get_files(proj):
     project_path = os.path.join(projects_base, proj)
     tracked, ignored = [], []
-    with lcd(project_path):
+    with lcd(project_path), settings(hide('running', 'warnings'), warn_only=True):
         result = local('hg manifest', capture=True)
         tracked = result.stdout.split('\n')
-        ## tracked.append(result.stderr)
     with open(os.path.join(project_path, '.hgignore')) as _in:
         subincludes = []
         syntax = 'regexp'
@@ -614,7 +606,13 @@ def _get_next(last, gen):
 def _check_ignored(name, tracked, ignored, path):
     if name in tracked:
         return False
+    sep = '/'
     for pattern, syntax in ignored:
+        if sep in pattern:
+            subdir, pattern = pattern.split(sep, 1)
+            test = os.path.basename(path)
+            if subdir != test:
+                continue # zinloos om verder te kijken
         all_files = glob.glob(os.path.join(path, pattern))
         if syntax == 'regexp' and re.match(pattern, name):
             return True
@@ -639,7 +637,6 @@ def _check_project(proj):
         ended2, new = _get_next('', deployfiles)
         while not ended1 and not ended2:
             if old > new:
-                ## print('old>new', old, new, subdir, repo_path, deploy_path)
                 if not _check_ignored(new, tracked, ignored, deploy_path):
                     inserts.append(os.path.join(subdir, new))
                 ended2, new = _get_next(new, deployfiles)
@@ -647,21 +644,18 @@ def _check_project(proj):
                 if _check_ignored(old, tracked, ignored, repo_path):
                     continue
                 if old < new:
-                    ## print('old<new', old, new, subdir, repo_path, deploy_path)
                     if not _check_ignored(old, tracked, ignored, repo_path):
                         deletes.append(os.path.join(subdir, old))
                     ended1, old = _get_next(old, repofiles)
                 else:
-                    ## print('old=new', old, new, subdir, repo_path, deploy_path)
                     if not _check_ignored(old, tracked, ignored, repo_path):
                         keeps.append((old, new))
                     ended1, old = _get_next(old, repofiles)
                     ended2, new = _get_next(new, deployfiles)
-        # we have our inserts and deletes, no check for changes
+        # we have our inserts and deletes, now check for changes
         for old, new in keeps:
             oldname = os.path.join(repo_path, old)
             newname = os.path.join(deploy_path, new)
-            print(repo_path, old, deploy_path, new)
             with settings(hide('running', 'warnings'), warn_only=True):
                 result = local('diff {} {}'.format(oldname, newname), capture=True)
                 if result.failed:
@@ -684,35 +678,6 @@ def _check_project(proj):
             results.append('    {}'.format(name))
     return results, difflist
 
-def _build_add_command(proj, name):
-    # this also presumes one level under the directory
-    dirname, filename = os.path.split(name)
-    for subdir, repo_path, deploy_path in _get_mapping(proj):
-        if dirname == subdir:
-            item = os.path.join(deploy_path, filename)
-            shutil.copyfile(item, os.path.join(repo_path, filename))
-            command = 'hg add {}'.format(name)
-            break
-    return command
-
-def _build_remove_command(proj, name):
-    # this also presumes one level under the directory
-    dirname, filename = os.path.split(name)
-    for subdir, repo_path, deploy_path in _get_mapping(proj):
-        if dirname == subdir:
-            command = 'hg remove {}'.format(name)
-            break
-    return command
-
-def _build_commit_command(proj, namelist, message=""):
-    # this also presumes one level under the directory
-    if message == '':
-        return 'Abort: empty commit message'
-    if namelist and len(namelist[0]) == 1: # a single string was supplied
-        namelist = [namelist]
-    command = 'hg commit {} -m "{}"'.format(" ".join(namelist), message)
-    return command
-
 def repocheck(*names):
     """check for modifications in repositories that are spread over various deploy
     locations (mainly plain cgi web applications)
@@ -725,14 +690,6 @@ def repocheck(*names):
             print('{}: use check_local for this project'.format(name))
             continue
         filelist, difflist = _check_project(name)
-        ## filelist.append('changed files for {}:'.format(name))
-        ## repo_root = os.path.join('/home/albert', 'hg_repos', name)
-        ## with lcd(repo_root):
-            ## result = local('./repo status', capture=True)
-        ## filelist.append(result.stdout.split('details', 1)[0])
-        ## with open('/tmp/reposync_status') as _in:
-            ## difflist.extend(_in.readlines())
-        ## filelist.append('changed files for {}:'.format(name))
         if filelist:
             output.append('possible changes for {}'.format(name))
             results.append('=== project: {} ==='.format(name))
@@ -740,10 +697,10 @@ def repocheck(*names):
             results.extend(difflist)
         else:
             output.append('no changes for {}'.format(name))
-    with open('/tmp/reposync_status_all', 'w') as _out:
+    with open('/tmp/reposync_status', 'w') as _out:
         for line in results:
             print(line, file=_out)
     for item in output:
         print(item)
     if results:
-        print('see /tmp/reposync_status_all for details')
+        print('see /tmp/reposync_status for details')
