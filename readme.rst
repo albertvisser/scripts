@@ -61,6 +61,11 @@ A collection of simple (mostly bash) scripts I put together. Most of these are s
 
     execute ``fab`` (fabric) using fabfile in nginx-config directory (for server configuration stuff)
 
+**fabssm**
+**fabssm.py**
+
+    ``fab`` commands for simple Vivaldi session management
+
 **hotkeys**
 
     starts my viewer for keyboard shortcuts in various applications. No arguments.
@@ -72,6 +77,10 @@ A collection of simple (mostly bash) scripts I put together. Most of these are s
 **iview**
 
     starts up IrfanView under Wine. Takes no arguments.
+
+**jsonp.py**
+
+    generate pretty-printed version of file with json data
 
 **morefromdos.py**
 
