@@ -678,6 +678,7 @@ def _check_project(proj):
             results.append('    {}'.format(name))
     return results, difflist
 
+not_suitable = 'project name {} not suitable for repocheck/repocopy'
 def repocheck(*names):
     """check for modifications in repositories that are spread over various deploy
     locations (mainly plain cgi web applications)
@@ -687,7 +688,7 @@ def repocheck(*names):
     results, output = [], []
     for name in names:
         if name not in non_deploy_repos:
-            print('{}: use check_local for this project'.format(name))
+            print(not_suitable.format(name))
             continue
         filelist, difflist = _check_project(name)
         if filelist:
@@ -704,3 +705,52 @@ def repocheck(*names):
         print(item)
     if results:
         print('see /tmp/reposync_status for details')
+
+def _repocopy(repo, path, name):
+    found = False
+    for subdir, repopath, deploypath in _get_mapping(repo):
+        if subdir == path:
+            found = True
+            break
+    if not found:
+        print('repository {} subpath {} not found'.format(repo, path))
+        return
+    try:
+        shutil.copyfile(os.path.join(deploypath, name), os.path.join(repopath, name))
+    except IOError:
+        print('file {} not found in deploy path for {}/{}'.format(os.path.join(path,
+            name), repo, path))
+
+def repocopy(repo=None, file=None):
+    """copy a file from the remote (deploy) location into the (working) repo
+
+    no parameters: copy all changes
+    one parameter: if only repo specified: copy all changes for this repo
+    two parameters: if both repo and file specified: copy specific file
+    otherwise: error
+    """
+    usage = "abort: usage is fab repocopy:repo=<reponame>,file=<pathname>/<filename>"
+    repos, files = [], []
+    if repo:
+        repos = [repo]
+    else:
+        repos = non_deploy_repos
+    if file:
+        if len(repos) == 1:
+            try:
+                subdir, name = file.split(os.sep, 1)
+            except ValueError:
+                print(usage)
+            else:
+                _repocopy(repo, subdir, name)
+        else:
+            print(usage)
+        return
+    for name in repos:
+        if name not in non_deploy_repos:
+            print(not_suitable.format(name))
+            continue
+        filelist, difflist = _check_project(name)
+        for file in filelist:
+            subdir, name = file.split(os.sep, 1)
+            _repocopy(repo, subdir, name)
