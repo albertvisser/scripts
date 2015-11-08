@@ -693,6 +693,8 @@ def repocheck(*names):
         filelist, difflist = _check_project(name)
         if filelist:
             output.append('possible changes for {}'.format(name))
+            for item in filelist:
+                output.append(item)
             results.append('=== project: {} ==='.format(name))
             results.extend(filelist)
             results.extend(difflist)
@@ -738,7 +740,7 @@ def repocopy(repo=None, file=None):
     if file:
         if len(repos) == 1:
             try:
-                subdir, name = file.split(os.sep, 1)
+                subdir, name = file.rsplit(os.sep, 1)
             except ValueError:
                 print(usage)
             else:
@@ -752,5 +754,8 @@ def repocopy(repo=None, file=None):
             continue
         filelist, difflist = _check_project(name)
         for file in filelist:
-            subdir, name = file.split(os.sep, 1)
+            try:
+                subdir, name = file.strip().rsplit(os.sep, 1)
+            except ValueError:
+                continue
             _repocopy(repo, subdir, name)
