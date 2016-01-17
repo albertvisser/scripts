@@ -341,7 +341,7 @@ def _check(context='local', push='no'):
             command = ''
             if not usb:
                 if outgoing:
-                    command = 'hg push' # if bb else 'hg push --remotecmd update'
+                    command = 'hg push' # if bb else 'hg push --remotecmd "hg update"'
                     # remotecmd werkt niet zo maar geen idee hoe dan wel
             else:
                 if incoming: #  and not uncommitted and not outgoing:
@@ -719,6 +719,7 @@ def _repocopy(repo, path, name):
         return
     try:
         shutil.copyfile(os.path.join(deploypath, name), os.path.join(repopath, name))
+        print('copy {} from {} to {}'.format(name, deploypath, repopath))
     except IOError:
         print('file {} not found in deploy path for {}/{}'.format(os.path.join(path,
             name), repo, path))
@@ -748,14 +749,14 @@ def repocopy(repo=None, file=None):
         else:
             print(usage)
         return
-    for name in repos:
-        if name not in non_deploy_repos:
-            print(not_suitable.format(name))
+    for projname in repos:
+        if projname not in non_deploy_repos:
+            print(not_suitable.format(projname))
             continue
-        filelist, difflist = _check_project(name)
+        filelist, difflist = _check_project(projname)
         for file in filelist:
             try:
-                subdir, name = file.strip().rsplit(os.sep, 1)
+                subdir, filename = file.strip().rsplit(os.sep, 1)
             except ValueError:
                 continue
-            _repocopy(repo, subdir, name)
+            _repocopy(projname, subdir, filename)
