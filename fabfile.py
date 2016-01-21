@@ -57,7 +57,10 @@ def build_scite(version):
     with open(logfile, 'w') as _out:
         with settings(hide('running', 'warnings'), warn_only=True):
             with lcd('/tmp'):
-                local('tar -zxf {}'.format(filename))
+                result = local('tar -zxf {}'.format(filename))
+                # looks like he's not gzipping anymore, if so then try again
+                if result.failed:
+                    local('tar -xf {}'.format(filename))
             with lcd('/tmp/scintilla/gtk'):
                 result = local('make', capture=True)
             _out.write(result.stdout + "\n")
