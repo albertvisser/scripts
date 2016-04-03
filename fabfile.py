@@ -29,6 +29,9 @@ today = datetime.datetime.today()
 def _log(message):
     logging.info(message)
 
+#
+# miscellaneous
+#
 def install_scite(version):
     """upgrade SciTE. argument: version number as used in filename
     """
@@ -129,6 +132,9 @@ def arcstuff(*names):
                 command = '{} {}'.format(command, path.strip())
         local(command)
 
+#
+# database server stuff
+#
 def start_mongo():
     "start mongo database server"
     local('sudo service mongodb start')
@@ -159,6 +165,9 @@ def restart_pg():
     "restart postgresql database server"
     local('sudo service postgresql restart')
 
+#
+# default webserver stuff
+#
 def wwwcopy(*names):
     "copy indicated file(s) from ~/www/nginx-root to real nginx root"
     for name in names:
@@ -183,6 +192,9 @@ def wwwedit_apache(name):
     local('sudo cp /tmp/{0} {1}/{0}'.format(name, apache_root))
     ## put('/tmp/{0} {1}'.format(name, apache_root), use_sudo=True)
 
+#
+# language support stuff
+#
 def gettext(sourcefile):
     """internalization: gather strings from file
 
@@ -223,10 +235,13 @@ def place(language_code, appname, locatie=""):
     local('msgfmt {}.po -o {}'.format(language_code, os.path.join(loc,
         appname + '.mo')))
 
+#
+# project/session management
+#
 def startproject(name):
-    """start a new software project in a standardized way
+    """start a new (Python) software project in a standardized way
     """
-    loc = '/home/albert/{}'.format(name)
+    loc = '/home/albert/projects/{}'.format(name)
     if os.path.exists(loc):
         print('sorry, this project name is already in use')
         return
@@ -239,6 +254,16 @@ def startproject(name):
     with open(tests_file, 'w') as _out:
         _out.write(data.replace('projectname', name))
 
+def start_session(name):
+    """start a programming session using various tools
+
+    expects a session script of the same name in .sessions (subdirectory for now)
+    each line contains a command to be executed
+    """
+    local('/bin/sh ~/bin/.sessions/{}'.format(name))
+#
+# routines for handling local and remote Mercurial repositories
+#
 def _check(context='local', push='no'):
     """vergelijkt mercurial repositories met elkaar
 
