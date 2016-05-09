@@ -12,6 +12,7 @@ opera-widget*
 log*
 throwaway/*
 doe
+.sessions/*
 
 # alternate notetree/doctree starters
 diary
