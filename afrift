@@ -1,3 +1,2 @@
 #! /bin/bash
-cd ~/projects/filefindr
-python3 afrift.pyw
+python3 ~/projects/filefindr/afrift.pyw $1
