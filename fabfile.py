@@ -259,33 +259,8 @@ def start_session(name):
 
     expects a session script of the same name in .sessions (subdirectory for now)
     each line contains a command to be executed
-
-    extra: automatically create filefindr instance for files named in editor commands
     """
     fname = os.path.expanduser('~/bin/.sessions/{}'.format(name))
-    files_list = []
-    files_contents = []
-    no_filefindr = True
-    with open(fname) as _in:
-        for line in _in:
-            files_contents.append(line)
-            if line.startswith('scite'):
-                words = line.strip().split()
-                files_list.extend([x for x in words if x.endswith('.py')])
-            elif line.startswith('afrift_multi'):
-                cmdline = line
-                no_filefindr = False
-    command = ' '.join(['afrift_multi'] + files_list + ['&']) + '\n'
-    if no_filefindr:
-        with open(fname, 'a') as _io:
-            _io.write(command)
-    elif command != cmdline:
-        with open(fname, 'w') as _o:
-            for line in files_contents:
-                if line.startswith('afrift_multi'):
-                    _o.write(command)
-                else:
-                    _o.write(line)
     local('/bin/sh {}'.format(fname))
 
 #
