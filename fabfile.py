@@ -432,13 +432,20 @@ def pushthru(*names):
     """push from working to "central" and on to bitbucket if possible
 
     either name specific repos or check all
-    for the time being this routine does not utilize the _check function,
-    but I think maybe it should
+    when no name is specified, the "_check" variants are used
     """
-    ## print(_check.locals())
     all_repos = bb_repos + private_repos
     if not names:
-        names = all_repos
+        ## names = all_repos
+        _check(push='yes')
+        _check('bb', push='yes')
+        with open('/tmp/pushthru_log', 'w') as _out:
+            for fname in ('/tmp/hg_local_changes', '/tmp/hg_changes'):
+                with open(fname) as _in:
+                    for line in _in:
+                        _out.write(line)
+        print('\nready, output in /tmp/pushthru_log')
+        return
     with open('/tmp/pushthru_log', 'w') as _out:
         for name in names:
             if name not in all_repos:
