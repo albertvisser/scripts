@@ -306,14 +306,17 @@ def _check(context='local', push='no'):
                 else:
                     pwd = os.path.join(root, 'www', name)
             elif name in django_repos and not bb:
-                proj = name.split('-')[0] if name.startswith('magiokis') else name
-                pwd = os.path.join(root, 'www', 'django', proj)
+                ## proj = name.split('-')[0] if name.startswith('magiokis') else name
+                ## pwd = os.path.join(root, 'projects', proj)
+                pwd = os.path.join(root, 'projects', name)
             elif name in cherrypy_repos and not bb:
-                proj = name.split('-')[0] if name.startswith('magiokis') else name
-                pwd = os.path.join(root, 'www', 'cherrypy', proj)
+                ## proj = name.split('-')[0] if name.startswith('magiokis') else name
+                ## pwd = os.path.join(root, 'projects', proj)
+                pwd = os.path.join(root, 'projects', name)
             elif name not in private_repos and not bb and not usb:
-                proj = name.replace('-', '_') if name.startswith('magiokis') else name
-                pwd = os.path.join(root, 'projects', proj)
+                ## proj = name.replace('-', '_') if name.startswith('magiokis') else name
+                ## pwd = os.path.join(root, 'projects', proj)
+                pwd = os.path.join(root, 'projects', name)
             else:
                 pwd = os.path.join(root, name)
 
