@@ -8,8 +8,8 @@ projects_base = os.path.expanduser('~/projects')
 cherrypy_repos = ['logviewer', 'rst2html', 'magiokis-cherry']
 django_repos = ['actiereg', 'albums', 'myprojects', 'magiokis-django']
 bb_repos = django_repos[:-1] + cherrypy_repos[:-1] + ['apropos', 'bitbucket',
-    'cssedit', 'doctree', 'filefindr', 'hotkeys', 'htmledit', 'notetree', 'probreg',
-    'xmledit']
+    'compare-tool', 'cssedit', 'doctree', 'filefindr', 'hotkeys', 'htmledit',
+    'notetree', 'probreg', 'xmledit']
 private_repos = ['bin', 'nginx-config']
 # repos die geen locale working versie hebben
 non_deploy_repos = ['absentie', 'doctool', 'magiokis', 'pythoneer']
