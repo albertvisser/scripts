@@ -333,6 +333,8 @@ def _check(context='local', push='no'):
             if bb:
                 tmpfile = os.path.join('/tmp', '{}_tip'.format(name))
                 tipfile = os.path.join(root, '{}_tip'.format(name))
+                if not os.path.exists(tipfile):
+                    local('touch {}'.format(tipfile))
                 with lcd(pwd):
                     local('hg tip > {}'.format(tmpfile))
                 with open(tmpfile) as _in1, open(tipfile) as _in2:
