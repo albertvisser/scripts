@@ -1,10 +1,2 @@
-#! /usr/bin/env python3
-import sys
-import subprocess
-
-parmfile = '/tmp/afrift_args'
-with open(parmfile, 'w') as _out:
-    for arg in sys.argv[1:]:
-        arg = arg.replace("\ ", " ")
-        _out.write(arg + "\n")
-subprocess.call(['python3', '/home/albert/projects/filefindr/afrift_multi.py', parmfile])
+#! /bin/bash
+python3 ~/projects/filefindr/afrift_multi.pyw $1
