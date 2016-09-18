@@ -1,3 +1,2 @@
 #! /bin/bash
-cd ~/projects/probreg
-python3 pr_start.py
+python3 ~/projects/probreg/pr_start.py

@@ -1,3 +1,3 @@
 #! /bin/bash
-cd ~/projects/apropos
-python3 apo_start.pyw
+cd ~/Documents
+python3 ~/projects/apropos/apo_start.py

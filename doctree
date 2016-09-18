@@ -1,3 +1,2 @@
 #! /bin/bash
-cd ~/projects/doctree
-python3 dt_start.pyw ~/Documents/doctree.pck
+python3 ~/projects/doctree/dt_start.py ~/Documents/doctree.pck

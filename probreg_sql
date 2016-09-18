@@ -1,3 +1,2 @@
 #! /bin/bash
-cd ~/projects/probreg
-python3 prsql_start.py
+python3 ~/projects/probreg/prsql_start.py
