@@ -35,7 +35,7 @@ def _log(message):
 def install_scite(version):
     """upgrade SciTE. argument: version number as used in filename
     """
-    filename = os.path.abspath('Downloads/SciTE/gscite{}.tgz'.format(version))
+    filename = os.path.expanduser('~/Downloads/SciTE/gscite{}.tgz'.format(version))
     if not os.path.exists(filename):
         print('{} does not exist'.format(filename))
         return
@@ -52,7 +52,7 @@ def build_scite(version):
 
     standard binary is 32-bit and my system is 64-bit, so I need this now
     """
-    filename = os.path.abspath('Downloads/SciTE/scite{}.tgz'.format(version))
+    filename = os.path.expanduser('~/Downloads/SciTE/scite{}.tgz'.format(version))
     if not os.path.exists(filename):
         print('{} does not exist'.format(filename))
         return
