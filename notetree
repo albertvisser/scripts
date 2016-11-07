@@ -1,2 +1,2 @@
 #! /bin/bash
-python3 ~/projects/notetree/nt_start.pyw
+python3 ~/projects/notetree/nt_start.py
