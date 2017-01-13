@@ -293,6 +293,15 @@ def start_session(name):
     fname = os.path.expanduser('~/bin/.sessions/{}'.format(name))
     local('/bin/sh {}'.format(fname))
 
+def edit_session(name):
+    """start a programming session using various tools
+
+    expects a session script of the same name in .sessions (subdirectory for now)
+    each line contains a command to be executed
+    """
+    fname = os.path.expanduser('~/bin/.sessions/{}'.format(name))
+    local('scite {}'.format(fname))
+
 #
 # routines for handling local and remote Mercurial repositories
 #
