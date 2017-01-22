@@ -1,2 +1,2 @@
 #! /bin/bash
-wine /home/albert/.wine/drive_c/totalcmd/totalcmd.exe
+wmctrl -s 1 && wine /home/albert/.wine/drive_c/totalcmd/totalcmd.exe

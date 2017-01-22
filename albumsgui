@@ -1,0 +1,2 @@
+#! /bin/bash
+python3 ~/projects/"banshee_(re)organiseren"/banshee_gui.py

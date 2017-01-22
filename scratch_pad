@@ -1,0 +1,3 @@
+#! /bin/bash
+cd /tmp
+python3 ~/projects/apropos/apo_start.py -n 'ScratchPad'
