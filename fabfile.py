@@ -40,7 +40,10 @@ def install_scite(version):
     if not os.path.exists(filename):
         print('{} does not exist'.format(filename))
         return
-    local('tar -zxf {}'.format(filename))
+    with settings(hide('running', 'warnings'), warn_only=True):
+        result = local('tar -zxf {}'.format(filename))
+        if result.failed:
+            result = local('tar -xf {}'.format(filename))
     local('sudo cp gscite/SciTE /usr/bin')
     local('sudo cp gscite/*.properties /etc/scite') # /usr/share/scite')
     local('sudo cp gscite/*.html /usr/share/scite')
