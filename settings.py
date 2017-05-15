@@ -11,7 +11,7 @@ fcgi_repos = ['absentie', 'doctool', 'magiokis', 'albums-cgi', 'magiokis-php']
 private_repos = ['bin', 'nginx-config']
 non_web_repos = ['apropos', 'bitbucket', 'compare-tool', 'cssedit', 'doctree',
     'filefindr', 'hotkeys', 'htmledit', 'modreader', 'notetree', 'probreg',
-    'xmledit']
+    'xmledit', 'albumsgui']
 non_deploy_repos = ['cobtools', 'jvsdoe', 'leesjcl',  'pythoneer']
 bb_repos = django_repos + cherrypy_repos + non_web_repos + fcgi_repos
 non_bb_repos = non_deploy_repos
