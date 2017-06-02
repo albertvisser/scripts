@@ -17,3 +17,13 @@ bb_repos = django_repos + cherrypy_repos + non_web_repos + fcgi_repos
 non_bb_repos = non_deploy_repos
 
 all_repos = bb_repos + private_repos + non_bb_repos
+
+# VivaldiHooks settings
+vhooks_path = os.path.join('/home', 'albert', 'git_repos', 'VivaldiHooks')
+appdir = 'vivaldi'
+vivaldi_path = os.path.join('/opt', 'vivaldi-snapshot', 'resources')
+vhooks_items = (
+    {'name': 'browser.html', 'is_dir': False, 'backup': True},
+    {'name': 'jdhooks.js', 'is_dir': False, 'backup': False},
+    {'name': 'hooks', 'is_dir': True, 'backup': False},
+    )

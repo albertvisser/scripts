@@ -33,6 +33,40 @@ def _log(message):
 #
 # miscellaneous
 #
+def _vhooks_copyitem(item):
+    source = os.path.join(vhooks_path, appdir, item['name'])
+    target = os.path.join(vivaldi_path, appdir, item['name'])
+    options = ''
+    if item['is_dir']: options = '-R'
+    if item['backup']:
+        options = '-b'
+    elif item['is_dir']:
+        local('sudo rm {} {}'.format(options, target))
+    local('sudo cp {} {} {}'.format(options, source, target))
+
+def install_vhooks():
+    "(re)install VivaldiHooks"
+    for item in vhooks_items:
+        _vhooks_copyitem(item)
+
+def disable_vhooks():
+    target = os.path.join(vivaldi_path, appdir, vhooks_items[0]['name'])
+    source = target + '~'
+    local('sudo mv {} {}'.format(source, target))
+
+def enable_vhooks():
+    _vhooks_copyitem(vhooks_items[0])
+
+def remove_vhooks():
+    disable_vhooks()
+    for item in vhooks_items[1:]:
+        target = os.path.join(vivaldi_path, appdir, item['name'])
+        options = ''
+        if item['is_dir']: options = '-R'
+        local('sudo rm {} {}'.format(options, target))
+
+
+
 def install_scite(version):
     """upgrade SciTE. argument: version number as used in filename
     """
