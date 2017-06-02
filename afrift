@@ -1,2 +1,2 @@
 #! /bin/bash
-python3 ~/projects/filefindr/afrift.py $1
+python3 ~/projects/filefindr/start.py $1
