@@ -1,27 +1,4 @@
 # use glob syntax.
 syntax: glob
 
-*.bak
-*~
-*pyc
-*.swp
-oude-versies/*
-*ini
-*conf
-log*
-throwaway/*
-.sessions/*
-
-# alternate notetree/doctree starters
-diary
-flarden
-ramble
-scrap
-
-# shortcuts to programs in nested paths
-viewhtml
-mdview
-rstview
-
-# shortcut to open multiple files with SciTE
-list2scite
+*
