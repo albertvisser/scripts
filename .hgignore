@@ -5,13 +5,11 @@ syntax: glob
 *~
 *pyc
 *.swp
-oude_bin/*
-opera-widget*
+oude-versies/*
 *ini
 *conf
 log*
 throwaway/*
-doe
 .sessions/*
 
 # alternate notetree/doctree starters

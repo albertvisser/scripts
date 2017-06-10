@@ -1,7 +1,12 @@
 #! /usr/bin/env python
+"""converts all files in a directory from dos (crlf) to linux (lf) line-endings
+
+optionally select only files with a certain extension
+"""
 import sys
 import os
 import subprocess as sp
+
 
 def fromdos(path, cmp_ext='.py'):
     path = os.path.abspath(path)

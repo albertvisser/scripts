@@ -1,2 +1,0 @@
-#! /bin/bash
-python3 ~/projects/doctree/dt_start.py ~/Documents/doctree.pck

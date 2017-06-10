@@ -259,6 +259,23 @@ def wwwedit_apache(name):
     local('sudo cp /tmp/{0} {1}/{0}'.format(name, apache_root))
     ## put('/tmp/{0} {1}'.format(name, apache_root), use_sudo=True)
 
+def wwwpermits(name):
+    """reset permits for dirs/files under web-accessible root
+    """
+    path = os.path.abspath(name)
+    for file in os.listdir(path):
+        fullname = os.path.join(path, file)
+        if os.path.isfile(fullname) and do_files:
+            rc = local('chmod 644 {}'.format(fullname))
+            if rc.failed:
+                print 'chmod failed on file {}'.format(fullname)
+        elif os.path.isdir(fullname):
+            rc = local('chmod 755 {}'.format(fullname))
+            if rc.failed:
+                print 'chmod failed on directory {}'.format(fullname)
+            else:
+                wwwpermits(fullname)
+
 #
 # language support stuff
 #

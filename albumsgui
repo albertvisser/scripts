@@ -1,2 +1,1 @@
-#! /bin/bash
-python3 ~/projects/albumsgui/banshee_gui.py
+/home/albert/projects/albumsgui/start_gui.py
