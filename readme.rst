@@ -1,23 +1,35 @@
 My scripts
 ==========
 
-A collection of simple (mostly bash) scripts I put together. Most of these are starters for applications that I put in /home/<user>/bin to have them on the system path.
+A collection of simple (mostly bash or python) scripts I put in /home/<user>/bin which I
+added to the system path for easy access.
+
+Also in this directory are starters for my own applications that are no more than symlinks to the actual starter in the application dir; as well as short scripts that pass specific arguments to such a symlink. These are not included in the repo.
+
+**.hgignore**
+
+    indicates which notracked files mercurial is to ignore
+
+**2panefm**
+
+    start Double Commander in workspace 2
 
 **arcstuff.conf.example**
 
     example ini file for ``fab arcstuff`` command
 
-**a-propos**
-
-    starts up my 'apropos' application. I had to rename it because there appeared to be a system tool by that name. No arguments.
-
 **binfab**
 
     execute ``fab`` (fabric) using fabfile in this directory
 
-**doctree**
 
-    starts up my docs/notes organiser (QT version) from a standard location. No arguments.
+**bstart**
+
+    start music player (originally Banshee, now Clementine) in workspace 4
+
+**dosomethingwith.py**
+
+    a general-purpose script that I wrote for use from within Double Commander to apply some action on the selected files and/or directories.
 
 **fabfile.py**
 
@@ -45,46 +57,54 @@ A collection of simple (mostly bash) scripts I put together. Most of these are s
 
     execute ``fab`` (fabric) using fabfile in nginx-config directory (for server configuration stuff)
 
-**fabssm**
-**fabssm.py**
-
-    ``fab`` commands for simple Vivaldi session management
-
 **iview**
 
-    starts up IrfanView under Wine. Takes no arguments.
+    starts up IrfanView under Wine. Takes one argument, assuming this is the file to view.
 
 **jsonp.py**
 
     generate pretty-printed version of file with json data
 
+**list2scite**
+
+    a script to take a file with filenames (created by e.g. Double Commander) and expand it into a command to start SciTE with all these files open
+
+**lstart**
+
+    start LMMS on workspace 3
+
 **morefromdos.py**
 
     Python script to change Windows line endings to Unix ones for all Python files in a directory. Takes two arguments: a directory name and an extension. Without an argument, works in the current working directory. Without an extension specified, works on Python source files (extension .py).
+
+**ostart**
+
+    start Opera 12 on workspace 1
 
 **readme.rst**
 
     this file.
 
-** settings.py**
+**runwithlog**
+
+    enable logging for an application that reacts to setting a DEBUG environment variable
+
+    to use, simply prepend this command to the usual call to the app
+
+**settings.py**
 
     Configuration values for the fabfile in this directory, mostly for the mercurial repo stuff.
 
-** sort_and_compare.py**
-
-    Compare two textfiles after sorting them first. Arguments: two existing file    names.
-
 **sort_file.py**
 
-    copy of a Python script I wrote on Windows to sort a (text) file from within Total Commander. Takes one argument: the file to sort. Ask for one if you omit it.The result is stored in the same directory under a different name, but can also be saved in a temporary location if appropriately called (as in *sort_and_compare.py*)
-
-**sortxml.py**
-
-    Reorders an XML file according to a common attribute of the sub-topmost elements. Projected to be part of a sort_and_compare script like the one above for text files, as such it is meant for data-like XML applications which is not the most clever use of XML in my opinion. I should know, I'm guilty of having done this myself quite a lot... in fact, that's what I started this for.
+    copy of a Python script I wrote on Windows to sort a (text) file from within Total Commander. Takes one argument: the file to sort. Ask for one if you omit it.The result is stored in the same directory under a different name, but can also be saved in a temporary location if appropriately called
 
 **totalcmd**
 
-    starts up Total Commander under Wine. takes no arguments.
+    starts up Total Commander under Wine. takes no arguments. Uses wmctrl to ensure which workspace it starts up in
+
+**vstart**
+    start Vivaldi browser on workspace 1
 
 Requirements
 ------------
@@ -94,9 +114,11 @@ Requirements
 - Fabric (where applicable)
 - Mercurial (for the check and push scripts)
 
+Not in this repository:
+-----------------------
 
 scripts that were replaced by functions in the fabfile:
--------------------------------------------------------
+.......................................................
 
 **check-local**
 
@@ -133,7 +155,7 @@ scripts that were replaced by functions in the fabfile:
 
     the same for repose on my usb drive
 
-**pushthru **
+**pushthru**
 
     script to push directly from a specified local repo to bitbucket
 
@@ -142,8 +164,8 @@ scripts that were replaced by functions in the fabfile:
     script to update rstblog source and push to central and bitbucket
 
 
-scripts that were replaced by symlinks the actual starter scripts:
-------------------------------------------------------------------
+symlinks or short starter scripts for my own applications:
+..........................................................
 
 **afrift**
 
@@ -157,17 +179,76 @@ scripts that were replaced by symlinks the actual starter scripts:
 
     starts up the former's multi file version with arguments taken from a list (like Double Commander provides them)
 
+**albumsgui**
+
+    starts my interface to several media file databases
+
+**a-propos**
+
+    starts up my 'apropos' application. I had to rename it because there appeared to be a system tool by that name. No arguments.
+
+**comparer**
+
+    starts up my compare tool
+
+**cssedit**
+
+  starts up a standalone version of my css editor
+
+**diary**
+
+    symlink to ramble
+
+**doctree**
+
+    starts up my docs/notes organiser (QT version) from a standard location. No arguments.
+
+**dt_print**
+
+    starts up a program to print the contents of a doctree file
+**flarden**
+
+    points notetree to a collection of text snippets
+
 **hotkeys**
 
     starts my viewer for keyboard shortcuts in various applications. No arguments.
+
+**hotrefs**
+
+    points the same viewer at a collection of application command references
 
 **htmledit**
 
     starts up my tree-based html editor. Takes one optional argument: the filename.
 
+**lint-all**
+
+    apply pylint or flake8 checks to all my software projects (under construction)
+
+**lint-this**
+
+    apply pylint or flake8 checks to selected files or files in a selected directory
+
+**mdview**
+
+    Viewer for markdown formatted documents. Can be used with Double Commander or from within SciTE etc.
+
+**modcompare**
+
+    start doctree with a file for comparing modreader transcripts
+
+**modreader**
+
+    make text transcriptions of music module files
+
 **notetree**
 
     starts up Doctree's predecessor. No arguments.
+
+**nt2ext**
+
+    show and/or reorganize contents of NoteTree documents
 
 **probreg**
 
@@ -176,6 +257,26 @@ scripts that were replaced by symlinks the actual starter scripts:
 **probreg_sql**
 
     the same for the version using sqlite. Also takes no arguments.
+
+**ramble**
+
+    points doctree to a collection of ramblings
+
+**rstview**
+
+    Viewer for ReST formatted documents. Can be used with Double Commander or from within SciTE etc.
+
+**scratch_pad**
+
+    start a-propos using a file in /tmp (which is not saved over Linux sessions)
+
+**treedocs**
+
+    symlink to the doctree application. Used by the doctree script (among others)
+
+**viewhtml**
+
+    viewer for HTML formatted documents. Can be used with Double Commander or from within SciTE etc.
 
 **xmledit**
 
