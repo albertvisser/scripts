@@ -1,0 +1,2 @@
+#! /bin/bash
+wine "/home/albert/.wine/drive_c/Program Files"/IrfanView/i_view64.exe $1
