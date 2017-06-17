@@ -268,11 +268,11 @@ def wwwpermits(name):
         if os.path.isfile(fullname) and do_files:
             rc = local('chmod 644 {}'.format(fullname))
             if rc.failed:
-                print 'chmod failed on file {}'.format(fullname)
+                print('chmod failed on file {}'.format(fullname))
         elif os.path.isdir(fullname):
             rc = local('chmod 755 {}'.format(fullname))
             if rc.failed:
-                print 'chmod failed on directory {}'.format(fullname)
+                print('chmod failed on directory {}'.format(fullname))
             else:
                 wwwpermits(fullname)
 
