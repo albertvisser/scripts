@@ -169,15 +169,11 @@ symlinks or short starter scripts for my own applications:
 
 **afrift**
 
-    starts up my 'Find/Replace in Files' tool. This one requires no arguments.
+    starts up my 'Find/Replace in Files' tool. Requires no arguments, but all options that can be set in the gui can be set from the command line.
 
-**afrift_single**
+**albums**
 
-    starts up the former's single file version. So one argument is required: the filename.
-
-**afrift_multi**
-
-    starts up the former's multi file version with arguments taken from a list (like Double Commander provides them)
+    starts up a GUI version of the webapp of the same name
 
 **albumsgui**
 
