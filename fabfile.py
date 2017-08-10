@@ -416,6 +416,7 @@ def _check(context='local', push='no'):
             stats = []
             ## if context != 'local' and name in non_deploy_repos:  # non_bb_repos:
                 ## continue
+            pwd = os.path.join(root, name)
             if name == 'bitbucket':
                 if remote:
                     pwd = os.path.join(root, 'avisser.bitbucket.org')
@@ -428,8 +429,6 @@ def _check(context='local', push='no'):
                     pwd = os.path.join(root.replace('hg', 'git'), name)
             elif local_ and not is_private:
                 pwd = os.path.join(root, 'projects', name)
-            else:
-                pwd = os.path.join(root, name)
 
             ## tmp = '/tmp/hg_st_{}'.format(name)
             uncommitted = outgoing = False
@@ -461,12 +460,14 @@ def _check(context='local', push='no'):
                     print('outgoing changes for {}'.format(name), file=_out)
                     _out.write("--local:\n")
                     _out.write(buf1 + "\n")
-                    _out.write("-- bb:\n")
+                    _out.write("-- remote:\n")
                     _out.write(buf2 + "\n")
             else:
-                command = 'git push --dry-run' if is_gitrepo else 'hg outgoing'
+                command = 'git log --branches --not --remotes=origin' if is_gitrepo else 'hg outgoing'
+                ## print(pwd, command)
                 with lcd(pwd):
                     result = local(command, capture=True)
+                    ## print(result, result.succeeded, result.stdout, result.stderr)
                     if is_gitrepo:
                         outgoing = result.stdout.strip()
                     else:
