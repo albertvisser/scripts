@@ -1,20 +1,3 @@
-from __future__ import print_function
-import os
-import stat
-import shutil
-import datetime
-from fabric.api import *
-from settings import *
-## from pathlib import Path # toch maar niet gebruikt vanwege unicode errors bij write
-import collections
-import re
-import glob
-import csv
-import functools
-import logging
-logging.basicConfig(filename="/home/albert/bin/log/fabfile_log", level=logging.DEBUG,
-    format='%(asctime)s %(message)s')
-
 """collection of shortcut functions for common tasks like
 
 . installing a new version of SciTE
@@ -24,47 +7,74 @@ logging.basicConfig(filename="/home/albert/bin/log/fabfile_log", level=logging.D
 . copying a file from the local to the webserver www directory
 . helper functions for (py)gettext internationalization
 """
-
+from __future__ import print_function
+import os
+import stat
+import shutil
+import datetime
+## from pathlib import Path # toch maar niet gebruikt vanwege unicode errors bij write
+import collections
+import re
+import glob
+import csv
+import functools
+import logging
+from fabric.api import *
+from settings import *
+HOME = os.path.expanduser('~')
+logging.basicConfig(filename=os.path.join("/tmp", "fabfile_log"),
+                    level=logging.DEBUG, format='%(asctime)s %(message)s')
+not_suitable = 'project name {} not suitable for repocheck/repocopy'
 today = datetime.datetime.today()
 
+
 def _log(message):
+    "write a message to the log"
     logging.info(message)
 
-#
+
 # miscellaneous
-#
 def _vhooks_copyitem(item):
+    "copy stuff for VivaldHooks support"
     source = os.path.join(vhooks_path, appdir, item['name'])
     target = os.path.join(vivaldi_path, appdir, item['name'])
     options = ''
-    if item['is_dir']: options = '-R'
+    if item['is_dir']:
+        options = '-R'
     if item['backup']:
         options = '-b'
     elif item['is_dir']:
         local('sudo rm {} {}'.format(options, target))
     local('sudo cp {} {} {}'.format(options, source, target))
 
+
 def install_vhooks():
     "(re)install VivaldiHooks"
     for item in vhooks_items:
         _vhooks_copyitem(item)
 
+
 def disable_vhooks():
+    "disable support for VivaldiHooks"
     target = os.path.join(vivaldi_path, appdir, vhooks_items[0]['name'])
     source = target + '~'
     local('sudo mv {} {}'.format(source, target))
 
+
 def enable_vhooks():
+    "(re)enable support for VivaldiHooks"
     _vhooks_copyitem(vhooks_items[0])
 
+
 def remove_vhooks():
+    "remove support for VivaldiHooks"
     disable_vhooks()
     for item in vhooks_items[1:]:
         target = os.path.join(vivaldi_path, appdir, item['name'])
         options = ''
-        if item['is_dir']: options = '-R'
+        if item['is_dir']:
+            options = '-R'
         local('sudo rm {} {}'.format(options, target))
-
 
 
 def install_scite(version):
@@ -79,11 +89,12 @@ def install_scite(version):
         if result.failed:
             result = local('tar -xf {}'.format(filename))
     local('sudo cp gscite/SciTE /usr/bin')
-    local('sudo cp gscite/*.properties /etc/scite') # /usr/share/scite')
+    local('sudo cp gscite/*.properties /etc/scite')  # /usr/share/scite')
     local('sudo cp gscite/*.html /usr/share/scite')
     local('sudo cp gscite/*.png /usr/share/scite')
     local('sudo cp gscite/*.jpg /usr/share/scite')
     local('rm gscite -r')
+
 
 def build_scite(version):
     """(re)build SciTE. argument: version number as used in filename
@@ -124,6 +135,7 @@ def build_scite(version):
     else:
         print('ready, see {}'.format(logfile))
 
+
 def arcstuff(*names):
     """backup selected files indicated in a .conf file
 
@@ -131,7 +143,7 @@ def arcstuff(*names):
     """
     if not names:
         files = [x for x in os.listdir(os.path.dirname(__file__))
-            if x.startswith('arcstuff') and os.path.splitext(x)[1] == '.conf']
+                 if x.startswith('arcstuff') and os.path.splitext(x)[1] == '.conf']
         names = []
         for x in files:
             y = os.path.splitext(x)[0]
@@ -143,15 +155,15 @@ def arcstuff(*names):
             hlp = '_' + name if name else ''
             fname = 'arcstuff{}.conf'.format(hlp)
             if not os.path.exists(fname):
-                raise ValueError('abort: no config file for {} ({} does not exist'
-                    ')'.format(name, fname))
+                raise ValueError('abort: no config file for {} '
+                                 '({} does not exist)'.format(name, fname))
             files.append(fname)
     for indx, infile in enumerate(files):
         name = 'all' if not names[indx] else names[indx]
         dts = datetime.datetime.today().strftime('%Y%m%d%H%M%S')
         outfile = '/home/albert/arcstuff/{}_{}.tar.gz'.format(name, dts)
         with open(infile) as f_in:
-            first = True
+            ## first = True
             command = 'tar -czvf {}'.format(outfile)
             prepend = ''
             for line in f_in:
@@ -170,6 +182,7 @@ def arcstuff(*names):
                 command = '{} {}'.format(command, path.strip())
         local(command)
 
+
 def chmodrecursive(path=None):
     """
     Permissies in een directory tree op standaard waarden zetten
@@ -178,7 +191,8 @@ def chmodrecursive(path=None):
 
     eenvoudigst om uit te voeren in de root van de betreffende tree
     """
-    if path is None: path = os.getcwd()
+    if path is None:
+        path = os.getcwd()
     for entry in os.listdir(path):
         if entry in ('__pycache__', '.hg'):
             continue
@@ -186,7 +200,7 @@ def chmodrecursive(path=None):
         if os.path.isfile(fnaam):
             try:
                 os.chmod(fnaam, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP |
-                    stat.S_IROTH)
+                         stat.S_IROTH)
             except PermissionError:
                 pass
         elif os.path.islink(fnaam):
@@ -194,25 +208,28 @@ def chmodrecursive(path=None):
         elif os.path.isdir(fnaam):
             try:
                 os.chmod(fnaam, stat.S_IFDIR | stat.S_IRWXU | stat.S_IRWXG |
-                    stat.S_IRWXO)
+                         stat.S_IRWXO)
             except PermissionError:
                 pass
             else:
                 chmodrecursive(fnaam)
-#
+
+
 # database server stuff
-#
 def start_mongo():
     "start mongo database server"
     local('sudo service mongodb start')
+
 
 def stop_mongo():
     "stop mongo database server"
     local('sudo service mongodb stop')
 
+
 def restart_mongo():
     "restart mongo database server"
     local('sudo service mongodb restart')
+
 
 def repair_mongo():
     "repair mongo db"
@@ -220,36 +237,41 @@ def repair_mongo():
     local('sudo mongod --dbpath /var/lib/mongodb/ --repair')
     local('sudo chmod 777 /var/lib/mongodb')
 
+
 def start_pg():
     "start postgresql database server"
     local('sudo service postgresql start')
+
 
 def stop_pg():
     "stop postgresql database server"
     local('sudo service postgresql stop')
 
+
 def restart_pg():
     "restart postgresql database server"
     local('sudo service postgresql restart')
 
-#
+
 # default webserver stuff
-#
 def wwwcopy(*names):
     "copy indicated file(s) from ~/www/nginx-root to real nginx root"
     for name in names:
         local('sudo cp ~/www/nginx-root/{0} {1}/{0}'.format(name, server_root))
+
 
 def wwwedit(*names):
     "edit indicated file(s) in ~/www/nginx-root"
     for name in names:
         local('scite ~/www/nginx-root/{0}'.format(name))
 
+
 def wwwsites():
     "update mydomains database and localhost/sites.html from /etc/hosts"
     with lcd('~/www/django/mydomains'):
         local('python check_hosts.py')
     wwwcopy('sites.html')
+
 
 def wwwedit_apache(name):
     "edit indicated file in apache root as-if edited directly"
@@ -259,13 +281,14 @@ def wwwedit_apache(name):
     local('sudo cp /tmp/{0} {1}/{0}'.format(name, apache_root))
     ## put('/tmp/{0} {1}'.format(name, apache_root), use_sudo=True)
 
+
 def wwwpermits(name):
     """reset permits for dirs/files under web-accessible root
     """
     path = os.path.abspath(name)
     for file in os.listdir(path):
         fullname = os.path.join(path, file)
-        if os.path.isfile(fullname) and do_files:
+        if os.path.isfile(fullname) and do_files:   # do_files undefined
             rc = local('chmod 644 {}'.format(fullname))
             if rc.failed:
                 print('chmod failed on file {}'.format(fullname))
@@ -276,9 +299,8 @@ def wwwpermits(name):
             else:
                 wwwpermits(fullname)
 
-#
+
 # language support stuff
-#
 def gettext(sourcefile):
     """internalization: gather strings from file
 
@@ -286,6 +308,7 @@ def gettext(sourcefile):
     en schrijf ze weg in een bestand genaamd messages.pot
     """
     local("pygettext {}".format(sourcefile))
+
 
 def poedit(language_code):
     """internalization: edit translations in language file
@@ -297,6 +320,7 @@ def poedit(language_code):
         local('poedit')
     else:
         local("poedit {}".format(fnaam))
+
 
 def place(language_code, appname, locatie=""):
     """internalization: make translation usable
@@ -316,12 +340,11 @@ def place(language_code, appname, locatie=""):
     loc = os.path.join(loc, 'LC_MESSAGES')
     if not os.path.exists(loc):
         os.mkdir(loc)
-    local('msgfmt {}.po -o {}'.format(language_code, os.path.join(loc,
-        appname + '.mo')))
+    local('msgfmt {}.po -o {}'.format(language_code,
+                                      os.path.join(loc, appname + '.mo')))
 
-#
+
 # project/session management
-#
 def startproject(name):
     """start a new (Python) software project in a standardized way
     """
@@ -338,6 +361,7 @@ def startproject(name):
     with open(tests_file, 'w') as _out:
         _out.write(data.replace('projectname', name))
 
+
 def start_session(name):
     """start a programming session using various tools
 
@@ -346,6 +370,7 @@ def start_session(name):
     """
     fname = os.path.expanduser('~/bin/.sessions/{}'.format(name))
     local('/bin/sh {}'.format(fname))
+
 
 def edit_session(name):
     """start a programming session using various tools
@@ -356,80 +381,77 @@ def edit_session(name):
     fname = os.path.expanduser('~/bin/.sessions/{}'.format(name))
     local('scite {}'.format(fname))
 
-#
-# routines for handling local and remote Mercurial repositories
-#
-def _check(context='local', push='no'):
-    """vergelijkt mercurial repositories met elkaar
 
-    context geeft aan welke: lokale working versie met lokale centrale versie,
-    lokale centrale versie met bitbucket versie of usb versie met centrale versie
+# routines for handling local and remote Mercurial and Git repositories
+def _check(context='local', push='no'):
+    """vergelijkt repositories met elkaar
+
+    context geeft aan welke:
+    'local':  lokale working versie met lokale centrale versie,
+    'remote': lokale centrale versie met bitbucket of github versie
     push geeft aan of er ook gepushed moet worden (working naar centraal, centraal
-    naar bitbucket of centraal naar usb) en moet indien van toepassing
-    expliciet als 'yes' worden opgegeven (in het geval van usb wordt feitelijk
-    gepulled, push vanuit usb moet altijd per repo apart)
-    voor correcte werking m.b.t. pushen naar bitbucket moet voor elke repo een file
-    <reponame>_tip aanwezig zijn met daarin de output van commando hg_tip
+    naar bitbucket of github) en moet indien van toepassing
+    expliciet als 'yes' worden opgegeven
+    voor correcte werking m.b.t. pushen naar remote moet voor elke repo een file
+    <reponame>_tip aanwezig zijn met daarin de output van commando hg_tip of
+    in het geval van git ...
     """
-    bb = context == 'bb'
-    usb = context == 'usb'
-    if context == 'local':
-        root, outfile = '/home/albert', '/tmp/hg_local_changes'
-    elif bb:
-        root, outfile = '/home/albert/hg_repos', '/tmp/hg_changes'
-    elif usb:
-        root, outfile = '/media/albert/KINGSTON', '/tmp/hg_usb_changes'
-    else:
+    local_ = context == 'local'
+    remote = not local_
+    if context not in ('local', 'remote'):
         print('wrong context for this routine')
         return
+    elif local_:
+        root, outfile = HOME, '/tmp/hg_local_changes'
+    else:
+        root, outfile = os.path.join(HOME, 'hg_repos'), '/tmp/hg_changes'
 
     changes = False
     with open(outfile, 'w') as _out, settings(hide('running', 'warnings'),
-            warn_only=True):
+                                              warn_only=True):
         print('check {} repos on {}\n\n'.format(context, today), file=_out)
         for name in all_repos:
+            is_gitrepo = name in git_repos
+            is_private = name in private_repos
             stats = []
-            if bb and name in non_bb_repos:
-                continue
-            if bb and name in private_repos:
-                pwd = os.path.join(root.replace('repos', 'private'), name)
-            elif name == 'bitbucket':
-                if bb:
+            ## if context != 'local' and name in non_deploy_repos:  # non_bb_repos:
+                ## continue
+            if name == 'bitbucket':
+                if remote:
                     pwd = os.path.join(root, 'avisser.bitbucket.org')
                 else:
                     pwd = os.path.join(root, 'www', name)
-            elif name in django_repos and not bb:
-                ## proj = name.split('-')[0] if name.startswith('magiokis') else name
-                ## pwd = os.path.join(root, 'projects', proj)
-                pwd = os.path.join(root, 'projects', name)
-            elif name in cherrypy_repos and not bb:
-                ## proj = name.split('-')[0] if name.startswith('magiokis') else name
-                ## pwd = os.path.join(root, 'projects', proj)
-                pwd = os.path.join(root, 'projects', name)
-            elif name not in private_repos and not bb and not usb:
-                ## proj = name.replace('-', '_') if name.startswith('magiokis') else name
-                ## pwd = os.path.join(root, 'projects', proj)
+            elif remote:
+                if is_private:
+                    pwd = os.path.join(root.replace('repos', 'private'), name)
+                elif is_gitrepo:
+                    pwd = os.path.join(root.replace('hg', 'git'), name)
+            elif local_ and not is_private:
                 pwd = os.path.join(root, 'projects', name)
             else:
                 pwd = os.path.join(root, name)
 
-            tmp = '/tmp/hg_st_{}'.format(name)
-            uncommitted = outgoing = incoming = False
+            ## tmp = '/tmp/hg_st_{}'.format(name)
+            uncommitted = outgoing = False
+
+            command = 'git status --short' if is_gitrepo else 'hg status --quiet'
             with lcd(pwd):
-                result = local('hg status --quiet', capture=True)
+                result = local(command, capture=True)
             test = result.stdout
             if test.strip():
                 stats.append('uncommitted changes')
                 print('\nuncommitted changes in {}'.format(pwd), file=_out)
                 uncommitted = True
                 _out.write(test + '\n')
-            if bb:
+            if remote:
                 tmpfile = os.path.join('/tmp', '{}_tip'.format(name))
                 tipfile = os.path.join(root, '{}_tip'.format(name))
                 if not os.path.exists(tipfile):
                     local('touch {}'.format(tipfile))
+
+                command = 'git log -r -1' if is_gitrepo else 'hg tip'
                 with lcd(pwd):
-                    local('hg tip > {}'.format(tmpfile))
+                    local('{} > {}'.format(command, tmpfile))
                 with open(tmpfile) as _in1, open(tipfile) as _in2:
                     buf1 = _in1.read()
                     buf2 = _in2.read()
@@ -442,89 +464,72 @@ def _check(context='local', push='no'):
                     _out.write("-- bb:\n")
                     _out.write(buf2 + "\n")
             else:
+                command = 'git push --dry-run' if is_gitrepo else 'hg outgoing'
                 with lcd(pwd):
-                    result = local('hg outgoing', capture=True)
-                outgoing = result.succeeded
+                    result = local(command, capture=True)
+                    if is_gitrepo:
+                        outgoing = result.stdout.strip()
+                    else:
+                        outgoing = result.succeeded
                 if outgoing:
                     changes = True
                     stats.append('outgoing changes')
                     print('\noutgoing changes for {}'.format(name), file=_out)
                     _out.write(result.stdout + '\n')
-                if usb:
-                    with lcd(pwd):
-                        result = local('hg incoming', capture=True)
-                    incoming = result.succeeded
-                    if incoming:
-                        changes = True
-                        stats.append('incoming changes')
-                        print('\nincoming changes for {}'.format(name), file=_out)
-                        _out.write(result.stdout + '\n')
             if stats:
                 print(' and '.join(stats) + ' for {}'.format(name))
             else:
                 print('no changes for {}'.format(name))
-            if uncommitted or outgoing or incoming: changes = True
+            if uncommitted or outgoing:
+                changes = True
             if push != 'yes':
                 continue
-            command = ''
-            if not usb:
-                if outgoing:
-                    command = 'hg push' # if bb else 'hg push --remotecmd "hg update"'
-                    # remotecmd werkt niet zo maar geen idee hoe dan wel
+            if not outgoing:
+                continue
+            if is_gitrepo:
+                ref = '-u' if remote else ''
+                command = 'git push {} origin master'.format(ref)
             else:
-                if incoming: #  and not uncommitted and not outgoing:
-                    command = 'hg pull --update'
-            if command:
-                with lcd(pwd):
-                    result = local(command)
-                    if result.succeeded:
-                        _out.write(result.stdout + '\n')
-                        if bb:
-                            with lcd(pwd):
-                                local('hg tip > {}'.format(tipfile))
+                command = 'hg push'  # if bb else 'hg push --remotecmd "hg update"'
+                # remotecmd werkt niet zo maar geen idee hoe dan wel
+            with lcd(pwd):
+                result = local(command)
+            if result.succeeded:
+                _out.write(result.stdout + '\n')
+                if remote:
+                    command = 'git log -r -1' if is_gitrepo else 'hg tip'
+                    with lcd(pwd):
+                        local('{} > {}'.format(command, tmpfile))
     print()
     if changes:
         print('for details see {}'.format(outfile))
     else:
         print('no change details')
 
+
 def check_local():
     """compare hg repositories: working vs "central"
     """
     _check()
 
-def check_bb():
-    """compare hg repositories: "central" vs BitBucket
-    """
-    _check('bb')
 
-def check_usb():
-    """compare hg repositories: "central" vs usb stick
+def check_remote():
+    """compare hg repositories: "central" vs BitBucket / GitHub
     """
-    _check('usb')
+    _check('remote')
+
 
 def push_local():
     """push from working to "central"
     """
     _check(push='yes')
 
-def push_bb():
+
+def push_remote():
     """push from "central" to BitBucket
     """
-    _check('bb', push='yes')
+    _check('remote', push='yes')
 
-def push_usb():
-    """push from "central" to usb stick (implemented as a pull)
-    """
-    _check('usb', push='yes')
-
-def pull_usb():
-    """not implemented yet: push from usb to "central"
-    """
-
-def pull_local():
-    """not implemented yet: push from "central" to working
-    """
 
 def pushthru(*names):
     """push from working to "central" and on to bitbucket if possible
@@ -532,11 +537,11 @@ def pushthru(*names):
     either name specific repos or check all
     when no name is specified, the "_check" variants are used
     """
-    all_repos = bb_repos + private_repos
+    ## all_repos = bb_repos + private_repos
     if not names:
         ## names = all_repos
         _check(push='yes')
-        _check('bb', push='yes')
+        _check('remote', push='yes')
         with open('/tmp/pushthru_log', 'w') as _out:
             for fname in ('/tmp/hg_local_changes', '/tmp/hg_changes'):
                 with open(fname) as _in:
@@ -558,11 +563,11 @@ def pushthru(*names):
                 centralpath = centralpath.replace('repos', 'private')
             elif name in django_repos:
                 localpath = localpath.replace('projects', os.path.join('www',
-                    'django'))
+                                                                       'django'))
             elif name in cherrypy_repos:
                 localpath = localpath.replace('projects', os.path.join('www',
-                    'cherrypy'))
-            elif name ==  'bitbucket':
+                                                                       'cherrypy'))
+            elif name == 'bitbucket':
                 localpath = localpath.replace('projects', 'www')
                 centralpath = centralpath.replace(name, 'avisser.bitbucket.org')
             with settings(hide('running', 'warnings'), warn_only=True):
@@ -590,6 +595,7 @@ def pushthru(*names):
                     _out.write(logline + "\n")
                     _out.write(result.stderr + "\n")
     print('ready, output in /tmp/pushthru_log')
+
 
 def _make_repolist(path):
     """turn the repo log into a history
@@ -623,6 +629,7 @@ def _make_repolist(path):
             outdict[key]['desc'] = []
     return outdict
 
+
 def _make_repo_ovz(outdict, outfile):
     """write the history to a file
 
@@ -632,12 +639,13 @@ def _make_repo_ovz(outdict, outfile):
     with open(outfile, "w") as _out:
         for key in sorted(outdict.keys()):
             _out.write('{}: {}\n'.format(outdict[key]['date'],
-                '\n'.join(outdict[key]['desc'])))
+                                         '\n'.join(outdict[key]['desc'])))
             try:
                 for item in outdict[key]['files']:
                     _out.write('    {}\n'.format(item))
             except KeyError:
                 pass
+
 
 def _make_repocsv(outdict, outfile):
     """turn the repo history into a comma delimited file
@@ -646,9 +654,11 @@ def _make_repocsv(outdict, outfile):
     output: the specified file as written to disk
     """
     def listnn(count):
+        "build list of empty strings"
         return count * [""]
     date_headers, desc_headers = [" \\ date"], ["filename \\ description"]
-    in_changeset_dict = collections.defaultdict(functools.partial(listnn, len(outdict.keys())))
+    in_changeset_dict = collections.defaultdict(
+        functools.partial(listnn, len(outdict.keys())))
     for key in sorted(outdict.keys()):
         date_headers.append(outdict[key]['date'])
         desc = "\n".join(outdict[key]['desc'])
@@ -660,7 +670,8 @@ def _make_repocsv(outdict, outfile):
         except KeyError:
             continue
         for item in filelist:
-            if '/' not in item: item = './' + item
+            if '/' not in item:
+                item = './' + item
             in_changeset_dict[item][int(key)] = "x"
     with open(outfile, "wb") as _out:
         writer = csv.writer(_out)
@@ -670,15 +681,19 @@ def _make_repocsv(outdict, outfile):
             out = [key] + in_changeset_dict[key]
             writer.writerow(out)
 
+
 def _repos_overzicht(name, path):
-    if not os.path.isdir(path): return
-    if '.hg' not in os.listdir(path): return
+    if not os.path.isdir(path):
+        return
+    if '.hg' not in os.listdir(path):
+        return
     print('processing repository: {}'.format(name))
     outdict = _make_repolist(path)
     ## outfile = os.path.join(root, ".overzicht", "{}.repo_ovz".format(name))
     ## _make_repo_ovz(outdict, outfile)
     outfile = os.path.join(os.path.dirname(path), ".overzicht", "{}.csv".format(name))
     _make_repocsv(outdict, outfile)
+
 
 def repos_overzicht(*names):
     """Try to build a history file
@@ -690,9 +705,9 @@ def repos_overzicht(*names):
     for item in names:
         path = os.path.join(root, item)
         _repos_overzicht(item, path)
-#
+
+
 # routines for repos that are not kept intact when deployed (e.g. plain cgi websites)
-#
 def _get_mapping(proj):
     project_path = os.path.join(projects_base, proj)
     mapping_file = os.path.join(project_path, 'paths.conf')
@@ -702,11 +717,12 @@ def _get_mapping(proj):
         for line in _in:
             try:
                 in_repo, in_deploy = line.strip().split('=')
-            except ValueError as e:
+            except ValueError:
                 continue
             path_map.append((in_repo, os.path.join(project_path, in_repo),
-                os.path.expanduser(in_deploy)))
+                             os.path.expanduser(in_deploy)))
     return path_map
+
 
 def _get_files(proj):
     project_path = os.path.join(projects_base, proj)
@@ -730,6 +746,7 @@ def _get_files(proj):
         # TODO: process subincludes
         return tracked, ignored
 
+
 def _get_next(last, gen):
     ended = False
     try:
@@ -737,6 +754,7 @@ def _get_next(last, gen):
     except StopIteration:
         ended = True
     return ended, last
+
 
 def _check_ignored(name, tracked, ignored, path):
     if name in tracked:
@@ -747,13 +765,14 @@ def _check_ignored(name, tracked, ignored, path):
             subdir, pattern = pattern.split(sep, 1)
             test = os.path.basename(path)
             if subdir != test:
-                continue # zinloos om verder te kijken
+                continue  # zinloos om verder te kijken
         all_files = glob.glob(os.path.join(path, pattern))
         if syntax == 'regexp' and re.match(pattern, name):
             return True
         elif syntax == 'glob' and os.path.join(path, name) in all_files:
             return True
     return False
+
 
 def _check_project(proj):
     project_path = os.path.join(projects_base, proj)
@@ -764,9 +783,9 @@ def _check_project(proj):
     for subdir, repo_path, deploy_path in _get_mapping(proj):
         # ignoring subdirectories for now
         repofiles = (x for x in sorted(os.listdir(repo_path))
-            if os.path.isfile(os.path.join(repo_path, x)))
+                     if os.path.isfile(os.path.join(repo_path, x)))
         deployfiles = (x for x in sorted(os.listdir(deploy_path))
-            if os.path.isfile(os.path.join(deploy_path, x)))
+                       if os.path.isfile(os.path.join(deploy_path, x)))
         keeps = []
         ended1, old = _get_next('', repofiles)
         ended2, new = _get_next('', deployfiles)
@@ -813,7 +832,7 @@ def _check_project(proj):
             results.append('    {}'.format(name))
     return results, difflist
 
-not_suitable = 'project name {} not suitable for repocheck/repocopy'
+
 def repocheck(*names):
     """check for modifications in repositories that are spread over various deploy
     locations (mainly plain cgi web applications)
@@ -843,6 +862,7 @@ def repocheck(*names):
     if results:
         print('see /tmp/reposync_status for details')
 
+
 def _repocopy(repo, path, name):
     found = False
     for subdir, repopath, deploypath in _get_mapping(repo):
@@ -856,8 +876,9 @@ def _repocopy(repo, path, name):
         shutil.copyfile(os.path.join(deploypath, name), os.path.join(repopath, name))
         print('copy {} from {} to {}'.format(name, deploypath, repopath))
     except IOError:
-        print('file {} not found in deploy path for {}/{}'.format(os.path.join(path,
-            name), repo, path))
+        print('file {} not found in deploy path for {}/{}'.format(
+            os.path.join(path, name), repo, path))
+
 
 def repocopy(repo=None, file=None):
     """copy a file from the remote (deploy) location into the (working) repo
@@ -868,7 +889,7 @@ def repocopy(repo=None, file=None):
     otherwise: error
     """
     usage = "abort: usage is fab repocopy:repo=<reponame>,file=<pathname>/<filename>"
-    repos, files = [], []
+    ## repos, files = [], []
     if repo:
         repos = [repo]
     else:

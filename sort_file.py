@@ -10,9 +10,11 @@ import sys
 import os
 TMP = '/tmp'
 if sys.platform.startswith('win'):
-    TMP = "C:\\Windows\Temp"
+    TMP = "C:\\Windows\\Temp"
+
 
 def main(fn, tmp=False):
+    """sorting the lines of the file and write the result to a new file"""
     if tmp:
         fnew = os.path.join(TMP, os.path.basename(fn))
     else:

@@ -8,6 +8,7 @@ import json
 
 INDENT = 2
 
+
 def prettify(filename):
     """input: filename
     output: None
@@ -24,4 +25,3 @@ if __name__ == "__main__":
         print("usage: python(3) jsonp.py <filename>")
     else:
         prettify(sys.argv[1])
-

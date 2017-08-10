@@ -9,6 +9,8 @@ import subprocess as sp
 
 
 def fromdos(path, cmp_ext='.py'):
+    """apply program "fromdos" to multiple files in a directory
+    """
     path = os.path.abspath(path)
     for file in os.listdir(path):
         fullname = os.path.join(path, file)

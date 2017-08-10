@@ -10,12 +10,13 @@ copy, rename and adapt the below function(s) to suit your needs
 import sys
 import pathlib
 
+
 def reorder_names(temp_file):
     """rename from e.g. "Albert Visser" to "Visser, Albert"
     """
     with open(temp_file) as _in:
         data = _in.readlines()
-    result = []
+    ## result = []
     for line in data:
         path = pathlib.Path(line.strip())
         root = path.parent
