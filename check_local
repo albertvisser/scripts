@@ -1,0 +1,283 @@
+#! /usr/bin/env python3
+"""examine uncommitted changes in source repository
+"""
+import sys
+import pathlib
+import argparse
+import subprocess
+import PyQt5.QtWidgets as qtw
+import PyQt5.QtGui as gui
+## import PyQt5.QtCore as core
+import PyQt5.Qsci as sci  # scintilla
+root = pathlib.Path.home() / 'projects'
+
+
+class DiffViewDialog(qtw.QDialog):
+    """dialoog voor het tonen van de diff output
+    """
+    def __init__(self, parent, title='', caption='', data='', size=(600, 400)):
+        "create a window with a scintilla text widget and an ok button"
+        self._parent = parent
+        super().__init__(parent)
+        self.setWindowTitle(title)
+        ## self.setWindowIcon(self._parent._parent.appicon)
+        self.resize(size[0], size[1])
+        vbox = qtw.QVBoxLayout()
+        hbox = qtw.QHBoxLayout()
+        hbox.addWidget(qtw.QLabel(caption, self))
+        vbox.addLayout(hbox)
+        hbox = qtw.QHBoxLayout()
+        self.text = sci.QsciScintilla(self)
+        self.setup_text()
+        self.text.setText(data)
+        self.text.setReadOnly(True)
+        hbox.addWidget(self.text)
+        vbox.addLayout(hbox)
+        hbox = qtw.QHBoxLayout()
+        ok_button = qtw.QPushButton('&Ok', self)
+        ok_button.clicked.connect(self.close)
+        ok_button.setDefault(True)
+        hbox.addStretch()
+        hbox.addWidget(ok_button)
+        hbox.addStretch()
+        vbox.addLayout(hbox)
+        self.setLayout(vbox)
+
+    def setup_text(self):
+        "define the scintilla widget's properties"
+        # Set the default font
+        font = gui.QFont()
+        font.setFamily('Courier')
+        font.setFixedPitch(True)
+        font.setPointSize(10)
+        self.text.setFont(font)
+        self.text.setMarginsFont(font)
+
+        # Margin 0 is used for line numbers
+        fontmetrics = gui.QFontMetrics(font)
+        self.text.setMarginsFont(font)
+        self.text.setMarginWidth(0, fontmetrics.width("00000"))
+        self.text.setMarginLineNumbers(0, True)
+        self.text.setMarginsBackgroundColor(gui.QColor("#cccccc"))
+
+        # Enable brace matching, auto-indent, code-folding
+        self.text.setBraceMatching(sci.QsciScintilla.SloppyBraceMatch)
+        self.text.setAutoIndent(True)
+        self.text.setFolding(sci.QsciScintilla.PlainFoldStyle)
+
+        # Current line visible with special background color
+        self.text.setCaretLineVisible(True)
+        self.text.setCaretLineBackgroundColor(gui.QColor("#ffe4e4"))
+
+        # Set HTML lexer
+        lexer = sci.QsciLexerDiff()
+        lexer.setDefaultFont(font)
+        self.text.setLexer(lexer)
+
+
+class Gui(qtw.QWidget):
+    """User interface"""
+    def __init__(self, path, repotype):
+        self.path = path
+        self.repotype = repotype
+        self.filelist = self.get_repofiles()
+
+        project = path.stem
+        super().__init__()
+        self.title = 'Uncommitted changes for `{}`'.format(project)
+        self.setWindowTitle(self.title)
+        vbox = qtw.QVBoxLayout()
+
+        hbox = qtw.QHBoxLayout()
+        self.list = qtw.QListWidget(self)
+        ## list.setSelectionMode(qtw.QAbstractItemView.MultiSelection)
+        self.list.setSelectionMode(qtw.QAbstractItemView.ExtendedSelection)
+        self.populate_frame()
+        hbox.addWidget(self.list)
+
+        vbox2 = qtw.QVBoxLayout()
+        vbox2.addWidget(qtw.QLabel('Select files and', self))
+        btn = qtw.QPushButton('Edit', self)
+        btn.clicked.connect(self.edit_selected)
+        vbox2.addWidget(btn)
+        btn = qtw.QPushButton('Show diff', self)
+        btn.clicked.connect(self.show_diff)
+        vbox2.addWidget(btn)
+        btn = qtw.QPushButton('Commit', self)
+        btn.clicked.connect(self.commit_selected)
+        vbox2.addWidget(btn)
+        btn = qtw.QPushButton('Add to ignore list', self)
+        btn.clicked.connect(self.add_ignore)
+        vbox2.addWidget(btn)
+        vbox2.addWidget(qtw.QLabel('', self))
+        hbox.addLayout(vbox2)
+        vbox.addLayout(hbox)
+
+        hbox = qtw.QHBoxLayout()
+        hbox.addStretch()
+        hbox.addWidget(qtw.QLabel('Or', self))
+        btn = qtw.QPushButton('Commit All changes', self)
+        btn.clicked.connect(self.commit_all)
+        hbox.addWidget(btn)
+        btn = qtw.QPushButton('Recheck repo', self)
+        btn.clicked.connect(self.refresh_frame)
+        hbox.addWidget(btn)
+        btn = qtw.QPushButton('Cancel', self)
+        btn.clicked.connect(self.close)
+        hbox.addWidget(btn)
+        hbox.addStretch()
+        vbox.addLayout(hbox)
+
+        self.setLayout(vbox)
+        self.show()
+
+    def get_repofiles(self):
+        """return results of "status" command -- list uncommitted / untracked files
+        """
+        command = [self.repotype, 'status']
+        if self.repotype == 'git':
+            command.append('--short')
+        result = subprocess.run(command, stdout=subprocess.PIPE, cwd=str(self.path))
+        return [x for x in str(result.stdout, encoding='utf-8').split('\n') if x]
+
+    def populate_frame(self):
+        """(re)populate list"""
+        self.list.clear()
+        for name in self.filelist:
+            self.list.addItem(name)
+
+    def get_selected_files(self):
+        """get a list of the selected filenames"""
+        return [item.text().split(None, 1) for item in self.list.selectedItems()]
+
+    def edit_selected(self):
+        """Open selected files in a text editor"""
+        command = [y for x, y in self.get_selected_files()]
+        command.insert(0, 'SciTE')
+        ## subprocess.Popen(command, cwd=str(self.path))  # don't wait for editor to close
+        subprocess.run(command, cwd=str(self.path))
+        self.refresh_frame()
+
+    def show_diff(self):
+        """show selected files in diff view"""
+        ## filenames = [y for x, y in self.get_selected_files()]
+        filelist = self.get_selected_files()
+        filenames = []
+        for letter, name in filelist:
+            if letter in ('?', '??'):
+                qtw.QMessageBox.information(self, self.title,
+                                            name + ' not tracked')
+            else:
+                filenames.append(name)
+        if filenames:
+            command = [self.repotype, 'diff'] + filenames
+            result = subprocess.run(command, stdout=subprocess.PIPE, cwd=str(self.path))
+            text = str(result.stdout, encoding='utf-8')
+            caption = 'Show diffs for: ' + ', '.join(filenames)
+            DiffViewDialog(self, self.title, caption, text).exec_()
+
+    def add_ignore(self):
+        """add selected file to ignore list"""
+        filelist = self.get_selected_files()
+        filenames = []
+        for letter, name in filelist:
+            if letter in ('?', '??'):
+                filenames.append(name)
+            else:
+                qtw.QMessageBox.information(self, self.title,
+                                            name + ' already tracked')
+        if filenames:
+            fname = self.path / '.hgignore'
+            with fname.open('a') as _out:
+                for name in filenames:
+                    _out.write(name)
+            self.refresh_frame()
+        ## qtw.QMessageBox.information(self, self.title,
+                                    ## 'Added selected files to ignore list.')
+
+    ## def add_new(self):
+        ## """add a new file to the tracked list"""
+        ## filenames = [y for x, y in self.get_selected_files()]
+        ## filename, ok = qtw.QInputDialog.getText(self, self.title,
+                                               ## 'Enter a filename:')
+        ## if ok:
+            ## if filename in filenames:
+                ## qtw.QMessageBox.information(self, self.title,
+                                            ## 'File is already tracked.')
+            ## fname = self.path / filename
+            ## if fname.exists():
+                ## command = ['hg', 'add', filename]
+                ## result = subprocess.run(command, cwd=str(self.path))
+                ## self.refresh_frame()
+            ## else:
+                ## qtw.QMessageBox.information(self, self.title,
+                                            ## 'File does not exist.')
+        ## qtw.QMessageBox.information(self, self.title,
+                                    ## 'Added selected files to ignore list.')
+
+    def refresh_frame(self):
+        """recheck repository and update list"""
+        self.filelist = self.get_repofiles()
+        self.populate_frame()
+
+    def commit_all(self):
+        """hg commit uitvoeren - vraag om commit message"""
+        message, ok = qtw.QInputDialog.getText(self, self.title,
+                                               'Enter a commit message:')
+        if ok:
+            if self.repotype == 'git':
+                command = ['git', 'commit', '-a', '-m', message]
+            else:
+                command = ['hg', 'commit', '-m', message]
+            result = subprocess.run(command, cwd=str(self.path))
+            self.refresh_frame()
+
+    def commit_selected(self):
+        """hg commit <selected files> uitvoeren - vraag om commit message"""
+        ## filenames = [y for x, y in self.get_selected_files()]
+        filelist = self.get_selected_files()
+        filenames = []
+        for letter, name in filelist:
+            if letter in ('?', '??'):
+                qtw.QMessageBox.information(self, self.title, name + ' not tracked')
+            else:
+                filenames.append(name)
+        if filenames:
+            message, ok = qtw.QInputDialog.getText(self, self.title,
+                                                   'Enter a commit message:')
+            if ok:
+                if self.repotype == 'git':
+                    command = ['git', 'add'] + filenames
+                command = [self.repotype, 'commit'] + filenames + ['-m', message]
+                result = subprocess.run(command, cwd=str(self.path))
+                self.refresh_frame()
+
+
+def main(args):
+    """do the thing"""
+    repotype = ''
+    path = root / args.project
+    test = path / '.hg'
+    if test.exists():
+        repotype = 'hg'
+    else:
+        test = path / '.git'
+        if test.exists():
+            repotype = 'git'
+        else:
+            path = pathlib.Path.home() / args.project
+            test = path / '.hg'
+            if test.exists():
+                repotype = 'hg'
+    if not repotype:
+        return args.project + ' is not a source repository'
+    app = qtw.QApplication(sys.argv)
+    win = Gui(path, repotype)
+    sys.exit(app.exec_())
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('project', help="name of a software project")
+    result = main(parser.parse_args())
+    if result:
+        print(result)
