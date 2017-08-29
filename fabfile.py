@@ -500,7 +500,7 @@ def _check(context='local', push='no'):
                 if remote:
                     command = 'git log -r -1' if is_gitrepo else 'hg tip'
                     with lcd(pwd):
-                        local('{} > {}'.format(command, tmpfile))
+                        local('{} > {}'.format(command, tipfile))
     print()
     if changes:
         print('for details see {}'.format(outfile))
