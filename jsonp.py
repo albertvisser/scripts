@@ -1,3 +1,5 @@
+#! /usr/bin/env python3
+
 """pretty-print json data in a given file
 
 saves a pretty-printed version instead of overwriting the original
