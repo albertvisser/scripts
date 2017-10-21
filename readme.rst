@@ -191,6 +191,11 @@ symlinks or short starter scripts for my own applications:
 
   starts up a standalone version of my css editor
 
+**csvhelper**
+
+    starter for routines to make editing a csv file somewhat easier
+    to be used in combination with or started from within a text editor
+
 **diary**
 
     symlink to ramble
@@ -222,6 +227,10 @@ symlinks or short starter scripts for my own applications:
 
     apply pylint or flake8 checks to all my software projects (under construction)
 
+**lintergui **
+
+    GUI frontend as replacement for *lint-this* and *lint-all*
+
 **lint-this**
 
     apply pylint or flake8 checks to selected files or files in a selected directory
@@ -246,6 +255,11 @@ symlinks or short starter scripts for my own applications:
 
     show and/or reorganize contents of NoteTree documents
 
+**pfind**
+
+    starts up *afrift* to search in all my Python software projects
+    can be called up with a search argument or without
+
 **probreg**
 
     starts up my 'probreg' application from a standard location. Takes no arguments.
@@ -253,6 +267,12 @@ symlinks or short starter scripts for my own applications:
 **probreg_sql**
 
     the same for the version using sqlite. Also takes no arguments.
+
+**probreg-jvs**
+**probreg-leesjcl**
+**probreg-todo**
+
+    starters for *probreg* with a specific data file
 
 **ramble**
 
@@ -277,3 +297,21 @@ symlinks or short starter scripts for my own applications:
 **xmledit**
 
     starts up my tree-based xml editor. Takes one (optional) argument: the filename.
+
+
+other scripts not in repo:
+
+determine-all-project-dirs
+    script to create the list that containing all directories to search
+    as used by the pfind command
+determine-all-project-files
+    a similar script intended to create a list of files
+    I have decided I don't really need this when I have a list of directories
+reaper                      starts linux version of reaper
+rpdb2.py                    used by winpd3, slightly adapted for python 3
+search-all-projects
+    original version of the `pfind` script
+    with an option to recreate the list of files/directories to search
+winpdb3                     starter for winpdb under python 3
+winpdb.py                   symlink to original
+
