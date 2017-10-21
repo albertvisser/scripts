@@ -7,7 +7,7 @@ import argparse
 import subprocess
 import PyQt5.QtWidgets as qtw
 import PyQt5.QtGui as gui
-## import PyQt5.QtCore as core
+import PyQt5.QtCore as core
 import PyQt5.Qsci as sci  # scintilla
 root = pathlib.Path.home() / 'projects'
 
@@ -42,6 +42,11 @@ class DiffViewDialog(qtw.QDialog):
         hbox.addStretch()
         vbox.addLayout(hbox)
         self.setLayout(vbox)
+        do = qtw.QAction('Done', self)
+        do.triggered.connect(self.close)
+        do.setShortcut('Esc')
+        self.addAction(do)
+        ## do.setShortCut(core.Qt.Key_Escape)
 
     def setup_text(self):
         "define the scintilla widget's properties"
@@ -96,17 +101,17 @@ class Gui(qtw.QWidget):
         hbox.addWidget(self.list)
 
         vbox2 = qtw.QVBoxLayout()
-        vbox2.addWidget(qtw.QLabel('Select files and', self))
-        btn = qtw.QPushButton('Edit', self)
+        vbox2.addWidget(qtw.QLabel('Select file(s) and', self))
+        btn = qtw.QPushButton('&Edit', self)
         btn.clicked.connect(self.edit_selected)
         vbox2.addWidget(btn)
-        btn = qtw.QPushButton('Show diff', self)
+        btn = qtw.QPushButton('Show &Diff', self)
         btn.clicked.connect(self.show_diff)
         vbox2.addWidget(btn)
-        btn = qtw.QPushButton('Commit', self)
+        btn = qtw.QPushButton('&Commit', self)
         btn.clicked.connect(self.commit_selected)
         vbox2.addWidget(btn)
-        btn = qtw.QPushButton('Add to ignore list', self)
+        btn = qtw.QPushButton('Add to &Ignore list', self)
         btn.clicked.connect(self.add_ignore)
         vbox2.addWidget(btn)
         vbox2.addWidget(qtw.QLabel('', self))
@@ -116,13 +121,13 @@ class Gui(qtw.QWidget):
         hbox = qtw.QHBoxLayout()
         hbox.addStretch()
         hbox.addWidget(qtw.QLabel('Or', self))
-        btn = qtw.QPushButton('Commit All changes', self)
+        btn = qtw.QPushButton('Commit &All changes', self)
         btn.clicked.connect(self.commit_all)
         hbox.addWidget(btn)
-        btn = qtw.QPushButton('Recheck repo', self)
+        btn = qtw.QPushButton('&Recheck repo', self)
         btn.clicked.connect(self.refresh_frame)
         hbox.addWidget(btn)
-        btn = qtw.QPushButton('Cancel', self)
+        btn = qtw.QPushButton('&Quit', self)
         btn.clicked.connect(self.close)
         hbox.addWidget(btn)
         hbox.addStretch()
@@ -130,6 +135,11 @@ class Gui(qtw.QWidget):
 
         self.setLayout(vbox)
         self.show()
+
+        do = qtw.QAction('Done', self)
+        do.triggered.connect(self.close)
+        do.setShortcut('Ctrl+Q')
+        self.addAction(do)
 
     def get_repofiles(self):
         """return results of "status" command -- list uncommitted / untracked files
