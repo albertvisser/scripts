@@ -506,12 +506,15 @@ def _check(context='local', push='no'):
         print('for details see {}'.format(outfile))
     else:
         print('no change details')
+    return changes
 
 
 def check_local():
     """compare hg repositories: working vs "central"
     """
-    _check()
+    test = _check()
+    if test:
+        print("use 'check_local <reponame>' to inspect changes")
 
 
 def check_remote():
