@@ -501,6 +501,12 @@ def _check(context='local', push='no'):
                     command = 'git log -r -1' if is_gitrepo else 'hg tip'
                     with lcd(pwd):
                         local('{} > {}'.format(command, tipfile))
+                else:
+                    with lcd(pwd):
+                        if not is_gitrepo:
+                            result = local('hg up')
+                            _out.write(result.stdout + '\n')
+
     print()
     if changes:
         print('for details see {}'.format(outfile))
@@ -514,7 +520,7 @@ def check_local():
     """
     test = _check()
     if test:
-        print("use 'check_local <reponame>' to inspect changes")
+        print("use 'check-repo <reponame>' to inspect changes")
 
 
 def check_remote():
