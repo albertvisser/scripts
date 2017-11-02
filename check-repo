@@ -266,7 +266,10 @@ class Gui(qtw.QWidget):
 def main(args):
     """do the thing"""
     repotype = ''
-    path = root / args.project
+    if args.project == 'bitbucket':
+        path = pathlib.Path.home() / 'www'/ args.project
+    else:
+        path = root / args.project
     test = path / '.hg'
     if test.exists():
         repotype = 'hg'
@@ -280,7 +283,7 @@ def main(args):
             if test.exists():
                 repotype = 'hg'
     if not repotype:
-        return args.project + ' is not a source repository'
+        return args.project + ' is not a repository'
     app = qtw.QApplication(sys.argv)
     win = Gui(path, repotype)
     sys.exit(app.exec_())
