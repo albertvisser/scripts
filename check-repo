@@ -111,6 +111,12 @@ class Gui(qtw.QWidget):
         btn = qtw.QPushButton('&Commit', self)
         btn.clicked.connect(self.commit_selected)
         vbox2.addWidget(btn)
+        btn = qtw.QPushButton('Start &Tracking', self)
+        btn.clicked.connect(self.add_new)
+        vbox2.addWidget(btn)
+        btn = qtw.QPushButton('&Stop Tracking', self)
+        btn.clicked.connect(self.forget)
+        vbox2.addWidget(btn)
         btn = qtw.QPushButton('Add to &Ignore list', self)
         btn.clicked.connect(self.add_ignore)
         vbox2.addWidget(btn)
@@ -205,25 +211,24 @@ class Gui(qtw.QWidget):
         ## qtw.QMessageBox.information(self, self.title,
                                     ## 'Added selected files to ignore list.')
 
-    ## def add_new(self):
-        ## """add a new file to the tracked list"""
-        ## filenames = [y for x, y in self.get_selected_files()]
-        ## filename, ok = qtw.QInputDialog.getText(self, self.title,
-                                               ## 'Enter a filename:')
-        ## if ok:
-            ## if filename in filenames:
-                ## qtw.QMessageBox.information(self, self.title,
-                                            ## 'File is already tracked.')
-            ## fname = self.path / filename
-            ## if fname.exists():
-                ## command = ['hg', 'add', filename]
-                ## result = subprocess.run(command, cwd=str(self.path))
-                ## self.refresh_frame()
-            ## else:
-                ## qtw.QMessageBox.information(self, self.title,
-                                            ## 'File does not exist.')
-        ## qtw.QMessageBox.information(self, self.title,
-                                    ## 'Added selected files to ignore list.')
+    def add_new(self):
+        """add selected file(s) to the tracked list"""
+        filenames = [y for x, y in self.get_selected_files()]
+        # remove already tracked files or let hg handle it
+        command = ['hg', 'add'] + filenames
+        result = subprocess.run(command, cwd=str(self.path))
+        # feedback needed? e.g. some files were already tracked?
+        self.refresh_frame()
+
+    def forget(self):
+        """stop tracking selected file(s)"""
+        filenames = [y for x, y in self.get_selected_files()]
+        # remove untracked files or let hg handle it
+        command = ['hg', 'forget'] + filenames
+        result = subprocess.run(command, cwd=str(self.path))
+        # feedback needed? e.g. some files weren't tracked?
+        self.refresh_frame()
+
 
     def refresh_frame(self):
         """recheck repository and update list"""
