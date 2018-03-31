@@ -118,6 +118,7 @@ def build_scite(version):
             _out.write(result.stdout + "\n")
             if result.failed:
                 err = 'make scintilla failed'
+                _out.write(result.stderr + "\n")
             else:
                 with lcd('/tmp/scite/gtk'):
                     err = ''
@@ -125,11 +126,13 @@ def build_scite(version):
                     _out.write(result.stdout + "\n")
                     if result.failed:
                         err = 'make scite failed'
+                        _out.write(result.stderr + "\n")
                     else:
                         result = local('sudo make install', capture=True)
                         _out.write(result.stdout + "\n")
                         if result.failed:
                             err = 'make install failed'
+                            _out.write(result.stderr + "\n")
     if err:
         print('{}, see {}'.format(err, logfile))
     else:
