@@ -34,6 +34,44 @@ def _log(message):
 
 
 # miscellaneous
+def listbin():
+    "list command files in scripts directory (~/bin) (based on readme file)"
+    with open(os.path.join(HOME, 'bin', 'readme.rst')) as _in:
+        lines = _in.readlines()
+    commands = {}
+    lastcommand = get_starters = False
+    command = ''
+    starters= {}
+    for line in lines:
+        if line.startswith("Requirements"):
+            lastcommand = True
+            command = ''
+        elif not lastcommand:
+            if line.startswith('**'):
+                command = line.strip()
+                commands[command] = []
+            elif command:
+                commands[command].append(line.strip())
+        elif line.startswith('symlinks'):
+            get_starters = True
+        elif get_starters:
+            if line.startswith('**'):
+                command = line.strip()
+                starters[command] = []
+            else:
+                if command:
+                    starters[command].append(line.strip())
+    for x, y in commands.items():
+        for command in ['.hgignore', 'arcstuff', 'settings', 'fabfile', 'readme']:
+            if command in x:
+                break
+        else:
+            print(x, ':', ' '.join(y))
+    print()
+    for x, y in starters.items():
+        print(x, ':', ' '.join(y))
+
+
 def _vhooks_copyitem(item):
     "copy stuff for VivaldHooks support"
     source = os.path.join(vhooks_path, appdir, item['name'])
