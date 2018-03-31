@@ -271,6 +271,8 @@ class Gui(qtw.QWidget):
 def main(args):
     """do the thing"""
     repotype = ''
+    if not args.project:
+        args.project = '.'
     if args.project == '.':
         args.project = pathlib.Path.cwd().name
     if args.project == 'bitbucket':
@@ -297,7 +299,8 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('project', help="name of a software project")
+    parser.add_argument('project', help="name of a software project", nargs='?',
+                        default="")
     result = main(parser.parse_args())
     if result:
         print(result)
