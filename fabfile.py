@@ -431,12 +431,13 @@ def list_sessions():
     print('\n'.join(names))
 
 # routines for handling local and remote Mercurial and Git repositories
-def _check(context='local', push='no'):
+def _check(context='local', push='no', verbose=False):
     """vergelijkt repositories met elkaar
 
     context geeft aan welke:
     'local':  lokale working versie met lokale centrale versie,
     'remote': lokale centrale versie met bitbucket of github versie
+    'verbose': geef ook 'no changes' meldingen
     push geeft aan of er ook gepushed moet worden (working naar centraal, centraal
     naar bitbucket of github) en moet indien van toepassing
     expliciet als 'yes' worden opgegeven
@@ -527,7 +528,7 @@ def _check(context='local', push='no'):
                     _out.write(result.stdout + '\n')
             if stats:
                 print(' and '.join(stats) + ' for {}'.format(name))
-            else:
+            elif verbose:
                 print('no changes for {}'.format(name))
             if uncommitted or outgoing:
                 changes = True
