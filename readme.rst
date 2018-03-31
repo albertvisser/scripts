@@ -308,17 +308,25 @@ symlinks or short starter scripts for my own applications:
 
 **probreg**
 
-    starts up my 'probreg' application from a standard location. Takes no arguments.
+    starts up my 'probreg' application. Optional arguments: either the name of an
+    XML file or 'sql' optionally followed by a project name. Without arguments:
+    presents a file selection dialog. With only 'sql': presents a project selector.
 
 **probreg_sql**
 
-    the same for the version using sqlite. Also takes no arguments.
+    shortcut for 'probreg sql'. Optional argument: project name.
 
 **probreg-jvs**
+
+    starter for *probreg* with a specific data file
+
 **probreg-leesjcl**
+
+    starter for *probreg* with a specific data file
+
 **probreg-todo**
 
-    starters for *probreg* with a specific data file
+    starter for *probreg* with a specific data file
 
 **ramble**
 

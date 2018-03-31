@@ -323,7 +323,7 @@ def poedit(language_code):
 
 
 def place(language_code, appname, locatie=""):
-    """internalization: make translation usable
+    """internalization: copy translation(s) into <appname> (at <location>)
 
     plaats het gecompileerde language file zodat het gebruikt kan worden
     gebruik <locatie> als de locale directory niet direct onder de huidige zit
@@ -373,7 +373,7 @@ def start_session(name):
 
 
 def edit_session(name):
-    """start a programming session using various tools
+    """define the tools to start a programming session with
 
     expects a session script of the same name in .sessions (subdirectory for now)
     each line contains a command to be executed
