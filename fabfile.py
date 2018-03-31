@@ -22,6 +22,7 @@ import logging
 from fabric.api import *
 from settings import *
 HOME = os.path.expanduser('~')
+SESSIONS = os.path.join(HOME, 'bin', '.sessions')
 logging.basicConfig(filename=os.path.join("/tmp", "fabfile_log"),
                     level=logging.DEBUG, format='%(asctime)s %(message)s')
 not_suitable = 'project name {} not suitable for repocheck/repocopy'
@@ -409,7 +410,7 @@ def start_session(name):
     expects a session script of the same name in .sessions (subdirectory for now)
     each line contains a command to be executed
     """
-    fname = os.path.expanduser('~/bin/.sessions/{}'.format(name))
+    fname = os.path.join(SESSIONS, name)
     local('/bin/sh {}'.format(fname))
 
 
@@ -419,9 +420,15 @@ def edit_session(name):
     expects a session script of the same name in .sessions (subdirectory for now)
     each line contains a command to be executed
     """
-    fname = os.path.expanduser('~/bin/.sessions/{}'.format(name))
+    fname = os.path.join(SESSIONS, name)
     local('scite {}'.format(fname))
 
+
+def list_sessions():
+    """list existing session names"""
+    names = ('    {}'.format(x) for x in os.listdir(SESSIONS))
+    print("available sessions:")
+    print('\n'.join(names))
 
 # routines for handling local and remote Mercurial and Git repositories
 def _check(context='local', push='no'):
