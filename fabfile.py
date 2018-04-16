@@ -305,7 +305,8 @@ def wwwcopy(*names):
 def wwwedit(*names):
     "edit indicated file(s) in ~/www/nginx-root"
     for name in names:
-        local('scite ~/www/nginx-root/{0}'.format(name))
+        ## local('scite ~/www/nginx-root/{0}'.format(name))
+        local('htmledit ~/www/nginx-root/{0}'.format(name))
 
 
 def wwwsites():
