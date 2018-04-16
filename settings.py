@@ -3,7 +3,7 @@ import os.path
 """
 # server data locations
 server_root = '/usr/share/nginx/html'
-apache_root = '/var/www'
+apache_root = '/var/www/html'
 projects_base = os.path.expanduser('~/projects')
 
 # repository types
