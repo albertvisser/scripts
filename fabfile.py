@@ -483,7 +483,7 @@ def _check(context='local', push='no', verbose=False):
             ## tmp = '/tmp/hg_st_{}'.format(name)
             uncommitted = outgoing = False
 
-            command = 'git status --short' if is_gitrepo else 'hg status --quiet'
+            command = 'git status -uno --short' if is_gitrepo else 'hg status --quiet'
             with lcd(pwd):
                 result = local(command, capture=True)
             test = result.stdout
