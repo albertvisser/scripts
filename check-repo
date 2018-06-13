@@ -7,7 +7,7 @@ import argparse
 import subprocess
 import PyQt5.QtWidgets as qtw
 import PyQt5.QtGui as gui
-import PyQt5.QtCore as core
+## import PyQt5.QtCore as core
 import PyQt5.Qsci as sci  # scintilla
 root = pathlib.Path.home() / 'projects'
 
@@ -108,6 +108,9 @@ class Gui(qtw.QWidget):
         btn = qtw.QPushButton('Show &Diff', self)
         btn.clicked.connect(self.show_diff)
         vbox2.addWidget(btn)
+        btn = qtw.QPushButton('&Lint', self)
+        btn.clicked.connect(self.lint_selected)
+        vbox2.addWidget(btn)
         btn = qtw.QPushButton('&Commit', self)
         btn.clicked.connect(self.commit_selected)
         vbox2.addWidget(btn)
@@ -127,6 +130,9 @@ class Gui(qtw.QWidget):
         hbox = qtw.QHBoxLayout()
         hbox.addStretch()
         hbox.addWidget(qtw.QLabel('Or', self))
+        btn = qtw.QPushButton('Lint all &Files', self)
+        btn.clicked.connect(self.lint_all)
+        hbox.addWidget(btn)
         btn = qtw.QPushButton('Commit &All changes', self)
         btn.clicked.connect(self.commit_all)
         hbox.addWidget(btn)
@@ -216,7 +222,7 @@ class Gui(qtw.QWidget):
         filenames = [y for x, y in self.get_selected_files()]
         # remove already tracked files or let hg handle it
         command = ['hg', 'add'] + filenames
-        result = subprocess.run(command, cwd=str(self.path))
+        subprocess.run(command, cwd=str(self.path))
         # feedback needed? e.g. some files were already tracked?
         self.refresh_frame()
 
@@ -225,10 +231,9 @@ class Gui(qtw.QWidget):
         filenames = [y for x, y in self.get_selected_files()]
         # remove untracked files or let hg handle it
         command = ['hg', 'forget'] + filenames
-        result = subprocess.run(command, cwd=str(self.path))
+        subprocess.run(command, cwd=str(self.path))
         # feedback needed? e.g. some files weren't tracked?
         self.refresh_frame()
-
 
     def refresh_frame(self):
         """recheck repository and update list"""
@@ -244,7 +249,7 @@ class Gui(qtw.QWidget):
                 command = ['git', 'commit', '-a', '-m', message]
             else:
                 command = ['hg', 'commit', '-m', message]
-            result = subprocess.run(command, cwd=str(self.path))
+            subprocess.run(command, cwd=str(self.path))
             self.refresh_frame()
 
     def commit_selected(self):
@@ -264,8 +269,25 @@ class Gui(qtw.QWidget):
                 if self.repotype == 'git':
                     command = ['git', 'add'] + filenames
                 command = [self.repotype, 'commit'] + filenames + ['-m', message]
-                result = subprocess.run(command, cwd=str(self.path))
+                subprocess.run(command, cwd=str(self.path))
                 self.refresh_frame()
+
+    def lint_selected(self):
+        """execute permissive linting on selected files
+        """
+        filelist = self.get_selected_files()
+        filelist = [name for letter, name in filelist if letter not in ('?', '??')]
+        if filelist:
+            mode = '-f' if len(filelist) == 1 else '-l'
+            command = ['lintergui', '-m', 'permissive', mode] + filelist
+            subprocess.run(command, cwd=str(self.path))
+        else:
+            qtw.QMessageBox.information(self, self.title, 'No tracked files selected')
+
+    def lint_all(self):
+        """execute permissive linting on all files in repository
+        """
+        subprocess.run(['lintergui', '-m', 'permissive', '-d', '.'])
 
 
 def main(args):
@@ -276,7 +298,7 @@ def main(args):
     if args.project == '.':
         args.project = pathlib.Path.cwd().name
     if args.project == 'bitbucket':
-        path = pathlib.Path.home() / 'www'/ args.project
+        path = pathlib.Path.home() / 'www' / args.project
     else:
         path = root / args.project
     test = path / '.hg'
@@ -294,7 +316,7 @@ def main(args):
     if not repotype:
         return args.project + ' is not a repository'
     app = qtw.QApplication(sys.argv)
-    win = Gui(path, repotype)
+    Gui(path, repotype)
     sys.exit(app.exec_())
 
 if __name__ == '__main__':
