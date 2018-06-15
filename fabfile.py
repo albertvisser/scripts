@@ -387,6 +387,36 @@ def place(language_code, appname, locatie=""):
                                       os.path.join(loc, appname + '.mo')))
 
 
+#ctags support stuff
+def _maketags(reponame):
+    path = ''
+    if reponame == '.':
+        path = os.getcwd()
+        reponame = os.path.basename(path)
+    if reponame in all_repos:
+        if not path:
+            if reponame in private_repos:
+                path = os.expanduser(os.path.join('~', reponame))
+            else:
+                path = os.path.join(projects_base, reponame)
+    else:
+        print('not a code repository')
+        return
+    use_git = True if reponame in git_repos else False
+    with lcd(path):
+        command = 'git ls-tree -r --name-only master' if use_git else 'hg manifest'
+        result = local(command, capture=True)
+    files = [x for x in result.stdout.split('\n') if os.path.splitext(x)[1] == '.py']
+    with lcd(path):
+        result = local('ctags -f .tags ' + ' '.join(files))
+
+
+def updatetags(*names):
+    if not names:
+        names = [x for x in all_repos]
+    for name in names:
+        _maketags(name)
+
 # project/session management
 def startproject(name):
     """start a new (Python) software project in a standardized way
