@@ -96,7 +96,6 @@ class Gui(qtw.QWidget):
 
         hbox = qtw.QHBoxLayout()
         self.list = qtw.QListWidget(self)
-        ## list.setSelectionMode(qtw.QAbstractItemView.MultiSelection)
         self.list.setSelectionMode(qtw.QAbstractItemView.ExtendedSelection)
         self.populate_frame()
         hbox.addWidget(self.list)
@@ -107,7 +106,7 @@ class Gui(qtw.QWidget):
         btn.clicked.connect(self.edit_selected)
         vbox2.addWidget(btn)
         btn = qtw.QPushButton('Show &Diff', self)
-        btn.clicked.connect(self.show_diff)
+        btn.clicked.connect(self.diff_selected)
         vbox2.addWidget(btn)
         btn = qtw.QPushButton('&Lint', self)
         btn.clicked.connect(self.lint_selected)
@@ -131,7 +130,10 @@ class Gui(qtw.QWidget):
         hbox = qtw.QHBoxLayout()
         hbox.addStretch()
         hbox.addWidget(qtw.QLabel('Or', self))
-        btn = qtw.QPushButton('Lint all &Files', self)
+        btn = qtw.QPushButton('Di&ff all Files', self)
+        btn.clicked.connect(self.diff_all)
+        hbox.addWidget(btn)
+        btn = qtw.QPushButton('L&int all Files', self)
         btn.clicked.connect(self.lint_all)
         hbox.addWidget(btn)
         btn = qtw.QPushButton('Commit &All changes', self)
@@ -147,12 +149,13 @@ class Gui(qtw.QWidget):
         vbox.addLayout(hbox)
 
         self.setLayout(vbox)
-        self.show()
 
         do = qtw.QAction('Done', self)
         do.triggered.connect(self.close)
         do.setShortcut('Ctrl+Q')
         self.addAction(do)
+        # start assuming Meld is present
+        self.got_meld = True
 
     def get_repofiles(self):
         """return results of "status" command -- list uncommitted / untracked files
@@ -181,9 +184,22 @@ class Gui(qtw.QWidget):
         subprocess.run(command, cwd=str(self.path))
         self.refresh_frame()
 
-    def show_diff(self):
+    def diff_all(self):
+        """show diff for all tracked files
+        """
+        command = ['meld', '.']
+        if self.got_meld:
+            try:
+                result = subprocess.run(command, cwd=str(self.path))
+            except OSError:
+            ## if result.returncode:
+                self.got_meld = False
+        if not self.got_meld:
+            qtw.QMessageBox.information(self, self.title, 'Sorry, not possible '
+                            'at this time - Meld not installed')
+
+    def diff_selected(self):
         """show selected files in diff view"""
-        ## filenames = [y for x, y in self.get_selected_files()]
         filelist = self.get_selected_files()
         filenames = []
         for letter, name in filelist:
@@ -192,12 +208,23 @@ class Gui(qtw.QWidget):
                                             name + ' not tracked')
             else:
                 filenames.append(name)
-        if filenames:
-            command = [self.repotype, 'diff'] + filenames
-            result = subprocess.run(command, stdout=subprocess.PIPE, cwd=str(self.path))
-            text = str(result.stdout, encoding='utf-8')
-            caption = 'Show diffs for: ' + ', '.join(filenames)
-            DiffViewDialog(self, self.title, caption, text).exec_()
+        if self.got_meld:
+            for name in filenames:
+                command = ['meld', name]
+                try:
+                    result = subprocess.run(command, cwd=str(self.path))
+                except OSError:
+                ## if result.returncode:
+                    self.got_meld = False
+                    break
+        if not self.got_meld:
+            if filenames:
+                command = [self.repotype, 'diff'] + filenames
+                result = subprocess.run(command, stdout=subprocess.PIPE,
+                                        cwd=str(self.path))
+                text = str(result.stdout, encoding='utf-8')
+                caption = 'Show diffs for: ' + ', '.join(filenames)
+                DiffViewDialog(self, self.title, caption, text).exec_()
 
     def add_ignore(self):
         """add selected file to ignore list"""
@@ -318,6 +345,7 @@ def main(args):
         return args.project + ' is not a repository'
     app = qtw.QApplication(sys.argv)
     win = Gui(path, repotype)
+    win.show()
     sys.exit(app.exec_())
 
 if __name__ == '__main__':
