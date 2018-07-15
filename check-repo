@@ -91,6 +91,7 @@ class Gui(qtw.QWidget):
         super().__init__()
         self.title = 'Uncommitted changes for `{}`'.format(project)
         self.setWindowTitle(self.title)
+        self.setWindowIcon(gui.QIcon('/home/albert/.icons/task.png'))
         vbox = qtw.QVBoxLayout()
 
         hbox = qtw.QHBoxLayout()
