@@ -389,6 +389,8 @@ def place(language_code, appname, locatie=""):
 
 #ctags support stuff
 def _maketags(reponame):
+    """build tags file for repository (by name or ".")
+    """
     path = ''
     if reponame == '.':
         path = os.getcwd()
@@ -412,6 +414,8 @@ def _maketags(reponame):
 
 
 def updatetags(*names):
+    """build tags file for repository (by name or ".")
+    """
     if not names:
         names = [x for x in all_repos]
     for name in names:
