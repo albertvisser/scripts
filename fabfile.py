@@ -257,6 +257,38 @@ def chmodrecursive(path=None):
                 chmodrecursive(fnaam)
 
 
+def create_shortcuts():
+    """(re)build script shortcuts in bin directory
+    """
+    os.chdir(os.path.expanduser('~/bin'))
+    data = (('/usr/share/vim/vim74/macros/less.sh', 'vless'),
+            ('/home/albert/projects/albumsgui/start_gui.py', 'albumsgui'),
+            ('/home/albert/projects/filefindr/start.py', 'afrift'),
+            ('/home/albert/bin/ramble', 'diary'),
+            ('/home/albert/projects/modreader/modreadergui.py', 'modreader'),
+            ('/home/albert/projects/mylinter/lint-all', 'lint-all'),
+            ('/home/albert/projects/hotkeys/start.py', 'hotkeys'),
+            ('/home/albert/projects/rst2html/mdviewer.py', 'mdview'),
+            ('/home/albert/projects/notetree/nt_start.py', 'notetree'),
+            ('/home/albert/projects/xmledit/xmleditor.py', 'xmledit'),
+            ('/home/albert/projects/cssedit/cssedit/start_editor.py', 'cssedit'),
+            ('/home/albert/projects/htmledit/htmleditor.py', 'htmledit'),
+            ('/home/albert/projects/doctree/dt_start.py', 'treedocs'),
+            ('/home/albert/projects/notetree/nt2ext.py', 'nt2ext'),
+            ('/home/albert/projects/apropos/apo_start.py', 'a-propos'),
+            ('/home/albert/projects/probreg/pr_start.py', 'probreg'),
+            ('/home/albert/projects/htmledit/viewhtml.py', 'viewhtml'),
+            ('/home/albert/projects/mylinter/start.py', 'lintergui'),
+            ('/home/albert/projects/compare-tool/actif.py', 'comparer'),
+            ('/home/albert/projects/rst2html/rstviewer.py', 'rstview'),
+            ('/home/albert/projects/csvtool/csvhelper.py', 'csvhelper'),
+            ('/home/albert/projects/albumsgui/start.py', 'albums'),
+            ('/home/albert/projects/mylinter/lint-this', 'lint-this'),
+            ('/home/albert/projects/doctree/dt_print.py', 'dt_print'))
+    for src, dst in data:
+        os.symlink(src, dst)
+
+
 # database server stuff
 def start_mongo():
     "start mongo database server"
