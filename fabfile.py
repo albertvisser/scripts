@@ -331,14 +331,21 @@ def restart_pg():
 def wwwcopy(*names):
     "copy indicated file(s) from ~/www/nginx-root to real nginx root"
     for name in names:
-        local('sudo cp ~/www/nginx-root/{0} {1}/{0}'.format(name, server_root))
+        local('sudo cp {1}/{0} {2}/{0}'.format(name, home_root, server_root))
+
+
+def wwwlink(*names):
+    "copy indicated symlink(s) from ~/www/nginx-root to real nginx root"
+    for name in names:
+        dest = os.readlink(os.path.join(home_root, name))
+        local('sudo ln -s {} {}'.format(dest, server_root))
 
 
 def wwwedit(*names):
     "edit indicated file(s) in ~/www/nginx-root"
     for name in names:
         ## local('scite ~/www/nginx-root/{0}'.format(name))
-        local('htmledit ~/www/nginx-root/{0}'.format(name))
+        local('htmledit {}/{}'.format(home_root, name))
 
 
 def wwwsites():

@@ -3,6 +3,7 @@ import os.path
 """
 # server data locations
 server_root = '/usr/share/nginx/html'
+home_root = os.path.expanduser('~/www/nginx-root')
 apache_root = '/var/www/html'
 projects_base = os.path.expanduser('~/projects')
 
