@@ -108,6 +108,9 @@ class Gui(qtw.QWidget):
         btn = qtw.QPushButton('Show &Diff', self)
         btn.clicked.connect(self.diff_selected)
         vbox2.addWidget(btn)
+        btn = qtw.QPushButton('Re&vert', self)
+        btn.clicked.connect(self.revert_selected)
+        vbox2.addWidget(btn)
         btn = qtw.QPushButton('&Lint', self)
         btn.clicked.connect(self.lint_selected)
         vbox2.addWidget(btn)
@@ -196,7 +199,7 @@ class Gui(qtw.QWidget):
                 self.got_meld = False
         if not self.got_meld:
             qtw.QMessageBox.information(self, self.title, 'Sorry, not possible '
-                            'at this time - Meld not installed')
+                                                          'at this time - Meld not installed')
 
     def diff_selected(self):
         """show selected files in diff view"""
@@ -299,6 +302,26 @@ class Gui(qtw.QWidget):
                 command = [self.repotype, 'commit'] + filenames + ['-m', message]
                 subprocess.run(command, cwd=str(self.path))
                 self.refresh_frame()
+
+    def revert_selected(self):
+        """hg revert <selected files> uitvoeren
+        """
+        print('in revert method')
+        filelist = self.get_selected_files()
+        filenames = []
+        for letter, name in filelist:
+            if letter in ('?', '??'):
+                qtw.QMessageBox.information(self, self.title, name + ' not tracked')
+            else:
+                filenames.append(name)
+        if filenames:
+            if self.repotype == 'git':
+                qtw.QMessageBox.information(self, self.title, ' not implemented')
+                # command = ['git', 'revert'] + filenames
+            command = [self.repotype, 'revert'] + filenames
+            subprocess.run(command, cwd=str(self.path))
+            print('command completed')
+            self.refresh_frame()
 
     def lint_selected(self):
         """execute permissive linting on selected files
