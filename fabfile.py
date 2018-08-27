@@ -42,7 +42,7 @@ def listbin():
     commands = {}
     lastcommand = get_starters = False
     command = ''
-    starters= {}
+    starters = {}
     for line in lines:
         if line.startswith("Requirements"):
             lastcommand = True
@@ -426,9 +426,9 @@ def place(language_code, appname, locatie=""):
                                       os.path.join(loc, appname + '.mo')))
 
 
-#ctags support stuff
-def _maketags(reponame):
-    """build tags file for repository (by name or ".")
+# ctags support stuff
+def _get_repofiles(reponame):
+    """get all files from manifest
     """
     path = ''
     if reponame == '.':
@@ -437,28 +437,72 @@ def _maketags(reponame):
     if reponame in all_repos:
         if not path:
             if reponame in private_repos:
-                path = os.expanduser(os.path.join('~', reponame))
+                path = os.path.expanduser(os.path.join('~', reponame))
+            elif reponame == 'bitbucket':
+                path = os.path.expanduser(os.path.join('~', 'www', reponame))
             else:
                 path = os.path.join(projects_base, reponame)
     else:
         print('not a code repository')
         return
     use_git = True if reponame in git_repos else False
-    with lcd(path):
+    with lcd(path), settings(hide('running', 'warnings'), warn_only=True):
         command = 'git ls-tree -r --name-only master' if use_git else 'hg manifest'
         result = local(command, capture=True)
     files = [x for x in result.stdout.split('\n') if os.path.splitext(x)[1] == '.py']
-    with lcd(path):
-        result = local('ctags -f .tags ' + ' '.join(files))
+    return path, files
 
 
-def updatetags(*names):
+def maketags(*names):
     """build tags file for repository (by name or ".")
     """
     if not names:
         names = [x for x in all_repos]
     for name in names:
-        _maketags(name)
+        path, files = _get_repofiles(name)
+        with lcd(path):
+            local('ctags -f .tags ' + ' '.join(files))
+
+
+def _check_changes(path, files):
+    """compare time stamps of sources with .tags file
+    """
+    rebuild = False
+    try:
+        dts_tags = os.stat(os.path.join(path, '.tags')).st_mtime
+    except OSError:
+        return rebuild
+    for fname in files:
+        dts = os.stat(os.path.join(path, fname)).st_mtime
+        if dts > dts_tags:
+            rebuild = True
+            break
+    return rebuild
+
+
+def checktags(*names):
+    """check if rebuilding tags file is necessary
+    """
+    if not names:
+        names = [x for x in all_repos]
+    for name in names:
+        path, files = _get_repofiles(name)
+        if _check_changes(path, files):
+            print('.tags file rebuild needed for project', name)
+
+
+def updatetags(*names):
+    """rebuild tags file for repository (by name or ".") if necessary
+    """
+    if not names:
+        names = [x for x in all_repos]
+    for name in names:
+        path, files = _get_repofiles(name)
+        if _check_changes(path, files):
+            print('rebuilding .tags file for project', name)
+            with lcd(path), settings(hide('running', 'warnings'), warn_only=True):
+                local('ctags -f .tags ' + ' '.join(files))
+
 
 # project/session management
 def startproject(name):
@@ -503,6 +547,7 @@ def list_sessions():
     names = ('    {}'.format(x) for x in os.listdir(SESSIONS))
     print("available sessions:")
     print('\n'.join(names))
+
 
 # routines for handling local and remote Mercurial and Git repositories
 def _check(context='local', push='no', verbose=False):
