@@ -229,7 +229,7 @@ def chmodrecursive(path=None):
     """
     Permissies in een directory tree op standaard waarden zetten
     bv. nadat de bestanden zijn gekopieerd vanaf een device
-    dat geen unix permits kan onthouden (zoals een mobiele harddisk)
+    dat geen unix permits kan onthouden (zoals een mobiele FAT-harddisk)
 
     eenvoudigst om uit te voeren in de root van de betreffende tree
     """
@@ -550,20 +550,23 @@ def list_sessions():
 
 
 # routines for handling local and remote Mercurial and Git repositories
-def _check(context='local', push='no', verbose=False):
+def _check(context='local', push='no', verbose=False, exclude=None):
     """vergelijkt repositories met elkaar
 
     context geeft aan welke:
     'local':  lokale working versie met lokale centrale versie,
     'remote': lokale centrale versie met bitbucket of github versie
     'verbose': geef ook 'no changes' meldingen
+    'exclude' maakt het mogelijk om repos uit te sluiten van verwerking
     push geeft aan of er ook gepushed moet worden (working naar centraal, centraal
     naar bitbucket of github) en moet indien van toepassing
     expliciet als 'yes' worden opgegeven
     voor correcte werking m.b.t. pushen naar remote moet voor elke repo een file
-    <reponame>_tip aanwezig zijn met daarin de output van commando hg_tip of
-    in het geval van git ...
+    <reponame>_tip aanwezig zijn met daarin de output van commando hg tip of
+    in het geval van git log -r -1
     """
+    if exclude is None:
+        exclude = []
     local_ = context == 'local'
     remote = not local_
     if context not in ('local', 'remote'):
@@ -579,6 +582,8 @@ def _check(context='local', push='no', verbose=False):
                                               warn_only=True):
         print('check {} repos on {}\n\n'.format(context, today), file=_out)
         for name in all_repos:
+            if name in exclude:
+                continue
             is_gitrepo = name in git_repos
             is_private = name in private_repos
             stats = []
@@ -684,7 +689,7 @@ def _check(context='local', push='no', verbose=False):
 
 
 def check_local():
-    """compare hg repositories: working vs "central"
+    """compare all hg repositories: working vs "central"
     """
     test = _check()
     if test:
@@ -692,21 +697,29 @@ def check_local():
 
 
 def check_remote():
-    """compare hg repositories: "central" vs BitBucket / GitHub
+    """compare all hg repositories: "central" vs BitBucket / GitHub
     """
     _check('remote')
 
 
-def push_local():
-    """push from working to "central"
+def push_local(exclude=None):
+    """push all repos from working to "central" with possibility to exclude
+    To exclude multiple repos you need to provide a string with escaped commas
+    e.q. binfab push_remote
+         binfab push remote:exclude=apropos
+         binfab push_remote:exclude="apropos\,albums"
     """
-    _check(push='yes')
+    _check(push='yes', exclude=exclude)
 
 
-def push_remote():
-    """push from "central" to BitBucket
+def push_remote(exclude=None):
+    """push all repos from "central" to BitBucket with possibility to exclude
+    To exclude multiple repos you need to provide a string with escaped commas
+    e.q. binfab push_remote
+         binfab push remote:exclude=apropos
+         binfab push_remote:exclude="apropos\,albums"
     """
-    _check('remote', push='yes')
+    _check('remote', push='yes', exclude=exclude)
 
 
 def pushthru(*names):
