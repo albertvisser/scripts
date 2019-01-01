@@ -108,14 +108,17 @@ class Gui(qtw.QWidget):
         btn = qtw.QPushButton('Show &Diff', self)
         btn.clicked.connect(self.diff_selected)
         vbox2.addWidget(btn)
-        btn = qtw.QPushButton('Re&vert', self)
-        btn.clicked.connect(self.revert_selected)
-        vbox2.addWidget(btn)
         btn = qtw.QPushButton('&Lint', self)
         btn.clicked.connect(self.lint_selected)
         vbox2.addWidget(btn)
+        btn = qtw.QPushButton('&Blame', self)
+        btn.clicked.connect(self.annotate)
+        vbox2.addWidget(btn)
         btn = qtw.QPushButton('&Commit', self)
         btn.clicked.connect(self.commit_selected)
+        vbox2.addWidget(btn)
+        btn = qtw.QPushButton('Re&vert', self)
+        btn.clicked.connect(self.revert_selected)
         vbox2.addWidget(btn)
         btn = qtw.QPushButton('Start &Tracking', self)
         btn.clicked.connect(self.add_new)
@@ -144,6 +147,9 @@ class Gui(qtw.QWidget):
         hbox.addWidget(btn)
         btn = qtw.QPushButton('&Recheck repo', self)
         btn.clicked.connect(self.refresh_frame)
+        hbox.addWidget(btn)
+        btn = qtw.QPushButton('View &History', self)
+        btn.clicked.connect(self.view_repo)
         hbox.addWidget(btn)
         btn = qtw.QPushButton('&Quit', self)
         btn.clicked.connect(self.close)
@@ -174,6 +180,7 @@ class Gui(qtw.QWidget):
         self.list.clear()
         for name in self.filelist:
             self.list.addItem(name)
+        self.list.setCurrentRow(0)
 
     def get_selected_files(self):
         """get a list of the selected filenames"""
@@ -339,6 +346,29 @@ class Gui(qtw.QWidget):
         """execute permissive linting on all files in repository
         """
         subprocess.run(['lintergui', '-m', 'permissive', '-d', '.'])
+
+    def annotate(self):
+        """show selected files in annotated view"""
+        filelist = self.get_selected_files()
+        filenames = []
+        for letter, name in filelist:
+            if letter in ('?', '??'):
+                qtw.QMessageBox.information(self, self.title,
+                                            name + ' not tracked')
+            else:
+                filenames.append(name)
+        if filenames:
+            command = [self.repotype, 'blame'] + filenames
+            result = subprocess.run(command, stdout=subprocess.PIPE,
+                                    cwd=str(self.path))
+            text = str(result.stdout, encoding='utf-8')
+            caption = 'Show annotations for: ' + ', '.join(filenames)
+            DiffViewDialog(self, self.title, caption, text).exec_()
+
+    def view_repo(self):
+        """execute hg view"""
+        command = [self.repotype, 'view']
+        result = subprocess.run(command, stdout=subprocess.PIPE, cwd=str(self.path))
 
 
 def main(args):
