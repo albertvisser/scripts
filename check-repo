@@ -10,6 +10,7 @@ import PyQt5.QtGui as gui
 ## import PyQt5.QtCore as core
 import PyQt5.Qsci as sci  # scintilla
 root = pathlib.Path.home() / 'projects'
+devel = pathlib.Path.home() / 'devel'
 
 
 class DiffViewDialog(qtw.QDialog):
@@ -381,7 +382,12 @@ def main(args):
     if args.project == 'bitbucket':
         path = pathlib.Path.home() / 'www' / args.project
     else:
-        path = root / args.project
+        try:
+            test = int(args.project[1:])
+        except ValueError:
+            path = root / args.project
+        else:
+            path = devel / args.project
     test = path / '.hg'
     if test.exists():
         repotype = 'hg'

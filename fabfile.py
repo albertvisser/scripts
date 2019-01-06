@@ -23,6 +23,7 @@ from fabric.api import *
 from settings import *
 HOME = os.path.expanduser('~')
 SESSIONS = os.path.join(HOME, 'bin', '.sessions')
+DEVEL = os.path.join(HOME, 'devel')
 logging.basicConfig(filename=os.path.join("/tmp", "fabfile_log"),
                     level=logging.DEBUG, format='%(asctime)s %(message)s')
 not_suitable = 'project name {} not suitable for repocheck/repocopy'
@@ -526,7 +527,6 @@ def start_session(name):
     """start a programming session using various tools
 
     expects a session script of the same name in .sessions (subdirectory for now)
-    each line contains a command to be executed
     """
     fname = os.path.join(SESSIONS, name)
     local('/bin/sh {}'.format(fname))
@@ -547,6 +547,47 @@ def list_sessions():
     names = ('    {}'.format(x) for x in os.listdir(SESSIONS))
     print("available sessions:")
     print('\n'.join(names))
+
+
+def start_ticket(ticket, project):
+    """set up handling of a ticket for a given project
+
+    clones the project repository and builds a session file
+    """
+    root = '_' + ticket
+    with lcd(DEVEL):
+        local('hg clone ~/projects/{} {}'.format(project, root))
+    dest = os.path.join(SESSIONS, ticket)
+    settings = os.path.join(DEVEL, root, '.hg', 'hgrc')
+    with open(settings) as _in:
+        in_section = False
+        for line in _in:
+            if line.startswith('[paths]'):
+                in_section = True
+            elif in_section and line.startswith('default'):
+                origin = line.split('=')[1].strip()
+                break
+        else:
+            origin = ''
+    if origin:
+        origin = os.path.basename(origin)
+        with open(dest, 'w') as _out:
+            first = True
+            with open(os.path.join(SESSIONS, origin)) as _in:
+                for line in _in:
+                    if line.startswith('cd ') and first:
+                        line = 'cd {}\n'.format(os.path.join(DEVEL, root))
+                        first = False
+                    _out.write(line)
+
+
+def cleanup_ticket(ticket):
+    """finish handling of a ticket by removing the repo clone and the session file
+    """
+    # remove session file
+    os.remove(os.path.join(SESSIONS, ticket))
+    # remove repository
+    shutil.rmtree(os.path.join(DEVEL, '_' + ticket))
 
 
 # routines for handling local and remote Mercurial and Git repositories
