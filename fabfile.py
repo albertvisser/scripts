@@ -384,12 +384,14 @@ def wwwpermits(name):
 
 
 # language support stuff
-def gettext(sourcefile):
+def gettext(sourcefile=''):
     """internalization: gather strings from file
 
     verzamel gemarkeerde symbolen in het aangegeven source file
     en schrijf ze weg in een bestand genaamd messages.pot
     """
+    if sourcefile == "":
+        sourcefile = '.'
     local("pygettext {}".format(sourcefile))
 
 
@@ -579,6 +581,17 @@ def start_ticket(ticket, project):
                         line = 'cd {}\n'.format(os.path.join(DEVEL, root))
                         first = False
                     _out.write(line)
+
+
+def pull_ticket(ticket, project):
+    """pull changes made for ticket into project
+
+    """
+    pull_dest = '~/projects/{}'.format(project)
+    pull_src = '~/devel/_{}'.format(ticket)
+    with lcd(pull_dest):
+        local('hg pull {}'.format(pull_src))
+        local('hg up')
 
 
 def cleanup_ticket(ticket):
