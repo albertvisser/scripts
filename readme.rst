@@ -356,23 +356,24 @@ symlinks or short starter scripts for my own applications:
 
 
 other scripts not in repo:
+..........................
 
-determine_all_project_dirs.py
+**determine_all_project_dirs.py**
     script to create the list that containing all directories to search
     as used by the pfind command
-determine_all_project_files.py
+**determine_all_project_files.py**
     a similar script intended to create a list of files
     I have decided I don't really need this when I have a list of directories
-reaper
+**reaper**
     starts linux version of reaper
-rpdb2.py
+**rpdb2.py**
     used by winpd3, slightly adapted for python 3
-search-all-projects
+**search-all-projects** 
     original version of the `pfind` script
     with an option to recreate the list of files/directories to search by calling
     determine_all_project_dirs.py
-winpdb3
+**winpdb3**
     starter for winpdb under python 3
-winpdb.py
+**winpdb.py**
     symlink to original
 
