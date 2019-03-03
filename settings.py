@@ -5,9 +5,13 @@ import os.path
 server_root = '/usr/share/nginx/html'
 home_root = os.path.expanduser('~/www/nginx-root')
 apache_root = '/var/www/html'
-projects_base = os.path.expanduser('~/projects')
 
-# repository types
+# project/session management
+PROJECTS_BASE = os.path.expanduser('~/projects')
+SESSIONS = os.path.expanduser('~/bin/.sessions')
+DEVEL = os.path.expanduser('~/devel')
+
+# repository management
 cherrypy_repos = ['logviewer', 'rst2html', 'magiokis-cherry']
 django_repos = ['actiereg', 'albums', 'myprojects', 'magiokis-django']
 fcgi_repos = ['absentie', 'doctool', 'magiokis', 'albums-cgi', 'magiokis-php']
