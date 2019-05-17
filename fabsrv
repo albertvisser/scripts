@@ -1,2 +1,2 @@
 #! /bin/bash
-fab -f ~/nginx-config/fabfile.py $1 $2 $3 $4
+inv -c ~/nginx-config/tasks $1 $2 $3 $4 $5 $6 $7 $8
