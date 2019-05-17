@@ -33,7 +33,7 @@ def get_repofiles(c, reponame):
     use_git = True if reponame in git_repos else False
     with c.cd(path):
         command = 'git ls-tree -r --name-only master' if use_git else 'hg manifest'
-        result = c.run(command, capture=True)
+        result = c.run(command)
     files = [x for x in result.stdout.split('\n') if os.path.splitext(x)[1] == '.py']
     return path, files
 
@@ -117,7 +117,7 @@ def _check(c, context='local', push='no', verbose=False, exclude=None):
                 outgoing = buf1 != buf2
                 if outgoing:
                     stats.append('outgoing changes')
-                    _out.write('outgoing changes for {}'.format(name))
+                    _out.write('outgoing changes for {}\n'.format(name))
                     _out.write("--local:\n")
                     _out.write(buf1 + "\n")
                     _out.write("-- remote:\n")
@@ -231,12 +231,14 @@ def pushthru(c, names):
                         _out.write(line)
         print('\nready, output in /tmp/pushthru_log')
         return
+    errors = False
     with open('/tmp/pushthru_log', 'w') as _out:
         for name in names.split(','):
             if name not in all_repos:
                 logline = '{} not pushed: is not on bitbucket'.format(name)
                 print(logline)
                 _out.write(logline + "\n")
+                errors = True
                 continue
             localpath = os.path.join('~', 'projects', name)
             centralpath = os.path.join('~', 'hg_repos', name)
@@ -250,31 +252,34 @@ def pushthru(c, names):
             elif name == 'bitbucket':
                 localpath = localpath.replace('projects', 'www')
                 centralpath = centralpath.replace(name, 'avisser.bitbucket.org')
-            with settings(hide('running', 'warnings'), warn_only=True):
+            with c.cd(localpath):
+                result = c.run('hg outgoing', warn=True, hide=True)
+            _out.write(result.stdout + "\n")
+            if result.failed:
+                logline = '{} - hg outgoing failed'.format(name)
+                _out.write(logline + "\n")
+                _out.write(result.stderr + "\n")
+                errors = True
+            else:
                 with c.cd(localpath):
-                    result = c.run('hg outgoing', capture=True)
+                    result = c.run('hg push --remotecmd update', warn=True, hide=True)
                 _out.write(result.stdout + "\n")
                 if result.failed:
-                    logline = '{} - hg outgoing failed'.format(name)
+                    logline = '{} - pushing failed'.format(name)
                     _out.write(logline + "\n")
                     _out.write(result.stderr + "\n")
-                else:
-                    with c.cd(localpath):
-                        result = c.run('hg push --remotecmd update', capture=True)
-                    _out.write(result.stdout + "\n")
-                    if result.failed:
-                        logline = '{} - pushing failed'.format(name)
-                        _out.write(logline + "\n")
-                        _out.write(result.stderr + "\n")
-                        continue
-                with c.cd(centralpath):
-                    result = c.run('hg push', capture=True)
-                _out.write(result.stdout + "\n")
-                if result.failed:
-                    logline = '{} - pushing to bitbucket failed'.format(name)
-                    _out.write(logline + "\n")
-                    _out.write(result.stderr + "\n")
-    print('ready, output in /tmp/pushthru_log')
+                    errors = True
+                    continue
+            with c.cd(centralpath):
+                result = c.run('hg push', warn=True, hide=True)
+            _out.write(result.stdout + "\n")
+            if result.failed:
+                logline = '{} - pushing to bitbucket failed'.format(name)
+                _out.write(logline + "\n")
+                _out.write(result.stderr + "\n")
+                errors = True
+    extra = ' with errors' if errors else ''
+    print('ready{}, output in /tmp/pushthru_log'.format(extra))
 
 
 def _make_repolist(c, path):
