@@ -91,7 +91,7 @@ def build_scite(c, version):
             if result.failed:
                 c.run('tar -xf {}'.format(filename))
         with c.cd('/tmp/scintilla/gtk'):
-            result = c.run('make', capture=True)
+            result = c.run('make')
         _out.write(result.stdout + "\n")
         if result.failed:
             err = 'make scintilla failed'
@@ -99,13 +99,13 @@ def build_scite(c, version):
         else:
             with c.cd('/tmp/scite/gtk'):
                 err = ''
-                result = c.run('make', capture=True)
+                result = c.run('make')
                 _out.write(result.stdout + "\n")
                 if result.failed:
                     err = 'make scite failed'
                     _out.write(result.stderr + "\n")
                 else:
-                    result = c.run('sudo make install', capture=True)
+                    result = c.run('sudo make install')
                     _out.write(result.stdout + "\n")
                     if result.failed:
                         err = 'make install failed'
@@ -116,7 +116,7 @@ def build_scite(c, version):
         print('ready, see {}'.format(logfile))
 
 
-@task(help={'names': 'list of files containing the files to baclup'})
+@task(help={'names': 'list of files containing the files to backup'})
 def arcstuff(c, names):
     """backup selected files indicated in a .conf file
 
