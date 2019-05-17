@@ -41,13 +41,14 @@ def edit(c, name):
     each line contains a command to be executed
     """
     fname = os.path.join(SESSIONS, name)
-    c.run('scite {}'.format(fname))
+    # c.run('scite {}'.format(fname))
+    c.run('edit {}'.format(fname))
 
 
 @task
 def list(c):
     """list existing session names"""
-    names = ('    {}'.format(x) for x in os.listdir(SESSIONS))
+    names = sorted('    {}'.format(x) for x in os.listdir(SESSIONS))
     print("available sessions:")
     print('\n'.join(names))
 
@@ -83,6 +84,17 @@ def ticket(c, ticket, project):
                         line = 'cd {}\n'.format(os.path.join(DEVEL, root))
                         first = False
                     _out.write(line)
+
+
+@task(help={'ticket': 'ticket number', 'project': 'project name'})
+def prep(c, ticket, project):
+    """check before pulling changes made for ticket into project
+
+    """
+    pull_dest = os.path.join(PROJECTS_BASE, project)
+    pull_src = os.path.join(DEVEL, '_' + ticket)
+    with c.cd(pull_dest):
+        c.run('hg incoming {}'.format(pull_src))
 
 
 @task(help={'ticket': 'ticket number', 'project': 'project name'})
