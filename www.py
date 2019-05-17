@@ -33,6 +33,18 @@ def update_sites(c):
     wwwcopy('sites.html')
 
 
+@task
+def list(c):
+    "list files in default nginx root"
+    c.run('ls -l {}'.format(server_root))
+
+
+@task
+def list_apache(c):
+    "list files in default apache root"
+    c.run('ls -l {}'.format(apache_root))
+
+
 @task(help={'names': 'comma separated list of filenames'})
 def edit_apache(c, names):
     "edit indicated file in apache root as-if edited directly"
@@ -44,14 +56,15 @@ def edit_apache(c, names):
         ## put('/tmp/{0} {1}'.format(name, apache_root), use_sudo=True)
 
 
-@task(help={'name': 'comma separated list of filenames'})
-def permits(c, name):
+@task(help={'name': 'comma separated list of directory names',
+            'do-files': 'process files as well as directories'})
+def permits(c, name, do_files=False):
     """reset permits for dirs/files under web-accessible root
     """
     path = os.path.abspath(name)
     for file in os.listdir(path):
         fullname = os.path.join(path, file)
-        if os.path.isfile(fullname) and do_files:   # do_files undefined
+        if os.path.isfile(fullname) and do_files:
             rc = c.run('chmod 644 {}'.format(fullname))
             if rc.failed:
                 print('chmod failed on file {}'.format(fullname))
