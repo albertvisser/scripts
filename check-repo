@@ -378,8 +378,10 @@ def main(args):
     if not args.project:
         args.project = '.'
     if args.project == '.':
-        args.project = pathlib.Path.cwd().name
-    if args.project == 'bitbucket':
+        # args.project = pathlib.Path.cwd().name
+        path = pathlib.Path.cwd()  # .resolve()
+    # if args.project in ('bitbucket', 'magiokisnl'):
+    elif args.project == 'bitbucket':
         path = pathlib.Path.home() / 'www' / args.project
     else:
         try:
