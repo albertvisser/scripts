@@ -1,4 +1,5 @@
 import os
+import datetime
 from invoke import task
 from settings import home_root, server_root, apache_root
 
@@ -74,3 +75,22 @@ def permits(c, name, do_files=False):
                 print('chmod failed on directory {}'.format(fullname))
             else:
                 permits(c, fullname)
+
+
+@task(help={'name': 'name of site as used in rst2html config'})
+def stage(c, name):
+    "voor site gemaakt met rst2html: zet gewijzigde files in staging en commit"
+    root = os.path.expanduser(os.path.join('~', 'www', name))
+    with c.cd(root):
+        result = c.run('hg st -q', hide='out')
+    files = [line.split()[1] for line in result.stdout.split('\n') if line]
+    for item in files:
+        dest = os.path.join(root, '.staging', item)
+        if not os.path.exists(dest):
+            os.makedirs(os.path.dirname(dest), exist_ok=True)
+        with c.cd(root):
+            result = c.run('cp {0} .staging/{0}'.format(item))
+    with c.cd(root):
+        now = datetime.datetime.today().strftime('%d-%m-%Y %H:%M')
+        c.run('hg ci -m "staged on {}"'.format(now))
+
