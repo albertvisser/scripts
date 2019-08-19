@@ -10,7 +10,7 @@ that pass specific arguments to such a symlink. These are not included in the re
 
 **.hgignore**
 
-    indicates which notracked files mercurial is to ignore
+    indicates which non-tracked files mercurial is to ignore
 
 **2panefm**
 
@@ -23,7 +23,7 @@ that pass specific arguments to such a symlink. These are not included in the re
 **binfab**
 
     execute ``fab`` (fabric) using fabfile in this directory
-
+    actually `fabric` is now replaced by `invoke` so this now starts ``tasks.py`` and runs under Python 3
 
 **bstart**
 
@@ -31,44 +31,25 @@ that pass specific arguments to such a symlink. These are not included in the re
 
 **check-repo** (formerly check_local)
 
-    while a script by this name was replaced with a function in the fabfile, my
-    creativity failed me in choosing a name for a somewhat similar but visual tool
-    that does some things that hgview does, but without needing to step into the
-    repo first.
+    while a script by this name was replaced with a function in the fabfile, my creativity failed me in choosing a name for a somewhat similar but visual tool that does some things that hgview does (and more), but without needing to step into the repo first.
+
+**db.py**
+
+    `invoke` functions to manage database servers. Currently contains start/restart/stop functions for mongodb and postgres and a repair function for mongodb
 
 **dosomethingwith.py**
 
-    a general-purpose script that I wrote for use from within Double Commander to
-    apply some action on the selected files and/or directories.
-
-**fabfile.py**
-
-    collection of special functions. Currently contains the following:
-
-    a function to upgrade SciTE to the specified version (after downloading).
-
-    a function to (re)build SciTE to the specified version (after downloading).
-    I needed this after upgrading my system to 64-bit, since the download binary is
-    32-bit.
-
-    a function that reads entries from a config file (called ``arcstuff.ini``,
-    example present) to build an archive containing backups of selected data files.
-
-    some functions that can be used to control a mongodb database server
-
-    a function to copy html files into the nginx server root and one to
-    subsequently edit it; same for doing this with the apache server root
-
-    a couple of functions to help with the internalization of source files
-
-    a function to set up a Python source tree in a standardized way
-
-    functions replacing the check- and push-scripts mentioned below
+    a general-purpose script - or at least meant as such - that I wrote for use from within Double Commander to apply some action on the selected files and/or directories.
 
 **fabsrv**
 
     execute ``fab`` (fabric) using fabfile in nginx-config directory (for server
     configuration stuff)
+    the same applies as for **binfab**
+
+**i18n.py**
+
+    a couple of `invoke` functions to help with the internalization of source files
 
 **iview**
 
@@ -83,6 +64,10 @@ that pass specific arguments to such a symlink. These are not included in the re
 
     a script to take a file with filenames (created by e.g. Double Commander)
     and expand it into a command to start SciTE with all these files open
+
+**list2vi** 
+
+    the same for VI in a terminal
 
 **lstart**
 
@@ -103,6 +88,10 @@ that pass specific arguments to such a symlink. These are not included in the re
 
     this file.
 
+**repo.py**
+
+    `invoke` functions for managing source repositories, like the replaced check- and push-scripts mentioned below
+
 **runwithlog**
 
     enable logging for an application that reacts to setting a DEBUG environment
@@ -110,9 +99,13 @@ that pass specific arguments to such a symlink. These are not included in the re
 
     to use, simply prepend this command to the usual call to the app
 
+**session.py**
+
+    `invoke` functions for my homemade session- and ticket management
+ 
 **settings.py**
 
-    Configuration values for the fabfile in this directory,
+    Configuration values for the fabfile (and the tasks files) in this directory,
     mostly for the mercurial repo stuff.
 
 **sort_file.py**
@@ -124,21 +117,49 @@ that pass specific arguments to such a symlink. These are not included in the re
     The result is stored in the same directory under a different name,
     but can also be saved in a temporary location if appropriately called
 
+**tags.py**
+
+    `invoke` functions to maintain ctags stuff in a source repository
+
+**tasks.py**
+
+    miscellaneous `invoke` functions. Currently contains the following:
+
+    a function to upgrade SciTE to the specified version (after downloading).
+
+    a function to (re)build SciTE to the specified version (after downloading).
+    I needed this after upgrading my system to 64-bit, since the download binary is
+    32-bit.
+
+    a function that reads entries from a config file (called ``arcstuff.ini``,
+    example present) to build an archive containing backups of selected data files.
+
+    a function to set up a Python source tree in a standardized way (really?)
+    
 **totalcmd**
 
     starts up Total Commander under Wine. takes no arguments.
     Uses wmctrl to ensure which workspace it starts up in
 
 **vstart**
+
     start Vivaldi browser on workspace 1
+
+**www.py**
+
+    `invoke` functions to do with plain html sites; mostly local (nginx and apache server root) but also to setup transport to a remote site like magiokis.nl
+
+**xmlp.py**
+
+    generate pretty-printed version of file with xml data
 
 Requirements
 ------------
 
 - a Linux/Unix based OS (although the Python scripts should be cross-platform)
 - Python
-- Fabric (where applicable)
-- Mercurial (for the check and push scripts)
+- Fabric (where applicable) - the new version uses Invoke instead
+- Mercurial and/or Git (for the check and push scripts)
 
 Not in this repository:
 -----------------------
@@ -228,6 +249,10 @@ symlinks or short starter scripts for my own applications:
 
     starts up my compare tool
 
+**comparer_from_dc**
+
+    a small helper script to start the previous from within Double Commander
+
 **cssedit**
 
     starts up a standalone version of my css editor
@@ -262,13 +287,21 @@ symlinks or short starter scripts for my own applications:
 
     points the same viewer at a collection of application command references
 
+**hotstuff**
+
+    starts up both hotkeys and hotrefs, since I'm using them simultaneously a lot (especially with VI)
+
 **htmledit**
 
     starts up my tree-based html editor. Takes one optional argument: the filename.
 
 **lint-all**
+        
+    apply pylint or flake8 checks to all my software projects (under construction?)
 
-    apply pylint or flake8 checks to all my software projects (under construction)
+**lint_all.py**
+
+    the same but using lintergui
 
 **lintergui**
 
@@ -301,10 +334,7 @@ symlinks or short starter scripts for my own applications:
 
 **pfind**
 
-    starts up *afrift* to search in all my Python software projects
-    for this it calls it in 'multi' mode using a list file that lives in this
-    directory and contains all the paths to be searched.
-    can be called up with a search argument or without
+    symlink to search-all-projects
 
 **probreg**
 
@@ -312,7 +342,7 @@ symlinks or short starter scripts for my own applications:
     XML file or 'sql' optionally followed by a project name. Without arguments:
     presents a file selection dialog. With only 'sql': presents a project selector.
 
-**probreg_sql**
+**probreg-sql**
 
     shortcut for 'probreg sql'. Optional argument: project name.
 
@@ -341,6 +371,15 @@ symlinks or short starter scripts for my own applications:
 
     start a-propos using a file in /tmp (which is not saved over Linux sessions)
 
+**search-all-projects** 
+    
+    starts up *afrift* to search in all my Python software projects
+    for this it calls it in 'multi' mode using a list file that lives in this
+    directory and contains all the paths to be searched.
+    can be called up with a search argument or without
+    with an option to recreate the list of files/directories to search by calling
+    determine_all_project_dirs.py which also lives in this directory
+
 **treedocs**
 
     symlink to the doctree application. Used by the doctree script (among others)
@@ -349,6 +388,10 @@ symlinks or short starter scripts for my own applications:
 
     viewer for HTML formatted documents.
     Can be used with Double Commander or from within SciTE etc.
+
+**webrefs**
+
+    points my hotkeys app to a collection of keyboard shortcuts for web apps
 
 **xmledit**
 
@@ -361,19 +404,22 @@ other scripts not in repo:
 **determine_all_project_dirs.py**
     script to create the list that containing all directories to search
     as used by the pfind command
-**determine_all_project_files.py**
-    a similar script intended to create a list of files
-    I have decided I don't really need this when I have a list of directories
+**latest-proprietary-media-future.sh**
+**latest-widevine.sh**
+    two scripts (not by me) to facilitate viewing proprietary video formats in Vivaldi browser
 **reaper**
     starts linux version of reaper
-**rpdb2.py**
-    used by winpd3, slightly adapted for python 3
-**search-all-projects** 
-    original version of the `pfind` script
-    with an option to recreate the list of files/directories to search by calling
-    determine_all_project_dirs.py
+**start-servers**
+    calls fabsrv to start all wsgi servers
+**stop-servers**
+    calls fabsrv to stop all wsgi servers
+**t-ed**
+    open a terminal in a "code editor" mode I defined
+**viref**
+    starts vi showing vi documentation
+**vless**
+    starts vi in a mode that is supposed to resemble the `less` program
 **winpdb3**
     starter for winpdb under python 3
-**winpdb.py**
-    symlink to original
-
+**wxdemo**
+    starter for the wxPython demo program
