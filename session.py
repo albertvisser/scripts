@@ -84,6 +84,7 @@ def ticket(c, ticket, project):
                         line = 'cd {}\n'.format(os.path.join(DEVEL, root))
                         first = False
                     _out.write(line)
+                _out.write("a-propos -n 'Mee Bezig' -f mee_bezig.pck &")
 
 
 @task(help={'ticket': 'ticket number', 'project': 'project name'})
