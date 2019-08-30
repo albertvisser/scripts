@@ -1,6 +1,6 @@
-import os.path
 """settings for fabfile
 """
+import os.path
 # server data locations
 server_root = '/usr/share/nginx/html'
 home_root = os.path.expanduser('~/www/nginx-root')
@@ -21,6 +21,7 @@ non_web_repos = ['apropos', 'bitbucket', 'compare-tool', 'cssedit', 'doctree',
                  'probreg', 'xmledit', 'albumsgui']
 non_deploy_repos = ['cobtools', 'jvsdoe', 'leesjcl', 'pythoneer']
 bb_repos = django_repos + cherrypy_repos + non_web_repos + fcgi_repos
+sf_repos = ['apropos']
 git_repos = ['mylinter']
 non_bb_repos = []  # non_deploy_repos
 all_repos = bb_repos + private_repos + non_bb_repos + git_repos

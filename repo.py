@@ -7,7 +7,8 @@ import functools
 import datetime
 import csv
 from invoke import task
-from settings import all_repos, git_repos, private_repos
+from settings import PROJECTS_BASE, all_repos, git_repos, private_repos, sf_repos, \
+    django_repos, cherrypy_repos
 HOME = os.path.expanduser('~')
 today = datetime.datetime.today()
 
@@ -26,10 +27,10 @@ def get_repofiles(c, reponame):
             elif reponame == 'bitbucket':
                 path = os.path.expanduser(os.path.join('~', 'www', reponame))
             else:
-                path = os.path.join(projects_base, reponame)
+                path = os.path.join(PROJECTS_BASE, reponame)
     else:
         print('not a code repository')
-        return
+        return '', ''
     use_git = True if reponame in git_repos else False
     with c.cd(path):
         command = 'git ls-tree -r --name-only master' if use_git else 'hg manifest'
@@ -59,7 +60,7 @@ def _check(c, context='local', push='no', verbose=False, exclude=None):
     remote = not local_
     if context not in ('local', 'remote'):
         print('wrong context for this routine')
-        return
+        return ''
     elif local_:
         root, outfile = HOME, '/tmp/hg_local_changes'
     else:
@@ -162,6 +163,18 @@ def _check(c, context='local', push='no', verbose=False, exclude=None):
                     command = 'git log -r -1' if is_gitrepo else 'hg tip'
                     with c.cd(pwd):
                         c.run('{} > {}'.format(command, tipfile))
+                    if name in sf_repos:
+                        sf_dir = pwd.replace('hg_repos', 'sf-repos') + '-code'
+                        if name == 'apropos':
+                            sf_dir = sf_dir.replace('apropos', 'a-propos')
+                        print('for sf push also from', sf_dir)
+                        command = 'hg push'
+                        with c.cd(sf_dir):
+                            for comm in ('hg pull {}'.format(pwd), 'hg up', command):
+                                result = c.run(comm)
+                                print('push to sf gives rc', result.ok)
+                                print(result.stdout)
+                                print(result.stderr)
                 else:
                     with c.cd(pwd):
                         if not is_gitrepo:
@@ -196,9 +209,9 @@ def check_remote(c):
 def push_local(c, exclude=None):
     """push all repos from working to "central" with possibility to exclude
     To exclude multiple repos you need to provide a string with escaped commas
-    e.q. binfab push_remote
+    e.g. binfab push_remote
          binfab push remote:exclude=apropos
-         binfab push_remote:exclude="apropos\,albums"
+         binfab push_remote:exclude="apropos,albums"
     """
     _check(c, push='yes', exclude=exclude)
 
@@ -207,9 +220,9 @@ def push_local(c, exclude=None):
 def push_remote(c, exclude=None):
     """push all repos from "central" to BitBucket with possibility to exclude
     To exclude multiple repos you need to provide a string with escaped commas
-    e.q. binfab push_remote
+    e.g. binfab push_remote
          binfab push remote:exclude=apropos
-         binfab push_remote:exclude="apropos\,albums"
+         binfab push_remote:exclude="apropos,albums"
     """
     _check(c, 'remote', push='yes', exclude=exclude)
 
@@ -294,6 +307,7 @@ def _make_repolist(c, path):
         data = result.stdout
     outdict = collections.defaultdict(dict)
     in_description = False
+    key = ''  # just to satisfy the linters
     for line in data.split('\n'):
         line = line.strip()
         words = line.split()
@@ -396,4 +410,3 @@ def overview(c, names=None):
         path = os.path.join(root, item)
         _repos_overzicht(c, item, path)
     print('output in {}'.format(os.path.join(os.path.dirname(path), ".overzicht")))
-
