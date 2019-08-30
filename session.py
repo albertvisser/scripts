@@ -5,6 +5,7 @@ import shutil
 from invoke import task
 from settings import PROJECTS_BASE, SESSIONS, DEVEL
 
+
 @task(help={'name': 'name for new software project'})
 def newproject(c, name):
     """start a new (Python) software project in a standardized way
@@ -85,6 +86,11 @@ def ticket(c, ticket, project):
                         first = False
                     _out.write(line)
                 _out.write("a-propos -n 'Mee Bezig' -f mee_bezig.pck &")
+    # finally: create a reminder that we have a ticket version of this repo
+    regfile = os.path.join(PROJECTS_BASE, project, '.tickets')
+    mode = 'a' if os.path.exists(regfile) else 'w'
+    with open(regfile, mode) as f:
+        print(ticket, file=f)
 
 
 @task(help={'ticket': 'ticket number', 'project': 'project name'})
@@ -110,11 +116,24 @@ def pull(c, ticket, project):
         c.run('hg up')
 
 
-@task(help={'ticket': 'ticket number'})
-def cleanup(c, ticket):
+@task(help={'ticket': 'ticket number', 'project': 'project name'})
+def cleanup(c, ticket, project):
     """finish handling of a ticket by removing the repo clone and the session file
     """
     # remove session file
     os.remove(os.path.join(SESSIONS, ticket))
     # remove repository
     shutil.rmtree(os.path.join(DEVEL, '_' + ticket))
+    # remove reference in .tickets file
+    regfile = os.path.join(PROJECTS_BASE, project, '.tickets')
+    with open(regfile) as f:
+        projects = f.read().strip().split('\n')
+    try:
+        projects.remove(ticket)
+    except ValueError:
+        return
+    if projects:
+        with open(regfile, 'w') as f:
+            f.write('\n'.join(projects) + '\n')
+    else:
+        os.remove(regfile)
