@@ -3,7 +3,19 @@
 import os
 import shutil
 from invoke import task
-from settings import PROJECTS_BASE, SESSIONS, DEVEL
+from settings import PROJECTS_BASE, SESSIONS, DEVEL, private_repos
+
+
+def get_project_dir(name):
+    "private repos don't live in PROJECTS_BASE"
+    base = PROJECTS_BASE
+    if name in private_repos:
+        base = os.path.dirname(base)
+    return os.path.join(base, name)
+
+
+def get_regfile_name(name):
+    return os.path.join(get_project_dir(name), '.tickets')
 
 
 @task(help={'name': 'name for new software project'})
@@ -62,7 +74,7 @@ def ticket(c, ticket, project):
     """
     root = '_' + ticket
     with c.cd(DEVEL):
-        c.run('hg clone {}/{} {}'.format(PROJECTS_BASE, project, root))
+        c.run('hg clone {} {}'.format(get_project_dir(project), root))
     dest = os.path.join(SESSIONS, ticket)
     settings = os.path.join(DEVEL, root, '.hg', 'hgrc')
     with open(settings) as _in:
@@ -87,7 +99,7 @@ def ticket(c, ticket, project):
                     _out.write(line)
                 _out.write("a-propos -n 'Mee Bezig' -f mee_bezig.pck &")
     # finally: create a reminder that we have a ticket version of this repo
-    regfile = os.path.join(PROJECTS_BASE, project, '.tickets')
+    regfile = get_regfile_name(project)
     mode = 'a' if os.path.exists(regfile) else 'w'
     with open(regfile, mode) as f:
         print(ticket, file=f)
@@ -96,9 +108,8 @@ def ticket(c, ticket, project):
 @task(help={'ticket': 'ticket number', 'project': 'project name'})
 def prep(c, ticket, project):
     """check before pulling changes made for ticket into project
-
     """
-    pull_dest = os.path.join(PROJECTS_BASE, project)
+    pull_dest = os.path.join(get_project_dir(project), project)
     pull_src = os.path.join(DEVEL, '_' + ticket)
     with c.cd(pull_dest):
         c.run('hg incoming {}'.format(pull_src))
@@ -107,9 +118,8 @@ def prep(c, ticket, project):
 @task(help={'ticket': 'ticket number', 'project': 'project name'})
 def pull(c, ticket, project):
     """pull changes made for ticket into project
-
     """
-    pull_dest = os.path.join(PROJECTS_BASE, project)
+    pull_dest = os.path.join(get_project_dir(project), project)
     pull_src = os.path.join(DEVEL, '_' + ticket)
     with c.cd(pull_dest):
         c.run('hg pull {}'.format(pull_src))
@@ -125,7 +135,7 @@ def cleanup(c, ticket, project):
     # remove repository
     shutil.rmtree(os.path.join(DEVEL, '_' + ticket))
     # remove reference in .tickets file
-    regfile = os.path.join(PROJECTS_BASE, project, '.tickets')
+    regfile = get_regfile_name(project)
     with open(regfile) as f:
         projects = f.read().strip().split('\n')
     try:
