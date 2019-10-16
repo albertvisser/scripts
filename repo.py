@@ -172,9 +172,6 @@ def _check(c, context='local', push='no', verbose=False, exclude=None):
                         with c.cd(sf_dir):
                             for comm in ('hg pull {}'.format(pwd), 'hg up', command):
                                 result = c.run(comm)
-                                print('push to sf gives rc', result.ok)
-                                print(result.stdout)
-                                print(result.stderr)
                 else:
                     with c.cd(pwd):
                         if not is_gitrepo:
