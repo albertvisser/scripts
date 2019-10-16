@@ -2,8 +2,17 @@
 """
 import os
 import shutil
+import configparser
 from invoke import task
 from settings import PROJECTS_BASE, SESSIONS, DEVEL, private_repos
+
+
+def get_project_name(ticket):
+    "find_project_by_ticket(number)"
+    hgrc = os.path.join(DEVEL, '_{}'.format(ticket), '.hg', 'hgrc')
+    conf = configparser.ConfigParser()
+    conf.read(hgrc)
+    return os.path.basename(conf['paths']['default'])
 
 
 def get_project_dir(name):
@@ -11,11 +20,18 @@ def get_project_dir(name):
     base = PROJECTS_BASE
     if name in private_repos:
         base = os.path.dirname(base)
-    return os.path.join(base, name)
+    test = os.path.join(base, name)
+    if os.path.exists(test):
+        return test
+    return ''
 
 
 def get_regfile_name(name):
-    return os.path.join(get_project_dir(name), '.tickets')
+    "return standard path for ticket registration file"
+    test = get_project_dir(name)
+    if not test:
+        return ''
+    return os.path.join(test, '.tickets')
 
 
 @task(help={'name': 'name for new software project'})
@@ -67,11 +83,12 @@ def list(c):
 
 
 @task(help={'ticket': 'ticket number', 'project': 'project name'})
-def ticket(c, ticket, project):
+def newticket(c, ticket, project):
     """set up handling of a ticket for a given project
 
     clones the project repository and builds a session file
     """
+    print('building new directory')
     root = '_' + ticket
     with c.cd(DEVEL):
         c.run('hg clone {} {}'.format(get_project_dir(project), root))
@@ -105,31 +122,50 @@ def ticket(c, ticket, project):
         print(ticket, file=f)
 
 
-@task(help={'ticket': 'ticket number', 'project': 'project name'})
-def prep(c, ticket, project):
+@task(help={'project': 'project name'})
+def tickets(c, project):
+    """list tickets in progress for project
+    """
+    regfile = get_regfile_name(project)
+    if not regfile:
+        print('wrong project name')
+        return
+    if not os.path.exists(regfile):
+        tickets = 'none'
+    else:
+        with open(regfile) as f:
+            tickets = ', '.join([x.strip() for x in f])
+    print("tickets I'm working on:", tickets)
+
+
+@task(help={'ticket': 'ticket number'})
+def prep(c, ticket):
     """check before pulling changes made for ticket into project
     """
-    pull_dest = os.path.join(get_project_dir(project), project)
+    project = get_project_name(ticket)
+    pull_dest = get_project_dir(project)
     pull_src = os.path.join(DEVEL, '_' + ticket)
     with c.cd(pull_dest):
-        c.run('hg incoming {}'.format(pull_src))
+        c.run('hg incoming -v {}'.format(pull_src))
 
 
-@task(help={'ticket': 'ticket number', 'project': 'project name'})
-def pull(c, ticket, project):
+@task(help={'ticket': 'ticket number'})
+def pull(c, ticket):
     """pull changes made for ticket into project
     """
-    pull_dest = os.path.join(get_project_dir(project), project)
+    project = get_project_name(ticket)
+    pull_dest = get_project_dir(project)
     pull_src = os.path.join(DEVEL, '_' + ticket)
     with c.cd(pull_dest):
         c.run('hg pull {}'.format(pull_src))
         c.run('hg up')
 
 
-@task(help={'ticket': 'ticket number', 'project': 'project name'})
-def cleanup(c, ticket, project):
+@task(help={'ticket': 'ticket number'})
+def cleanup(c, ticket):
     """finish handling of a ticket by removing the repo clone and the session file
     """
+    project = get_project_name(ticket)
     # remove session file
     os.remove(os.path.join(SESSIONS, ticket))
     # remove repository
