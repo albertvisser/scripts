@@ -39,6 +39,29 @@ def get_repofiles(c, reponame):
     return path, files
 
 
+def get_project_root(name, context='local'):
+    """find out where a repository lives
+    """
+    # TODO: add site repositories like 'bitbucket'
+    is_private = name in private_repos
+    git_repo = name in git_repos
+    sf_repo = name in sf_repos
+    root = PROJECTS_BASE
+    if context == 'local':
+        if is_private:
+            root = root.parent
+    else:  # if context in ('remote', 'bb'):
+        if is_private:
+            root = root.parent / 'hg_private'
+        elif git_repo and context not in ('sf', 'bb'):
+            root = root.parent / 'git-repos'
+        elif sf_repo and context == 'sf':
+            root = root.parent / 'sf_repos'
+        elif context not in ('git', 'sf'):
+            root = root.parent / 'hg_repos'
+    return root
+
+
 def _check(c, context='local', push='no', verbose=False, exclude=None):
     """vergelijkt repositories met elkaar
 
