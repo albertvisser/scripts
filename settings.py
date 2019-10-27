@@ -22,9 +22,9 @@ non_web_repos = ['apropos', 'bitbucket', 'compare-tool', 'cssedit', 'doctree',
 non_deploy_repos = ['cobtools', 'jvsdoe', 'leesjcl', 'pythoneer']
 bb_repos = django_repos + cherrypy_repos + non_web_repos + fcgi_repos
 sf_repos = ['apropos']
-git_repos = ['mylinter']
+git_repos = ['mylinter', 'filefindr']
 non_bb_repos = []  # non_deploy_repos
-all_repos = bb_repos + private_repos + non_bb_repos + git_repos
+all_repos = bb_repos + private_repos + non_bb_repos + git_repos[:1]
 DO_NOT_LINT = fcgi_repos + non_deploy_repos  # + private_repos
 
 # VivaldiHooks settings
