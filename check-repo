@@ -190,7 +190,8 @@ class Gui(qtw.QWidget):
     def edit_selected(self):
         """Open selected files in a text editor"""
         command = [y for x, y in self.get_selected_files()]
-        command.insert(0, 'SciTE')
+        # command.insert(0, 'SciTE')
+        command[:0] = ['gnome-terminal', '--profile', 'Code Editor Shell', '--', 'vi']
         ## subprocess.Popen(command, cwd=str(self.path))  # don't wait for editor to close
         subprocess.run(command, cwd=str(self.path))
         self.refresh_frame()
@@ -248,7 +249,8 @@ class Gui(qtw.QWidget):
                 qtw.QMessageBox.information(self, self.title,
                                             name + ' already tracked')
         if filenames:
-            fname = self.path / '.hgignore'
+            fname = '.hgignore' if self.repotype == '.hg' else '.gitignore'
+            fname = self.path / fname 
             with fname.open('a') as _out:
                 for name in filenames:
                     _out.write(name)
@@ -259,19 +261,16 @@ class Gui(qtw.QWidget):
     def add_new(self):
         """add selected file(s) to the tracked list"""
         filenames = [y for x, y in self.get_selected_files()]
-        # remove already tracked files or let hg handle it
-        command = ['hg', 'add'] + filenames
+        command = [self.repotype, 'add'] + filenames
         subprocess.run(command, cwd=str(self.path))
-        # feedback needed? e.g. some files were already tracked?
         self.refresh_frame()
 
     def forget(self):
         """stop tracking selected file(s)"""
+        commands = {'hg': ['hg', 'forget'], 'git': ['git', 'rm', '--cached']}
         filenames = [y for x, y in self.get_selected_files()]
-        # remove untracked files or let hg handle it
-        command = ['hg', 'forget'] + filenames
+        command = commands[self.repotype] + filenames
         subprocess.run(command, cwd=str(self.path))
-        # feedback needed? e.g. some files weren't tracked?
         self.refresh_frame()
 
     def refresh_frame(self):
@@ -368,7 +367,7 @@ class Gui(qtw.QWidget):
 
     def view_repo(self):
         """execute hg view"""
-        command = [self.repotype, 'view']
+        command = {'hg': ['hg', 'view'], 'git': ['gitg']}[self.repotype]
         result = subprocess.run(command, stdout=subprocess.PIPE, cwd=str(self.path))
 
 
@@ -408,6 +407,7 @@ def main(args):
     win = Gui(path, repotype)
     win.show()
     sys.exit(app.exec_())
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
