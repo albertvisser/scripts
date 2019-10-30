@@ -430,3 +430,9 @@ def overview(c, names=None):
         path = os.path.join(root, item)
         _repos_overzicht(c, item, path)
     print('output in {}'.format(os.path.join(os.path.dirname(path), ".overzicht")))
+
+
+@task(help={'name': 'repository name'})
+def add2gitweb(c, name):
+    "make a repository visible with gitweb"
+    c.run('sudo ln -s ~/git_repos/{0}/.git /var/lib/git/{0}.git'.format(name))
