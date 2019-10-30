@@ -1,23 +1,10 @@
 #! /usr/bin/env python3
-"""open multiple files in one instance of VI 
+"""open multiple files in one instance of VI
 """
 import sys
-import os
-import stat
-import time
 import subprocess
 
 with open(sys.argv[1]) as f_in:
     files = [x.strip() for x in f_in]
-exec = sys.argv[1] + '.do'
-source="""\
-#! /bin/sh
-files='{}'
-export files
-gnome-terminal --profile='Code Editor Shell'
-""".format(' '.join(files))
-with open(exec, 'w') as f_out:
-    print(source, file=f_out)
-os.chmod(exec, stat.S_IREAD | stat.S_IWRITE | stat.S_IEXEC)
-time.sleep(1)
-subprocess.run(exec)
+command = ["gnome-terminal", "--profile", 'Code Editor Shell', "--", "vi"] + files
+subprocess.run(command)
