@@ -62,7 +62,7 @@ def get_project_root(name, context='local'):
     return root
 
 
-def _check(c, context='local', push='no', verbose=False, exclude=None):
+def _check(c, context='local', push='no', verbose=False, exclude=None, dry_run=False):
     """vergelijkt repositories met elkaar
 
     context geeft aan welke:
@@ -107,17 +107,20 @@ def _check(c, context='local', push='no', verbose=False, exclude=None):
                 else:
                     pwd = os.path.join(root, 'www', name)
             elif remote:
-                if is_private:
-                    pwd = os.path.join(root.replace('repos', 'private'), name)
-                elif is_gitrepo:
+                if is_gitrepo or is_private:
                     pwd = os.path.join(root.replace('hg', 'git'), name)
+                    root = root.replace('hg', 'git')
+                # elif is_private:
+                #     pwd = os.path.join(root.replace('repos', 'private'), name)
             elif local_ and not is_private:
                 pwd = os.path.join(root, 'projects', name)
 
             ## tmp = '/tmp/hg_st_{}'.format(name)
             uncommitted = outgoing = False
 
-            command = 'git status -uno --short' if is_gitrepo else 'hg status --quiet'
+            command = 'git status -uno --short' if (is_gitrepo or is_private) else 'hg status --quiet'
+            if dry_run:
+                print('execute `{}` in directory `{}`'.format(command, pwd))
             with c.cd(pwd):
                 result = c.run(command, hide=True)
             test = result.stdout
@@ -130,9 +133,14 @@ def _check(c, context='local', push='no', verbose=False, exclude=None):
                 tmpfile = os.path.join('/tmp', '{}_tip'.format(name))
                 tipfile = os.path.join(root, '{}_tip'.format(name))
                 if not os.path.exists(tipfile):
-                    c.run('touch {}'.format(tipfile))
+                    command = 'touch {}'.format(tipfile)
+                    if dry_run:
+                        print('execute `{}`'.format(command))
+                    c.run(command)
 
                 command = 'git log -r -1' if is_gitrepo else 'hg tip'
+                if dry_run:
+                    print('execute `{}` in directory `{}`'.format(command, pwd))
                 with c.cd(pwd):
                     c.run('{} > {}'.format(command, tmpfile))
                 with open(tmpfile) as _in1, open(tipfile) as _in2:
@@ -148,8 +156,9 @@ def _check(c, context='local', push='no', verbose=False, exclude=None):
                     _out.write(buf2 + "\n")
             else:
                 command = 'git log --branches --not --remotes=origin' if is_gitrepo else 'hg outgoing'
-                # print(pwd, command)
                 result = None
+                if dry_run:
+                    print('execute `{}` in directory `{}`'.format(command, pwd))
                 with c.cd(pwd):
                     result = c.run(command, warn=True, hide=True)
                     # print(result, result.ok, result.stdout, result.stderr)
@@ -178,23 +187,28 @@ def _check(c, context='local', push='no', verbose=False, exclude=None):
             else:
                 command = 'hg push'  # if bb else 'hg push --remotecmd "hg update"'
                 # remotecmd werkt niet zo maar geen idee hoe dan wel
+            if dry_run:
+                print('execute `{}` in directory `{}`'.format(command, pwd))
             with c.cd(pwd):
                 result = c.run(command)
             if result.ok:
                 _out.write(result.stdout + '\n')
                 if remote:
                     command = 'git log -r -1' if is_gitrepo else 'hg tip'
+                    if dry_run:
+                        print('execute `{}` in directory `{}`'.format(command, pwd))
                     with c.cd(pwd):
                         c.run('{} > {}'.format(command, tipfile))
-                    if name in sf_repos:
-                        sf_dir = pwd.replace('hg_repos', 'sf-repos') + '-code'
-                        if name == 'apropos':
-                            sf_dir = sf_dir.replace('apropos', 'a-propos')
-                        print('for sf push also from', sf_dir)
-                        command = 'hg push'
-                        with c.cd(sf_dir):
-                            for comm in ('hg pull {}'.format(pwd), 'hg up', command):
-                                result = c.run(comm)
+                    # dropping sourcefroge support...
+                    # if name in sf_repos:
+                    #     sf_dir = pwd.replace('git_repos', 'sf-repos') + '-code'
+                    #     if name == 'apropos':
+                    #         sf_dir = sf_dir.replace('apropos', 'a-propos')
+                    #     print('for sf push also from', sf_dir)
+                    #     command = 'hg push'
+                    #     with c.cd(sf_dir):
+                    #         for comm in ('hg pull {}'.format(pwd), 'hg up', command):
+                    #             result = c.run(comm)
                 else:
                     with c.cd(pwd):
                         if not is_gitrepo:
