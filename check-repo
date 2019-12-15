@@ -9,8 +9,10 @@ import PyQt5.QtWidgets as qtw
 import PyQt5.QtGui as gui
 ## import PyQt5.QtCore as core
 import PyQt5.Qsci as sci  # scintilla
-root = pathlib.Path.home() / 'projects'
-devel = pathlib.Path.home() / 'devel'
+import settings
+
+HOME = pathlib.Path.home()
+root = HOME / 'projects'
 
 
 class DiffViewDialog(qtw.QDialog):
@@ -216,8 +218,7 @@ class Gui(qtw.QWidget):
         filenames = []
         for letter, name in filelist:
             if letter in ('?', '??'):
-                qtw.QMessageBox.information(self, self.title,
-                                            name + ' not tracked')
+                qtw.QMessageBox.information(self, self.title, name + ' not tracked')
             else:
                 filenames.append(name)
         if self.got_meld:
@@ -232,8 +233,7 @@ class Gui(qtw.QWidget):
         if not self.got_meld:
             if filenames:
                 command = [self.repotype, 'diff'] + filenames
-                result = subprocess.run(command, stdout=subprocess.PIPE,
-                                        cwd=str(self.path))
+                result = subprocess.run(command, stdout=subprocess.PIPE, cwd=str(self.path))
                 text = str(result.stdout, encoding='utf-8')
                 caption = 'Show diffs for: ' + ', '.join(filenames)
                 DiffViewDialog(self, self.title, caption, text).exec_()
@@ -246,8 +246,7 @@ class Gui(qtw.QWidget):
             if letter in ('?', '??'):
                 filenames.append(name)
             else:
-                qtw.QMessageBox.information(self, self.title,
-                                            name + ' already tracked')
+                qtw.QMessageBox.information(self, self.title, name + ' already tracked')
         if filenames:
             fname = '.hgignore' if self.repotype == '.hg' else '.gitignore'
             fname = self.path / fname 
@@ -255,8 +254,7 @@ class Gui(qtw.QWidget):
                 for name in filenames:
                     _out.write(name)
             self.refresh_frame()
-        ## qtw.QMessageBox.information(self, self.title,
-                                    ## 'Added selected files to ignore list.')
+        ## qtw.QMessageBox.information(self, self.title, 'Added selected files to ignore list.')
 
     def add_new(self):
         """add selected file(s) to the tracked list"""
@@ -306,6 +304,7 @@ class Gui(qtw.QWidget):
             if ok:
                 if self.repotype == 'git':
                     command = ['git', 'add'] + filenames
+                    #FIXME: moet hier niet nog een subprocess.run tussen of zo?
                 command = [self.repotype, 'commit'] + filenames + ['-m', message]
                 subprocess.run(command, cwd=str(self.path))
                 self.refresh_frame()
@@ -377,30 +376,22 @@ def main(args):
     if not args.project:
         args.project = '.'
     if args.project == '.':
-        # args.project = pathlib.Path.cwd().name
         path = pathlib.Path.cwd()  # .resolve()
-    # if args.project in ('bitbucket', 'magiokisnl'):
-    elif args.project == 'bitbucket':
-        path = pathlib.Path.home() / 'www' / args.project
+    elif args.project == 'bitbucket':  # in ('bitbucket', 'magiokisnl'):
+        path = HOME / 'www' / args.project
+    elif args.project in settings.private_repos:
+        path = HOME / settings.private_repos[args.project]
+    elif args.project in settings.private_repos.values():
+        path = HOME / args.project
     else:
-        try:
-            test = int(args.project[1:])
-        except ValueError:
-            path = root / args.project
-        else:
-            path = devel / args.project
-    test = path / '.hg'
+        path = root / args.project
+    test = path / '.git'
     if test.exists():
-        repotype = 'hg'
+        repotype = 'git'
     else:
-        test = path / '.git'
+        test = path / '.hg'
         if test.exists():
-            repotype = 'git'
-        else:
-            path = pathlib.Path.home() / args.project
-            test = path / '.hg'
-            if test.exists():
-                repotype = 'hg'
+            repotype = 'hg'
     if not repotype:
         return args.project + ' is not a repository'
     app = qtw.QApplication(sys.argv)
