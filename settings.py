@@ -15,7 +15,7 @@ DEVEL = os.path.expanduser('~/devel')
 cherrypy_repos = ['logviewer', 'rst2html', 'magiokis-cherry']
 django_repos = ['actiereg', 'albums', 'myprojects', 'magiokis-django']
 fcgi_repos = ['absentie', 'doctool', 'magiokis', 'albums-cgi', 'magiokis-php']
-private_repos = ['bin', 'nginx-config']
+private_repos = {'scripts': 'bin', 'server-stuff': 'nginx-config'}
 non_web_repos = ['apropos', 'bitbucket', 'compare-tool', 'cssedit', 'doctree',
                  'filefindr', 'hotkeys', 'htmledit', 'modreader', 'notetree',
                  'probreg', 'xmledit', 'albumsgui']
@@ -25,7 +25,7 @@ bb_repos = django_repos + cherrypy_repos + non_web_repos + fcgi_repos
 sf_repos = ['apropos']
 git_repos = ['mylinter'] + bb_repos
 non_bb_repos = []  # non_deploy_repos
-all_repos = bb_repos + private_repos + non_bb_repos + git_repos[:1]
+all_repos = git_repos + [x for x in private_repos] + non_bb_repos
 DO_NOT_LINT = fcgi_repos + non_deploy_repos  # + private_repos
 
 # VivaldiHooks settings
