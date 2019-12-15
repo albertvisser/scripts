@@ -112,8 +112,11 @@ def _check(c, context='local', push='no', verbose=False, exclude=None, dry_run=F
                     root = root.replace('hg', 'git')
                 # elif is_private:
                 #     pwd = os.path.join(root.replace('repos', 'private'), name)
-            elif local_ and not is_private:
-                pwd = os.path.join(root, 'projects', name)
+            elif local_:
+                if is_private:
+                    pwd = os.path.join(root, private_repos[name])
+                else:
+                    pwd = os.path.join(root, 'projects', name)
 
             ## tmp = '/tmp/hg_st_{}'.format(name)
             uncommitted = outgoing = False
@@ -121,8 +124,9 @@ def _check(c, context='local', push='no', verbose=False, exclude=None, dry_run=F
             command = 'git status -uno --short' if (is_gitrepo or is_private) else 'hg status --quiet'
             if dry_run:
                 print('execute `{}` in directory `{}`'.format(command, pwd))
-            with c.cd(pwd):
-                result = c.run(command, hide=True)
+            else:
+                with c.cd(pwd):
+                    result = c.run(command, hide=True)
             test = result.stdout
             if test.strip():
                 stats.append('uncommitted changes')
@@ -136,13 +140,15 @@ def _check(c, context='local', push='no', verbose=False, exclude=None, dry_run=F
                     command = 'touch {}'.format(tipfile)
                     if dry_run:
                         print('execute `{}`'.format(command))
-                    c.run(command)
+                    else:
+                        c.run(command)
 
-                command = 'git log -r -1' if is_gitrepo else 'hg tip'
+                command = 'git log -r -1' if is_gitrepo or is_private else 'hg tip'
                 if dry_run:
                     print('execute `{}` in directory `{}`'.format(command, pwd))
-                with c.cd(pwd):
-                    c.run('{} > {}'.format(command, tmpfile))
+                else:
+                    with c.cd(pwd):
+                        c.run('{} > {}'.format(command, tmpfile))
                 with open(tmpfile) as _in1, open(tipfile) as _in2:
                     buf1 = _in1.read()
                     buf2 = _in2.read()
@@ -155,17 +161,22 @@ def _check(c, context='local', push='no', verbose=False, exclude=None, dry_run=F
                     _out.write("-- remote:\n")
                     _out.write(buf2 + "\n")
             else:
-                command = 'git log --branches --not --remotes=origin' if is_gitrepo else 'hg outgoing'
+                if is_gitrepo or is_private:
+                    command = 'git log --branches --not --remotes=origin'
+                else:
+                    command = 'hg outgoing'
                 result = None
                 if dry_run:
                     print('execute `{}` in directory `{}`'.format(command, pwd))
-                with c.cd(pwd):
-                    result = c.run(command, warn=True, hide=True)
-                    # print(result, result.ok, result.stdout, result.stderr)
-                    if is_gitrepo:
-                        outgoing = result.stdout.strip()
-                    else:
-                        outgoing = result.ok
+                    outgoing = False
+                else:
+                    with c.cd(pwd):
+                        result = c.run(command, warn=True, hide=True)
+                        # print(result, result.ok, result.stdout, result.stderr)
+                        if is_gitrepo or is_private:
+                            outgoing = result.stdout.strip()
+                        else:
+                            outgoing = result.ok
                 if outgoing:
                     changes = True
                     stats.append('outgoing changes')
@@ -181,7 +192,7 @@ def _check(c, context='local', push='no', verbose=False, exclude=None, dry_run=F
                 continue
             if not outgoing:
                 continue
-            if is_gitrepo:
+            if is_gitrepo or is_private:
                 ref = '-u' if remote else ''
                 command = 'git push {} origin master'.format(ref)
             else:
@@ -189,31 +200,28 @@ def _check(c, context='local', push='no', verbose=False, exclude=None, dry_run=F
                 # remotecmd werkt niet zo maar geen idee hoe dan wel
             if dry_run:
                 print('execute `{}` in directory `{}`'.format(command, pwd))
-            with c.cd(pwd):
-                result = c.run(command)
+                # simulate result.ok somehow?
+            else:
+                with c.cd(pwd):
+                    result = c.run(command)
             if result.ok:
                 _out.write(result.stdout + '\n')
                 if remote:
-                    command = 'git log -r -1' if is_gitrepo else 'hg tip'
+                    command = 'git log -r -1' if is_gitrepo or is_private else 'hg tip'
                     if dry_run:
                         print('execute `{}` in directory `{}`'.format(command, pwd))
-                    with c.cd(pwd):
-                        c.run('{} > {}'.format(command, tipfile))
-                    # dropping sourcefroge support...
-                    # if name in sf_repos:
-                    #     sf_dir = pwd.replace('git_repos', 'sf-repos') + '-code'
-                    #     if name == 'apropos':
-                    #         sf_dir = sf_dir.replace('apropos', 'a-propos')
-                    #     print('for sf push also from', sf_dir)
-                    #     command = 'hg push'
-                    #     with c.cd(sf_dir):
-                    #         for comm in ('hg pull {}'.format(pwd), 'hg up', command):
-                    #             result = c.run(comm)
+                    else:
+                        with c.cd(pwd):
+                            c.run('{} > {}'.format(command, tipfile))
                 else:
-                    with c.cd(pwd):
-                        if not is_gitrepo:
-                            result = c.run('hg up')
-                            _out.write(result.stdout + '\n')
+                    if not is_gitrepo and not is_private:
+                        command = 'hg up'
+                        if dry_run:
+                            print('execute `{}` in directory `{}`'.format(command, pwd))
+                        else:
+                            with c.cd(pwd):
+                                result = c.run(command)
+                                _out.write(result.stdout + '\n')
 
     print()
     if changes:
@@ -224,41 +232,41 @@ def _check(c, context='local', push='no', verbose=False, exclude=None, dry_run=F
 
 
 @task
-def check_local(c):
+def check_local(c, dry_run=False):
     """compare all hg repositories: working vs "central"
     """
-    test = _check(c)
+    test = _check(c, dry_run=dry_run)
     if test:
         print("use 'check-repo <reponame>' to inspect changes")
 
 
 @task
-def check_remote(c):
+def check_remote(c, dry_run=False):
     """compare all hg repositories: "central" vs BitBucket / GitHub
     """
-    _check(c, 'remote')
+    _check(c, 'remote', dry_run=dry_run)
 
 
 @task(help={'exclude': 'comma separated list of repostories not to push'})
-def push_local(c, exclude=None):
+def push_local(c, exclude=None, dry_run=False):
     """push all repos from working to "central" with possibility to exclude
     To exclude multiple repos you need to provide a string with escaped commas
     e.g. binfab push_remote
          binfab push remote:exclude=apropos
          binfab push_remote:exclude="apropos,albums"
     """
-    _check(c, push='yes', exclude=exclude)
+    _check(c, push='yes', exclude=exclude, dry_run=dry_run)
 
 
 @task(help={'exclude': 'comma separated list of repostories not to push'})
-def push_remote(c, exclude=None):
+def push_remote(c, exclude=None, dry_run=False):
     """push all repos from "central" to BitBucket with possibility to exclude
     To exclude multiple repos you need to provide a string with escaped commas
     e.g. binfab push_remote
          binfab push remote:exclude=apropos
          binfab push_remote:exclude="apropos,albums"
     """
-    _check(c, 'remote', push='yes', exclude=exclude)
+    _check(c, 'remote', push='yes', exclude=exclude, dry_run=dry_run)
 
 
 @task(help={'names': 'comma separated list of repostories to push'})
