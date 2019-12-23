@@ -4,7 +4,7 @@ import os
 import shutil
 import configparser
 from invoke import task
-from settings import PROJECTS_BASE, SESSIONS, DEVEL, private_repos
+from settings import PROJECTS_BASE, SESSIONS, DEVEL, get_project_dir  # , private_repos
 
 
 def get_project_name(ticket):
@@ -13,17 +13,6 @@ def get_project_name(ticket):
     conf = configparser.ConfigParser()
     conf.read(hgrc)
     return os.path.basename(conf['paths']['default'])
-
-
-def get_project_dir(name):
-    "private repos don't live in PROJECTS_BASE"
-    base = PROJECTS_BASE
-    if name in private_repos:
-        base = os.path.dirname(base)
-    test = os.path.join(base, name)
-    if os.path.exists(test):
-        return test
-    return ''
 
 
 def get_regfile_name(name):

@@ -7,8 +7,8 @@ import functools
 import datetime
 import csv
 from invoke import task
-from settings import PROJECTS_BASE, all_repos, git_repos, private_repos, sf_repos, \
-    django_repos, cherrypy_repos
+from settings import get_project_dir, all_repos, git_repos, private_repos, django_repos, \
+    cherrypy_repos
 HOME = os.path.expanduser('~')
 today = datetime.datetime.today()
 
@@ -20,46 +20,17 @@ def get_repofiles(c, reponame):
     if reponame == '.':
         path = os.getcwd()
         reponame = os.path.basename(path)
-    if reponame in all_repos:
-        if not path:
-            if reponame in private_repos:
-                path = os.path.expanduser(os.path.join('~', reponame))
-            elif reponame == 'bitbucket':
-                path = os.path.expanduser(os.path.join('~', 'www', reponame))
-            else:
-                path = os.path.join(PROJECTS_BASE, reponame)
     else:
+        path = get_project_dir(reponame)
+    if not path:
         print('not a code repository')
-        return '', ''
-    use_git = True if reponame in git_repos else False
+        return '', []
+    use_git = True   # if reponame in git_repos else False
     with c.cd(path):
         command = 'git ls-tree -r --name-only master' if use_git else 'hg manifest'
         result = c.run(command)
     files = [x for x in result.stdout.split('\n') if os.path.splitext(x)[1] == '.py']
     return path, files
-
-
-def get_project_root(name, context='local'):
-    """find out where a repository lives
-    """
-    # TODO: add site repositories like 'bitbucket'
-    is_private = name in private_repos
-    git_repo = name in git_repos
-    sf_repo = name in sf_repos
-    root = PROJECTS_BASE
-    if context == 'local':
-        if is_private:
-            root = root.parent
-    else:  # if context in ('remote', 'bb'):
-        if is_private:
-            root = root.parent / 'hg_private'
-        elif git_repo and context not in ('sf', 'bb'):
-            root = root.parent / 'git-repos'
-        elif sf_repo and context == 'sf':
-            root = root.parent / 'sf_repos'
-        elif context not in ('git', 'sf'):
-            root = root.parent / 'hg_repos'
-    return root
 
 
 def _check(c, context='local', push='no', verbose=False, exclude=None, dry_run=False):
@@ -276,6 +247,8 @@ def pushthru(c, names):
     either name specific repos or check all
     when no name is specified, the "_check" variants are used
     """
+    print('niet uitgevoerd, moet herschreven worden o.a. naar gebruik van git')
+    return
     if not names:
         _check(c, push='yes')
         _check(c, 'remote', push='yes')
@@ -300,9 +273,9 @@ def pushthru(c, names):
             if name in private_repos:
                 localpath = os.path.join('~', name)
                 centralpath = centralpath.replace('repos', 'private')
-            elif name in django_repos:
+            elif name in django_repos:  # ??
                 localpath = localpath.replace('projects', os.path.join('www', 'django'))
-            elif name in cherrypy_repos:
+            elif name in cherrypy_repos:  # ??
                 localpath = localpath.replace('projects', os.path.join('www', 'cherrypy'))
             elif name == 'bitbucket':
                 localpath = localpath.replace('projects', 'www')
