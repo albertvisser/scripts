@@ -10,7 +10,7 @@ import session
 import repo
 import tags
 import www
-import i18n
+import lang
 import db
 
 
@@ -233,7 +233,7 @@ ns.add_collection(session)
 ns.add_collection(repo)
 ns.add_collection(tags)
 ns.add_collection(www)
-ns.add_collection(i18n)
+ns.add_collection(lang)
 ns.add_collection(db)
 ns.add_task(listbin)
 ns.add_task(install_scite)
