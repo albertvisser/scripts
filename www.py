@@ -77,20 +77,71 @@ def permits(c, name, do_files=False):
                 permits(c, fullname)
 
 
-@task(help={'name': 'name of site as used in rst2html config'})
-def stage(c, name):
-    "voor site gemaakt met rst2html: zet gewijzigde files in staging en commit"
-    root = os.path.expanduser(os.path.join('~', 'www', name))
+@task(help={'sitename': 'name of site as used in rst2html config',
+            'new_only': 'only stage new files',
+            'filename': 'only stage this (new) file',
+            'list-only': 'do not actually stage, just show the names'})
+def stage(c, sitename, new_only=False, filename='', list_only=False):
+    """voor site gemaakt met rst2html: zet gewijzigde files in staging en commit
+
+    standaard werking is om alleen gewijzigde documenten te stagen
+    met `new-only` is het mogelijk om juist alle nieuwe documenten te stagen
+      (handig bij het starten van een nieuwe site);
+    met de `filename` optie kan een enkel nieuw document worden toegevoegd
+    """
+    # bepaal en controleer de mirror locatie
+    root = os.path.expanduser(os.path.join('~', 'www', sitename))
+    if not os.path.exists(root):
+        root = os.path.expanduser(os.path.join('~', 'projects', 'rst2html', 'rst2html-data',
+                                               sitename))
+    if not os.path.exists(root):
+        print('no existing mirror location found for `{}`'.format(sitename))
+        return
     with c.cd(root):
-        result = c.run('hg st -q', hide='out')
-    files = [line.split()[1] for line in result.stdout.split('\n') if line]
+        result = c.run('hg st', hide='out', warn=True)
+    if result.failed:
+        print('mirror location should be a mercurial repository')
+        return
+
+    # bepaal en controleer de te stagen files
+    newfiles = [line.split()[1] for line in result.stdout.split('\n') if line and line[0] == '?']
+    if filename:
+        if not os.path.exists(os.path.join(root, filename)):
+            print('no such file')
+            return
+        if filename not in newfiles:
+            print('not a new file')
+            return
+        files = [filename]
+    elif new_only:
+        files = newfiles
+    else:
+        files = [line.split()[1] for line in result.stdout.split('\n') if line and line[0] != '?']
+
+    # bij list optie: toon namen en exit
+    if list_only:
+        if files:
+            print('files to be staged:')
+            print()
+            for item in files:
+                print(item)
+        else:
+            print('nothing to stage')
+        return
+
+    # kopieer naar staging locatie
     for item in files:
         dest = os.path.join(root, '.staging', item)
         if not os.path.exists(dest):
             os.makedirs(os.path.dirname(dest), exist_ok=True)
         with c.cd(root):
             result = c.run('cp {0} .staging/{0}'.format(item))
+
+    # commit de gestagede files zodat ze niet nog een keer geselecteerd worden
     with c.cd(root):
+        if filename:
+            c.run('hg add {}'.format(filename))
+        elif new_only:
+            c.run('hg add {}'.format(' '.join(newfiles)))
         now = datetime.datetime.today().strftime('%d-%m-%Y %H:%M')
         c.run('hg ci -m "staged on {}"'.format(now))
-
