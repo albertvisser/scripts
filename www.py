@@ -117,16 +117,15 @@ def stage(c, sitename, new_only=False, filename='', list_only=False):
         files = newfiles
     else:
         files = [line.split()[1] for line in result.stdout.split('\n') if line and line[0] != '?']
+    if not files:
+        print('nothing to stage')
+        return
 
     # bij list optie: toon namen en exit
     if list_only:
-        if files:
-            print('files to be staged:')
-            print()
-            for item in files:
-                print(item)
-        else:
-            print('nothing to stage')
+        for item in files:
+            print(item)
+        print('\n{} files to be staged'.format(len(files)))
         return
 
     # kopieer naar staging locatie
@@ -136,6 +135,7 @@ def stage(c, sitename, new_only=False, filename='', list_only=False):
             os.makedirs(os.path.dirname(dest), exist_ok=True)
         with c.cd(root):
             result = c.run('cp {0} .staging/{0}'.format(item))
+    print('{} files staged'.format(len(files)))
 
     # commit de gestagede files zodat ze niet nog een keer geselecteerd worden
     with c.cd(root):
