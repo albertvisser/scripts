@@ -14,6 +14,20 @@ import settings
 HOME = pathlib.Path.home()
 root = HOME / 'projects'
 
+def just_run(command_list, path):
+    "shortcut for call to subprocess (no interest in result"
+    subprocess.run(command_list, cwd=str(path))
+     
+def get_run_results(command_list, path):
+    "shortcut for call to subprocess (returns stdout and stderr as lists)"
+    result = subprocess.run(command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                            cwd=str(path))
+    ret1i, ret2 = [], []
+    if result.stdout is not None:
+        ret1 = [x for x in str(result.stdout, encoding='utf-8').split('\n') if x] 
+    if result.stderr is not None:
+        ret2 = [x for x in str(result.stderr, encoding='utf-8').split('\n') if x]
+    return ret1, ret2
 
 class DiffViewDialog(qtw.QDialog):
     """dialoog voor het tonen van de diff output
@@ -98,12 +112,38 @@ class Gui(qtw.QWidget):
         vbox = qtw.QVBoxLayout()
 
         hbox = qtw.QHBoxLayout()
+        hbox.addWidget(qtw.QLabel('Branch:', self))
+        self.cb_branch = qtw.QComboBox(self)
+        self.cb_branch.setEditable(True)
+        self.update_branches()
+        hbox.addWidget(self.cb_branch)
+        
+        btn = qtw.QPushButton('&Create', self)
+        btn.clicked.connect(self.create_branch)
+        hbox.addWidget(btn)
+        btn = qtw.QPushButton('&Switch To', self)
+        btn.clicked.connect(self.switch2branch)
+        hbox.addWidget(btn)
+        btn = qtw.QPushButton('&Stash', self)
+        btn.setMenu(self.setup_stashmenu())
+        hbox.addWidget(btn)
+        btn = qtw.QPushButton('&Merge', self)
+        btn.clicked.connect(self.merge_branch)
+        hbox.addWidget(btn)
+        btn = qtw.QPushButton('&Delete', self)
+        btn.clicked.connect(self.delete_branch)
+        hbox.addWidget(btn)
+        hbox.addStretch()
+        vbox.addLayout(hbox)
+
+        hbox = qtw.QHBoxLayout()
         self.list = qtw.QListWidget(self)
         self.list.setSelectionMode(qtw.QAbstractItemView.ExtendedSelection)
         self.populate_frame()
         hbox.addWidget(self.list)
 
         vbox2 = qtw.QVBoxLayout()
+        vbox2.addSpacing(10)
         vbox2.addWidget(qtw.QLabel('Select file(s) and', self))
         btn = qtw.QPushButton('&Edit', self)
         btn.clicked.connect(self.edit_selected)
@@ -358,8 +398,7 @@ class Gui(qtw.QWidget):
                 filenames.append(name)
         if filenames:
             command = [self.repotype, 'blame'] + filenames
-            result = subprocess.run(command, stdout=subprocess.PIPE,
-                                    cwd=str(self.path))
+            result = subprocess.run(command, stdout=subprocess.PIPE, cwd=str(self.path))
             text = str(result.stdout, encoding='utf-8')
             caption = 'Show annotations for: ' + ', '.join(filenames)
             DiffViewDialog(self, self.title, caption, text).exec_()
@@ -368,6 +407,85 @@ class Gui(qtw.QWidget):
         """execute hg view"""
         command = {'hg': ['hg', 'view'], 'git': ['gitg']}[self.repotype]
         result = subprocess.run(command, stdout=subprocess.PIPE, cwd=str(self.path))
+
+    def update_branches(self):
+        "build a list of branches and update combobox"
+        stdout, stderr = get_run_results(['git', 'branch'], self.path)
+        current, branches = 0, []
+        for ix, item in enumerate(stdout):
+            test = item.split(None, 1)
+            branches.append(test[-1])
+            if len(test) > 1 and test[0] == '*':
+                current = ix
+        self.cb_branch.clear()
+        self.cb_branch.addItems(branches)
+        self.cb_branch.setCurrentIndex(current)
+
+    def create_branch(self):
+        "create a new branch"
+        branch_name = self.cb_branch.currentText()
+        # als je een branch aanmaakt die al bestaat krijg je hiermee een melding in de console
+        just_run(['git', 'branch', branch_name], self.path)
+        # of heb ik liever nette een foutafhandeling (de melding komt in stderr)?
+        # stdout, stderr = get_run_results(['git', 'branch', branch_name], self.path)
+        # print(stdout)
+        # print(stderr)
+        self.update_branches()
+
+    def switch2branch(self):
+        """switch to the chosen branch
+
+        do not ignore error message
+        """
+        branch_name = self.cb_branch.currentText()
+        stdout, stderr = get_run_results(['git', 'checkout', branch_name], self.path)
+        print('stdout:', stdout)
+        print('stderr:', stderr)
+        self.update_branches()
+
+    def merge_branch (self):
+        """merge the chosen brach with the current
+
+        make it possible to resolve merge conflicts
+        """
+        branch_name = self.cb_branch.currentText()
+        stdout, stderr = get_run_results(['git', 'merge', branch_name], self.path)
+        print('stdout:', stdout)
+        print('stderr:', stderr)
+        # self.update_branches()
+
+    def delete_branch (self):
+        "delete the chosen branch"
+        branch_name = self.cb_branch.currentText()
+        stdout, stderr = get_run_results(['git', 'branch', '-d', branch_name], self.path)
+        print('stdout:', stdout)
+        print('stderr:', stderr)
+        # als de branch verwijderd kan worden krijg je alleen een melding in de stdout
+        self.update_branches()
+
+    def setup_stashmenu(self):
+        """define popup menu with options to create and retrieve stashes
+        """
+        menu = qtw.QMenu()
+        for label, callback in (('&New Stash', self.stash_push),
+                               ('&Apply Stash', self.stash_pop),
+                               ('&Remove Stash', self.stash_kill)):
+            action = qtw.QAction(label, self)
+            action.triggered.connect(callback)
+            menu.addAction(action)
+        return menu
+
+    def stash_push(self):
+        "create a new stash on the current branch"
+        qtw.QMessageBox.information(self, '', 'create stash')
+
+    def stash_pop(self):
+        "apply a stash to the current branch"
+        qtw.QMessageBox.information(self, '', 'apply stash')
+
+    def stash_kill(self):
+        "delete a shash"
+        qtw.QMessageBox.information(self, '', 'delete stash')
 
 
 def main(args):
