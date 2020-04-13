@@ -14,20 +14,6 @@ import settings
 HOME = pathlib.Path.home()
 root = HOME / 'projects'
 
-def just_run(command_list, path):
-    "shortcut for call to subprocess (no interest in result"
-    subprocess.run(command_list, cwd=str(path))
-     
-def get_run_results(command_list, path):
-    "shortcut for call to subprocess (returns stdout and stderr as lists)"
-    result = subprocess.run(command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                            cwd=str(path))
-    ret1i, ret2 = [], []
-    if result.stdout is not None:
-        ret1 = [x for x in str(result.stdout, encoding='utf-8').split('\n') if x] 
-    if result.stderr is not None:
-        ret2 = [x for x in str(result.stderr, encoding='utf-8').split('\n') if x]
-    return ret1, ret2
 
 class DiffViewDialog(qtw.QDialog):
     """dialoog voor het tonen van de diff output
@@ -117,20 +103,20 @@ class Gui(qtw.QWidget):
         self.cb_branch.setEditable(True)
         self.update_branches()
         hbox.addWidget(self.cb_branch)
-        
-        btn = qtw.QPushButton('&Create', self)
+
+        btn = qtw.QPushButton('Create', self)
         btn.clicked.connect(self.create_branch)
         hbox.addWidget(btn)
-        btn = qtw.QPushButton('&Switch To', self)
+        btn = qtw.QPushButton('Switch To', self)
         btn.clicked.connect(self.switch2branch)
         hbox.addWidget(btn)
-        btn = qtw.QPushButton('&Stash', self)
+        btn = qtw.QPushButton('Stash', self)
         btn.setMenu(self.setup_stashmenu())
         hbox.addWidget(btn)
-        btn = qtw.QPushButton('&Merge', self)
+        btn = qtw.QPushButton('Merge', self)
         btn.clicked.connect(self.merge_branch)
         hbox.addWidget(btn)
-        btn = qtw.QPushButton('&Delete', self)
+        btn = qtw.QPushButton('Delete', self)
         btn.clicked.connect(self.delete_branch)
         hbox.addWidget(btn)
         hbox.addStretch()
@@ -182,7 +168,7 @@ class Gui(qtw.QWidget):
         btn = qtw.QPushButton('Di&ff all Files', self)
         btn.clicked.connect(self.diff_all)
         hbox.addWidget(btn)
-        btn = qtw.QPushButton('L&int all Files', self)
+        btn = qtw.QPushButton('Li&nt all Files', self)
         btn.clicked.connect(self.lint_all)
         hbox.addWidget(btn)
         btn = qtw.QPushButton('Commit &All changes', self)
@@ -289,7 +275,7 @@ class Gui(qtw.QWidget):
                 qtw.QMessageBox.information(self, self.title, name + ' already tracked')
         if filenames:
             fname = '.hgignore' if self.repotype == '.hg' else '.gitignore'
-            fname = self.path / fname 
+            fname = self.path / fname
             with fname.open('a') as _out:
                 for name in filenames:
                     _out.write(name)
@@ -344,7 +330,7 @@ class Gui(qtw.QWidget):
             if ok:
                 if self.repotype == 'git':
                     command = ['git', 'add'] + filenames
-                    #FIXME: moet hier niet nog een subprocess.run tussen of zo?
+                    # FIXME: moet hier niet nog een subprocess.run tussen of zo?
                 command = [self.repotype, 'commit'] + filenames + ['-m', message]
                 subprocess.run(command, cwd=str(self.path))
                 self.refresh_frame()
@@ -409,8 +395,9 @@ class Gui(qtw.QWidget):
         result = subprocess.run(command, stdout=subprocess.PIPE, cwd=str(self.path))
 
     def update_branches(self):
-        "build a list of branches and update combobox"
-        stdout, stderr = get_run_results(['git', 'branch'], self.path)
+        """build a list of branches and update combobox
+        """
+        stdout, stderr = self.run_and_capture(['git', 'branch'])
         current, branches = 0, []
         for ix, item in enumerate(stdout):
             test = item.split(None, 1)
@@ -422,44 +409,31 @@ class Gui(qtw.QWidget):
         self.cb_branch.setCurrentIndex(current)
 
     def create_branch(self):
-        "create a new branch"
+        """create a new branch
+        """
         branch_name = self.cb_branch.currentText()
-        # als je een branch aanmaakt die al bestaat krijg je hiermee een melding in de console
-        just_run(['git', 'branch', branch_name], self.path)
-        # of heb ik liever nette een foutafhandeling (de melding komt in stderr)?
-        # stdout, stderr = get_run_results(['git', 'branch', branch_name], self.path)
-        # print(stdout)
-        # print(stderr)
+        self.run_and_report(['git', 'branch', branch_name])
         self.update_branches()
 
     def switch2branch(self):
         """switch to the chosen branch
-
-        do not ignore error message
         """
         branch_name = self.cb_branch.currentText()
-        stdout, stderr = get_run_results(['git', 'checkout', branch_name], self.path)
-        print('stdout:', stdout)
-        print('stderr:', stderr)
+        self.run_and_report(['git', 'checkout', branch_name])
         self.update_branches()
 
-    def merge_branch (self):
+    def merge_branch(self):
         """merge the chosen brach with the current
-
-        make it possible to resolve merge conflicts
         """
         branch_name = self.cb_branch.currentText()
-        stdout, stderr = get_run_results(['git', 'merge', branch_name], self.path)
-        print('stdout:', stdout)
-        print('stderr:', stderr)
-        # self.update_branches()
+        self.run_and_report(['git', 'merge', branch_name])
+        self.update_branches()
 
-    def delete_branch (self):
-        "delete the chosen branch"
+    def delete_branch(self):
+        """delete the chosen branch
+        """
         branch_name = self.cb_branch.currentText()
-        stdout, stderr = get_run_results(['git', 'branch', '-d', branch_name], self.path)
-        print('stdout:', stdout)
-        print('stderr:', stderr)
+        self.run_and_report(['git', 'branch', '-d', branch_name])
         # als de branch verwijderd kan worden krijg je alleen een melding in de stdout
         self.update_branches()
 
@@ -468,8 +442,8 @@ class Gui(qtw.QWidget):
         """
         menu = qtw.QMenu()
         for label, callback in (('&New Stash', self.stash_push),
-                               ('&Apply Stash', self.stash_pop),
-                               ('&Remove Stash', self.stash_kill)):
+                                ('&Apply Stash', self.stash_pop),
+                                ('&Remove Stash', self.stash_kill)):
             action = qtw.QAction(label, self)
             action.triggered.connect(callback)
             menu.addAction(action)
@@ -478,14 +452,59 @@ class Gui(qtw.QWidget):
     def stash_push(self):
         "create a new stash on the current branch"
         qtw.QMessageBox.information(self, '', 'create stash')
+        self.run_and_report(['git', 'stash', 'push'])
+
+    def select_stash(self):
+        """show popup with list of current stashes; return the selected one
+        """
+        stashes, stderr = self.run_and_capture(['git', 'stash', 'list'])
+        if not stashes:
+            qtw.QMessageBox.information(self, self.title, 'No stashes found')
+            return ''
+        stash, ok = qtw.QInputDialog.getItem(self, self.title, 'select a stash from the list',
+                                             stashes)
+        stashid = stash.split(': ')[0] if ok else ''
+        return stashid
 
     def stash_pop(self):
         "apply a stash to the current branch"
-        qtw.QMessageBox.information(self, '', 'apply stash')
+        stash_id = self.select_stash()
+        if stash_id:
+            self.run_and_report(['git', 'stash', 'apply', stash_id])
 
     def stash_kill(self):
         "delete a shash"
-        qtw.QMessageBox.information(self, '', 'delete stash')
+        stash_id = self.select_stash()
+        if stash_id:
+            self.run_and_report(['git', 'stash', 'drop', stash_id])
+
+    def just_run(self, command_list):
+        "shortcut for call to subprocess (no interest in result"
+        subprocess.run(command_list, cwd=str(self.path))
+
+    def run_and_report(self, command_list):
+        "shortcut for call to subprocess (reports results from stdout and stderr)"
+        result = subprocess.run(command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                cwd=str(self.path))
+        if result.stdout is not None:
+            text = str(result.stdout, encoding='utf-8').strip('\n')
+            if text:
+                qtw.QMessageBox.information(self, self.title, text)
+        if result.stderr is not None:
+            text = str(result.stderr, encoding='utf-8').strip('\n')
+            if text:
+                qtw.QMessageBox.warning(self, self.title, text)
+
+    def run_and_capture(self, command_list):
+        "shortcut for call to subprocess (returns stdout and stderr as lists)"
+        result = subprocess.run(command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                cwd=str(self.path))
+        ret1, ret2 = [], []
+        if result.stdout is not None:
+            ret1 = [x for x in str(result.stdout, encoding='utf-8').split('\n') if x]
+        if result.stderr is not None:
+            ret2 = [x for x in str(result.stderr, encoding='utf-8').split('\n') if x]
+        return ret1, ret2
 
 
 def main(args):
