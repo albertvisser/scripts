@@ -220,8 +220,7 @@ class Gui(qtw.QWidget):
         command = [y for x, y in self.get_selected_files()]
         # command.insert(0, 'SciTE')
         command[:0] = ['gnome-terminal', '--profile', 'Code Editor Shell', '--', 'vi']
-        ## subprocess.Popen(command, cwd=str(self.path))  # don't wait for editor to close
-        subprocess.run(command, cwd=str(self.path))
+        self.just_run(command)
         self.refresh_frame()
 
     def diff_all(self):
@@ -230,49 +229,37 @@ class Gui(qtw.QWidget):
         command = ['meld', '.']
         if self.got_meld:
             try:
-                result = subprocess.run(command, cwd=str(self.path))
+                self.just_run(command)
             except OSError:
-            ## if result.returncode:
                 self.got_meld = False
         if not self.got_meld:
-            qtw.QMessageBox.information(self, self.title, 'Sorry, not possible '
-                                                          'at this time - Meld not installed')
+            qtw.QMessageBox.information(self, self.title, 'Sorry, not possible at this time -'
+                                        ' Meld not installed')
 
     def diff_selected(self):
         """show selected files in diff view"""
-        filelist = self.get_selected_files()
-        filenames = []
-        for letter, name in filelist:
-            if letter in ('?', '??'):
-                qtw.QMessageBox.information(self, self.title, name + ' not tracked')
-            else:
-                filenames.append(name)
+        filenames = self.filter_tracked(self.get_selected_files())
         if self.got_meld:
             for name in filenames:
                 command = ['meld', name]
                 try:
-                    result = subprocess.run(command, cwd=str(self.path))
+                    self.just_run(command)
                 except OSError:
-                ## if result.returncode:
                     self.got_meld = False
                     break
         if not self.got_meld:
             if filenames:
                 command = [self.repotype, 'diff'] + filenames
-                result = subprocess.run(command, stdout=subprocess.PIPE, cwd=str(self.path))
-                text = str(result.stdout, encoding='utf-8')
+                _out, _err = self.run_and_capture(command)
+                if _err:
+                    qtw.QMessageBox.information(self, self.title, '\n'.join(_err))
+                    return
                 caption = 'Show diffs for: ' + ', '.join(filenames)
-                DiffViewDialog(self, self.title, caption, text).exec_()
+                DiffViewDialog(self, self.title, caption, _out).exec_()
 
     def add_ignore(self):
         """add selected file to ignore list"""
-        filelist = self.get_selected_files()
-        filenames = []
-        for letter, name in filelist:
-            if letter in ('?', '??'):
-                filenames.append(name)
-            else:
-                qtw.QMessageBox.information(self, self.title, name + ' already tracked')
+        filenames = self.filter_tracked(self.get_selected_files())
         if filenames:
             fname = '.hgignore' if self.repotype == '.hg' else '.gitignore'
             fname = self.path / fname
@@ -285,16 +272,14 @@ class Gui(qtw.QWidget):
     def add_new(self):
         """add selected file(s) to the tracked list"""
         filenames = [y for x, y in self.get_selected_files()]
-        command = [self.repotype, 'add'] + filenames
-        subprocess.run(command, cwd=str(self.path))
+        self.run_and_report([self.repotype, 'add'] + filenames)
         self.refresh_frame()
 
     def forget(self):
         """stop tracking selected file(s)"""
         commands = {'hg': ['hg', 'forget'], 'git': ['git', 'rm', '--cached']}
         filenames = [y for x, y in self.get_selected_files()]
-        command = commands[self.repotype] + filenames
-        subprocess.run(command, cwd=str(self.path))
+        self.run_and_report(commands[self.repotype] + filenames)
         self.refresh_frame()
 
     def refresh_frame(self):
@@ -304,100 +289,85 @@ class Gui(qtw.QWidget):
 
     def commit_all(self):
         """hg commit uitvoeren - vraag om commit message"""
-        message, ok = qtw.QInputDialog.getText(self, self.title,
-                                               'Enter a commit message:')
+        message, ok = qtw.QInputDialog.getText(self, self.title, 'Enter a commit message:')
         if ok:
-            if self.repotype == 'git':
-                command = ['git', 'commit', '-a', '-m', message]
-            else:
-                command = ['hg', 'commit', '-m', message]
-            subprocess.run(command, cwd=str(self.path))
+            commands = {'git': ['git', 'commit', '-a', '-m', message],
+                        'hg': ['hg', 'commit', '-m', message]}
+            self.run_and_report(commands[self.repotype])
             self.refresh_frame()
 
     def commit_selected(self):
         """hg commit <selected files> uitvoeren - vraag om commit message"""
-        ## filenames = [y for x, y in self.get_selected_files()]
-        filelist = self.get_selected_files()
-        filenames = []
-        for letter, name in filelist:
-            if letter in ('?', '??'):
-                qtw.QMessageBox.information(self, self.title, name + ' not tracked')
-            else:
-                filenames.append(name)
+        filenames = self.filter_tracked(self.get_selected_files())
         if filenames:
-            message, ok = qtw.QInputDialog.getText(self, self.title,
-                                                   'Enter a commit message:')
+            message, ok = qtw.QInputDialog.getText(self, self.title, 'Enter a commit message:')
             if ok:
                 if self.repotype == 'git':
-                    command = ['git', 'add'] + filenames
-                    # FIXME: moet hier niet nog een subprocess.run tussen of zo?
-                command = [self.repotype, 'commit'] + filenames + ['-m', message]
-                subprocess.run(command, cwd=str(self.path))
+                    self.run_and_report(['git', 'add'] + filenames)
+                self.run_and_report([self.repotype, 'commit'] + filenames + ['-m', message])
                 self.refresh_frame()
 
     def revert_selected(self):
         """hg revert <selected files> uitvoeren
         """
-        print('in revert method')
-        filelist = self.get_selected_files()
-        filenames = []
-        for letter, name in filelist:
-            if letter in ('?', '??'):
-                qtw.QMessageBox.information(self, self.title, name + ' not tracked')
-            else:
-                filenames.append(name)
+        filenames = self.filter_tracked(self.get_selected_files())
         if filenames:
-            if self.repotype == 'git':
-                qtw.QMessageBox.information(self, self.title, ' not implemented')
-                # command = ['git', 'revert'] + filenames
-            command = [self.repotype, 'revert'] + filenames
-            subprocess.run(command, cwd=str(self.path))
-            print('command completed')
+            commands = {'git': ['git', 'checkout', '--'], 'hg': ['hg', 'revert']}
+            self.run_and_report(commands[self.repotype] + filenames)
             self.refresh_frame()
 
     def lint_selected(self):
         """execute permissive linting on selected files
         """
-        filelist = self.get_selected_files()
-        filelist = [name for letter, name in filelist if letter not in ('?', '??')]
+        filelist = self.filter_tracked(self.get_selected_files(), notify=False)
+        # [name for letter, name in self.get_selected_files() if letter not in ('?', '??')]
         if filelist:
             mode = '-f' if len(filelist) == 1 else '-l'
-            command = ['lintergui', '-m', 'permissive', mode] + filelist
-            subprocess.run(command, cwd=str(self.path))
+            self.just_run(['lintergui', '-m', 'permissive', mode] + filelist)
         else:
             qtw.QMessageBox.information(self, self.title, 'No tracked files selected')
 
     def lint_all(self):
         """execute permissive linting on all files in repository
         """
-        subprocess.run(['lintergui', '-m', 'permissive', '-d', '.'])
+        self.just_run(['lintergui', '-m', 'permissive', '-d', '.'])
 
     def annotate(self):
         """show selected files in annotated view"""
-        filelist = self.get_selected_files()
+        filenames = self.filter_tracked(self.get_selected_files())
+        if filenames:
+            command = [self.repotype, 'blame'] + filenames
+            _out, _err = self.run_and_capture(command)
+            if _err:
+                qtw.QMessageBox.information(self, self.title, '\n'.join(_err))
+                return
+            caption = 'Show annotations for: ' + ', '.join(filenames)
+            DiffViewDialog(self, self.title, caption, '\n'.join(_out)).exec_()
+
+    def filter_tracked(self, filelist, notify=True):
+        """return only the tracked files, optionally (don't) show messages for untracked ones
+        """
         filenames = []
         for letter, name in filelist:
             if letter in ('?', '??'):
-                qtw.QMessageBox.information(self, self.title,
-                                            name + ' not tracked')
+                if notify:
+                    qtw.QMessageBox.information(self, self.title, name + ' not tracked')
             else:
                 filenames.append(name)
-        if filenames:
-            command = [self.repotype, 'blame'] + filenames
-            result = subprocess.run(command, stdout=subprocess.PIPE, cwd=str(self.path))
-            text = str(result.stdout, encoding='utf-8')
-            caption = 'Show annotations for: ' + ', '.join(filenames)
-            DiffViewDialog(self, self.title, caption, text).exec_()
+        return filenames
 
     def view_repo(self):
         """execute hg view"""
         command = {'hg': ['hg', 'view'], 'git': ['gitg']}[self.repotype]
-        result = subprocess.run(command, stdout=subprocess.PIPE, cwd=str(self.path))
+        self.just_run(command)
 
     def update_branches(self):
         """build a list of branches and update combobox
         """
         stdout, stderr = self.run_and_capture(['git', 'branch'])
+        if stderr:
+            qtw.QMessageBox.information(self, self.title, '\n'.join(stderr))
+            return
         current, branches = 0, []
         for ix, item in enumerate(stdout):
             test = item.split(None, 1)
@@ -458,6 +428,9 @@ class Gui(qtw.QWidget):
         """show popup with list of current stashes; return the selected one
         """
         stashes, stderr = self.run_and_capture(['git', 'stash', 'list'])
+        if stderr:
+            qtw.QMessageBox.information(self, self.title, '\n'.join(stderr))
+            return ''
         if not stashes:
             qtw.QMessageBox.information(self, self.title, 'No stashes found')
             return ''
@@ -541,6 +514,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('project', help="name of a software project", nargs='?',
                         default="")
-    result = main(parser.parse_args())
-    if result:
-        print(result)
+    results = main(parser.parse_args())
+    if results:
+        print(results)
