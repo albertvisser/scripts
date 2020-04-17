@@ -104,6 +104,8 @@ def _check(c, context='local', push='no', verbose=False, exclude=None, dry_run=F
 
             ## tmp = '/tmp/hg_st_{}'.format(name)
             uncommitted = outgoing = False
+            # check if we are on branch 'master'
+            not_on_master = get_branchname(c, pwd) if is_gitrepo or is_private else ''
 
             command = 'git status -uno --short' if (is_gitrepo or is_private) else 'hg status --quiet'
             if dry_run:
@@ -113,8 +115,6 @@ def _check(c, context='local', push='no', verbose=False, exclude=None, dry_run=F
                     result = c.run(command, hide=True)
             test = result.stdout
             if test.strip():
-                # first check if we are on branch 'master'
-                not_on_master = get_branchname(c, pwd) if is_gitrepo or is_private else ''
                 on_branch = ' (on branch {})'.format(not_on_master) if not_on_master else ''
                 stats.append('uncommitted changes' + on_branch)
                 _out.write('\nuncommitted changes in {}{}\n'.format(pwd, on_branch))
@@ -149,7 +149,10 @@ def _check(c, context='local', push='no', verbose=False, exclude=None, dry_run=F
                     _out.write(buf2 + "\n")
             else:
                 if is_gitrepo or is_private:
-                    command = 'git log --not --branches=master --remotes=origin'
+                    if not_on_master:
+                        command = 'git log --not --branches=master --remotes=origin'
+                    else:
+                        command = 'git log --branches --not --remotes=origin'
                 else:
                     command = 'hg outgoing'
                 result = None
