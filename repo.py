@@ -33,6 +33,19 @@ def get_repofiles(c, reponame):
     return path, files
 
 
+def get_branchname(c, pwd):
+    with c.cd(pwd):
+        result = c.run('git branch', hide=True)
+    name = ''
+    for line in result.stdout.split('\n'):
+        if line.startswith('*'):
+            name = line.split()[1]
+            break
+    if name == 'master':
+        return ''
+    return name
+
+
 def _check(c, context='local', push='no', verbose=False, exclude=None, dry_run=False):
     """vergelijkt repositories met elkaar
 
@@ -100,8 +113,11 @@ def _check(c, context='local', push='no', verbose=False, exclude=None, dry_run=F
                     result = c.run(command, hide=True)
             test = result.stdout
             if test.strip():
-                stats.append('uncommitted changes')
-                _out.write('\nuncommitted changes in {}\n'.format(pwd))
+                # first check if we are on branch 'master'
+                not_on_master = get_branchname(c, pwd) if is_gitrepo or is_private else ''
+                on_branch = ' (on branch {})'.format(not_on_master) if not_on_master else ''
+                stats.append('uncommitted changes' + on_branch)
+                _out.write('\nuncommitted changes in {}{}\n'.format(pwd, on_branch))
                 uncommitted = True
                 _out.write(test + '\n')
             if remote:
@@ -133,7 +149,7 @@ def _check(c, context='local', push='no', verbose=False, exclude=None, dry_run=F
                     _out.write(buf2 + "\n")
             else:
                 if is_gitrepo or is_private:
-                    command = 'git log --branches --not --remotes=origin'
+                    command = 'git log --not --branches=master --remotes=origin'
                 else:
                     command = 'hg outgoing'
                 result = None
