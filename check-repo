@@ -101,7 +101,6 @@ class Gui(qtw.QWidget):
         hbox.addWidget(qtw.QLabel('Branch:', self))
         self.cb_branch = qtw.QComboBox(self)
         self.cb_branch.setEditable(True)
-        self.update_branches()
         hbox.addWidget(self.cb_branch)
 
         btn = qtw.QPushButton('Create', self)
@@ -210,6 +209,7 @@ class Gui(qtw.QWidget):
         for name in self.filelist:
             self.list.addItem(name)
         self.list.setCurrentRow(0)
+        self.update_branches()
 
     def get_selected_files(self):
         """get a list of the selected filenames"""
@@ -390,14 +390,16 @@ class Gui(qtw.QWidget):
         """
         branch_name = self.cb_branch.currentText()
         self.run_and_report(['git', 'checkout', branch_name])
-        self.update_branches()
+        # self.update_branches()
+        self.refresh_list()
 
     def merge_branch(self):
         """merge the chosen brach with the current
         """
         branch_name = self.cb_branch.currentText()
         self.run_and_report(['git', 'merge', branch_name])
-        self.update_branches()
+        # self.update_branches()
+        self.refresh_list()
 
     def delete_branch(self):
         """delete the chosen branch
