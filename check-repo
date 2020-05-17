@@ -124,7 +124,7 @@ class Gui(qtw.QWidget):
         hbox = qtw.QHBoxLayout()
         self.list = qtw.QListWidget(self)
         self.list.setSelectionMode(qtw.QAbstractItemView.ExtendedSelection)
-        self.populate_frame()
+        # self.populate_frame()
         hbox.addWidget(self.list)
 
         vbox2 = qtw.QVBoxLayout()
@@ -193,6 +193,7 @@ class Gui(qtw.QWidget):
         self.addAction(do)
         # start assuming Meld is present
         self.got_meld = True
+        self.refresh_frame()
 
     def get_repofiles(self):
         """return results of "status" command -- list uncommitted / untracked files
@@ -286,6 +287,7 @@ class Gui(qtw.QWidget):
         """recheck repository and update list"""
         self.filelist = self.get_repofiles()
         self.populate_frame()
+        self.list.setFocus()
 
     def commit_all(self):
         """hg commit uitvoeren - vraag om commit message"""
