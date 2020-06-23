@@ -29,7 +29,7 @@ def edit(c, names):
 @task
 def update_sites(c):
     "update mydomains database and localhost/sites.html from /etc/hosts"
-    with c.cd('~/www/django/mydomains'):
+    with c.cd('~/projects/mydomains'):
         c.run('python check_hosts.py')
     wwwcopy('sites.html')
 
