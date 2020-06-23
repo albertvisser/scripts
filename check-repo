@@ -88,6 +88,7 @@ class Gui(qtw.QWidget):
     def __init__(self, path, repotype):
         self.path = path
         self.repotype = repotype
+        self.outtype = 'status'
         self.filelist = self.get_repofiles()
 
         project = path.stem
@@ -128,7 +129,14 @@ class Gui(qtw.QWidget):
         hbox.addWidget(self.list)
 
         vbox2 = qtw.QVBoxLayout()
-        vbox2.addSpacing(10)
+        #vbox2.addSpacing(10)
+        hbox2 = qtw.QHBoxLayout()
+        hbox2.addWidget(qtw.QLabel('Show:', self))
+        self.cb_list = qtw.QComboBox(self)
+        self.cb_list.addItems(['status', 'repolist'])
+        self.cb_list.currentIndexChanged.connect(self.set_outtype)
+        hbox2.addWidget(self.cb_list)
+        vbox2.addLayout(hbox2)
         vbox2.addWidget(qtw.QLabel('Select file(s) and', self))
         btn = qtw.QPushButton('&Edit', self)
         btn.clicked.connect(self.edit_selected)
@@ -198,9 +206,12 @@ class Gui(qtw.QWidget):
     def get_repofiles(self):
         """return results of "status" command -- list uncommitted / untracked files
         """
-        command = [self.repotype, 'status']
-        if self.repotype == 'git':
-            command.append('--short')
+        if self.outtype == 'status':
+            command = [self.repotype, 'status']
+            if self.repotype == 'git':
+                command.append('--short')
+        elif self.outtype == 'repolist':
+            command = {'hg': ['hg', 'manifest'], 'git': ['git', 'ls-files']}[self.repotype]
         result = subprocess.run(command, stdout=subprocess.PIPE, cwd=str(self.path))
         return [x for x in str(result.stdout, encoding='utf-8').split('\n') if x]
 
@@ -214,7 +225,10 @@ class Gui(qtw.QWidget):
 
     def get_selected_files(self):
         """get a list of the selected filenames"""
-        return [item.text().split(None, 1) for item in self.list.selectedItems()]
+        if self.outtype == 'status':
+            return [item.text().split(None, 1) for item in self.list.selectedItems()]
+        return [('', item.text()) for item in self.list.selectedItems()]
+        
 
     def edit_selected(self):
         """Open selected files in a text editor"""
@@ -281,6 +295,11 @@ class Gui(qtw.QWidget):
         commands = {'hg': ['hg', 'forget'], 'git': ['git', 'rm', '--cached']}
         filenames = [y for x, y in self.get_selected_files()]
         self.run_and_report(commands[self.repotype] + filenames)
+        self.refresh_frame()
+
+    def set_outtype(self, *args):
+        """register change in selected output format"""
+        self.outtype = self.cb_list.currentText()
         self.refresh_frame()
 
     def refresh_frame(self):
