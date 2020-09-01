@@ -412,7 +412,7 @@ class Gui(qtw.QWidget):
         branch_name = self.cb_branch.currentText()
         self.run_and_report(['git', 'checkout', branch_name])
         # self.update_branches()
-        self.refresh_list()
+        self.refresh_frame()
 
     def merge_branch(self):
         """merge the chosen brach with the current
@@ -420,7 +420,7 @@ class Gui(qtw.QWidget):
         branch_name = self.cb_branch.currentText()
         self.run_and_report(['git', 'merge', branch_name])
         # self.update_branches()
-        self.refresh_list()
+        self.refresh_frame()
 
     def delete_branch(self):
         """delete the chosen branch
