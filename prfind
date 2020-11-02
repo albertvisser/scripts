@@ -1,0 +1,1 @@
+afrift -m multi -P $files &

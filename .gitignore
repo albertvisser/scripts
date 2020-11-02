@@ -4,6 +4,6 @@ __pycache__/
 *$py.class
 
 # development stuff
-logs/
+.sessions/
 *.swp
 *.swo

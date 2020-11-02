@@ -1,0 +1,6 @@
+#! /usr/bin/env python3
+"""syntax check python script
+"""
+import sys
+import py_compile
+py_compile.compile(sys.argv[1])

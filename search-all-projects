@@ -1,0 +1,20 @@
+#! /bin/sh
+if test -z "$1"; then
+    afrift -m multi ~/bin/all_project_dirs.lst -e py -P
+else
+    if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "Usage: search-all-projects [OPTION] [TEXT]"
+	echo "Search for given text in python files of all known projects"
+	echo ""
+	echo "Wnen no search argument is provided a GUI is presented"
+	echo "  -h --help	display this help and exit"
+	echo "  -r --regen	regenerate list of directories to search in"
+	echo ""
+	echo " 'pfind' is provided as an alias for this command"
+    elif [ "$1" = "-r" ] || [ "$1" = "-regen" ]; then
+        #~ python3 ~/projects/filefindr/determine_all_project_files.py ~/bin/all_project_dirs.lst
+        python3 ~/bin/determine_all_project_dirs.py ~/bin/all_project_dirs.lst
+    else
+        afrift -m multi ~/bin/all_project_dirs.lst -e py -PN -s $1
+    fi
+fi
