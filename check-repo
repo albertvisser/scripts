@@ -229,7 +229,6 @@ class Gui(qtw.QWidget):
             return [item.text().split(None, 1) for item in self.list.selectedItems()]
         return [('', item.text()) for item in self.list.selectedItems()]
         
-
     def edit_selected(self):
         """Open selected files in a text editor"""
         command = [y for x, y in self.get_selected_files()]
@@ -418,9 +417,13 @@ class Gui(qtw.QWidget):
         """merge the chosen brach with the current
         """
         branch_name = self.cb_branch.currentText()
-        self.run_and_report(['git', 'merge', branch_name])
-        # self.update_branches()
-        self.refresh_frame()
+        current = self.find_current_branch()
+        ok = qtw.QMessageBox.question(self, self.title,
+                                      'Merge {} into {}?'.format(branch_name, current)) 
+        if ok == qtw.QMessageBox.Yes:
+            self.run_and_report(['git', 'merge', branch_name])
+            # self.update_branches()
+            self.refresh_frame()
 
     def delete_branch(self):
         """delete the chosen branch
@@ -444,7 +447,7 @@ class Gui(qtw.QWidget):
 
     def stash_push(self):
         "create a new stash on the current branch"
-        qtw.QMessageBox.information(self, '', 'create stash')
+        qtw.QMessageBox.information(self, self.title, 'create stash')
         self.run_and_report(['git', 'stash', 'push'])
 
     def select_stash(self):
@@ -473,6 +476,11 @@ class Gui(qtw.QWidget):
         stash_id = self.select_stash()
         if stash_id:
             self.run_and_report(['git', 'stash', 'drop', stash_id])
+
+    def find_current_branch(self):
+        out, err = self.run_and_capture(['git', 'branch'])
+        print(out, err)
+        return out[0].strip().split()[-1]
 
     def just_run(self, command_list):
         "shortcut for call to subprocess (no interest in result"
