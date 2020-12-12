@@ -486,6 +486,7 @@ def mee_bezig(c, name=''):
 
 
 def rebuild_filenamelist(c):
+    "build a list of all tracked Python files in all projects"
     all_files = []
     for repo in all_repos:
         path, files = get_repofiles(c, repo)
@@ -497,7 +498,7 @@ def rebuild_filenamelist(c):
 
 @task
 def search(c, find='', rebuild=False):
-    "search for `phrase` in all tracked python files in all repo's"
+    "search in all tracked python files in all repos"
     if not os.path.exists(FILELIST) or rebuild:
         rebuild_filenamelist(c)
     command = 'afrift -m multi {} -e py -P'.format(FILELIST)

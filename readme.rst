@@ -37,10 +37,6 @@ that pass specific arguments to such a symlink. These are not included in the re
 
     `invoke` functions to manage database servers. Currently contains start/restart/stop functions for mongodb and postgres and a repair function for mongodb
 
-**determine_all_project_dirs.py**
-    script to create the list that containing all directories to search
-    as used by the search-all-projects / pfind command
-
 **dosomethingwith.py**
 
     a general-purpose script - or at least meant as such - that I wrote for use from within Double Commander to apply some action on the selected files and/or directories.
@@ -90,9 +86,9 @@ that pass specific arguments to such a symlink. These are not included in the re
     Without an argument, works in the current working directory.
     Without an extension specified, works on Python source files (extension .py).
 
-**ostart**
+**pfind**
 
-    start Opera 12 on workspace 1
+    shortcut for a `binfab` command that starts up *filefindr* to search in all my Python software projects
 
 **predit**
 
@@ -122,15 +118,6 @@ that pass specific arguments to such a symlink. These are not included in the re
     variable
 
     to use, simply prepend this command to the usual call to the app
-
-**search-all-projects** 
-    
-    starts up *afrift* to search in all my Python software projects
-    for this it calls it in 'multi' mode using a list file that lives in this
-    directory and contains all the paths to be searched.
-    can be called up with a search argument or without
-    with an option to recreate the list of files/directories to search by calling
-    determine_all_project_dirs.py which also lives in this directory
 
 **session.py**
 
@@ -364,10 +351,6 @@ symlinks or short starter scripts for my own applications:
 **nt2ext**
 
     show and/or reorganize contents of NoteTree documents
-
-**pfind**
-
-    symlink to search-all-projects
 
 **probreg**
 
