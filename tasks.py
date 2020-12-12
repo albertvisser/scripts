@@ -227,7 +227,6 @@ def create_shortcuts(c):
     for src, dst in data:
         os.symlink(src, dst)
 
-
 ns = Collection()
 ns.add_collection(session)
 ns.add_collection(repo)

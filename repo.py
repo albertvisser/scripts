@@ -9,8 +9,10 @@ import csv
 from invoke import task
 from settings import get_project_dir, all_repos, git_repos, private_repos, django_repos, \
     cherrypy_repos
+
 HOME = os.path.expanduser('~')
-today = datetime.datetime.today()
+TODAY = datetime.datetime.today()
+FILELIST = '/tmp/~~pfind'
 
 
 def get_repofiles(c, reponame):
@@ -28,7 +30,7 @@ def get_repofiles(c, reponame):
     use_git = True   # if reponame in git_repos else False
     with c.cd(path):
         command = 'git ls-tree -r --name-only master' if use_git else 'hg manifest'
-        result = c.run(command)
+        result = c.run(command, hide=True)
     files = [x for x in result.stdout.split('\n') if os.path.splitext(x)[1] == '.py']
     return path, files
 
@@ -75,7 +77,7 @@ def _check(c, context='local', push='no', verbose=False, exclude=None, dry_run=F
 
     changes = False
     with open(outfile, 'w') as _out:
-        _out.write('check {} repos on {}\n\n'.format(context, today))
+        _out.write('check {} repos on {}\n\n'.format(context, TODAY))
         for name in all_repos:
             if name in exclude:
                 continue
@@ -450,3 +452,56 @@ def overview(c, names=None):
 def add2gitweb(c, name):
     "make a repository visible with gitweb"
     c.run('sudo ln -s ~/git_repos/{0}/.git /var/lib/git/{0}.git'.format(name))
+
+
+def check_and_run_for_project(c, name, command):
+    "run only if called for a valid project"
+    if name:
+        where = get_project_dir(name)
+        if where:
+            with c.cd(where):
+                c.run(command)
+        else:
+            print('{} is not a known project'.format(where))
+    else:
+        where = os.getcwd()
+        name = os.path.basename(where)
+        if get_project_dir(name) == where:
+            c.run(command)
+        else:
+            print('you are not in a known project directory')
+
+
+@task
+def dtree(c, name=''):
+    "Open project docs using treedocs"
+    check_and_run_for_project(c, name, 'treedocs projdocs.pck')
+
+
+@task
+def mee_bezig(c, name=''):
+    "Open Doing list for a project using a-propos"
+    check_and_run_for_project(c, name, "a-propos -n 'Mee Bezig' -f mee_bezig.pck")
+
+
+
+def rebuild_filenamelist(c):
+    all_files = []
+    for repo in all_repos:
+        path, files = get_repofiles(c, repo)
+        all_files.extend([os.path.join(path, x) for x in files])
+    with open(FILELIST, 'w') as out:
+        for line in sorted(all_files):
+            print(line, file=out)
+
+
+@task
+def search(c, find='', rebuild=False):
+    "search for `phrase` in all tracked python files in all repo's"
+    if not os.path.exists(FILELIST) or rebuild:
+        rebuild_filenamelist(c)
+    command = 'afrift -m multi {} -e py -P'.format(FILELIST)
+    if find:
+        command += 'N -s ' + find
+    c.run(command)
+
