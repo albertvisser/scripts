@@ -230,6 +230,13 @@ def check_local(c, dry_run=False):
     test = _check(c, dry_run=dry_run)
     if test:
         print("use 'check-repo <reponame>' to inspect changes")
+        print("    'binfab repo.check-local-notes` for remarks")
+
+
+@task
+def check_local_notes(c):
+    with c.cd('~/projects'):
+        c.run("a-propos -n 'Ongoing stuff not needing to be committed yet' -f ongoing.pck &")
 
 
 @task
