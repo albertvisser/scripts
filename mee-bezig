@@ -1,4 +1,1 @@
-if test -n "$1"; then
-  cd ~/projects/$1
-fi
-a-propos -n 'Mee Bezig' -f mee_bezig.pck &
+binfab repo.mee-bezig $1
