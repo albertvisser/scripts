@@ -488,7 +488,10 @@ def dtree(c, name=''):
 @task
 def mee_bezig(c, name=''):
     "Open Doing list for a project using a-propos"
-    check_and_run_for_project(c, name, "a-propos -n 'Mee Bezig' -f mee_bezig.pck")
+    if not name:
+        where = os.getcwd()
+        name = os.path.basename(where)
+    check_and_run_for_project(c, name, "a-propos -n 'Mee Bezig ({})' -f mee_bezig.pck".format(name))
 
 
 
