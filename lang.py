@@ -92,11 +92,32 @@ def gettext(c, project, source=''):
 
 
 @task(help={'project': 'project name',
+            'language': 'language to update translation for',
+            'source': 'source file for catalog (do not specify if it is for the entire project)'})
+def merge(c, project, language, source=''):
+    """merge new strings from catalog into language file
+    """
+    base = get_base_dir(project)
+    if not base:
+        print('unknown project')
+        return
+    if not source:
+        source = 'all'
+    else:
+        source = source.replace('.', '-').replace('/', '-')
+    with c.cd(os.path.join(base, 'locale')):
+        langfile = "{}.po".format(language)
+        catfile = 'messages-{}.pot'.format(source)
+        c.run('msgmerge -U {} {}'.format(langfile, catfile))
+        print('merged.')
+
+
+@task(help={'project': 'project name',
             'language': 'designates language to create translation for'})
 def poedit(c, project, language):
     """edit translations in language file
 
-    bewerkt het aangegeven language file met poedit
+    bewerkt het language file voor het aangegeven project en de aangegeven taal met poedit
     """
     base = get_base_dir(project)
     if not base:
@@ -126,6 +147,14 @@ def place(c, project, language, appname=''):
         appname = os.path.basename(base)
     fromname = language + '.po'
     toname = os.path.join(language, 'LC_MESSAGES', appname + '.mo')
+    # kijken of er al een werkend .mo file bestaat, voor het geval die eigenlijk in mixed-case is
+    # helaas werkt dit nog niet
+    loc = os.path.join(language, 'LC_MESSAGES')
+    for name in os.listdir(os.path.join(base, 'locale', loc)):
+        print(name)
+        if os.path.splitext(name) == '.mo':
+            toname = os.path.join(loc, name)
+            break
     command = 'msgfmt {} -o {}'.format(fromname, toname)
     with c.cd(os.path.join(base, 'locale')):
         c.run(command)
