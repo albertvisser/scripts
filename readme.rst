@@ -23,7 +23,8 @@ that pass specific arguments to such a symlink. These are not included in the re
 **binfab**
 
     execute ``fab`` (fabric) using fabfile in this directory
-    actually `fabric` is now replaced by `invoke` so this now starts ``tasks.py`` and runs under Python 3
+    actually `fabric` is now replaced by `invoke` so this now starts ``tasks.py`` 
+    and runs under Python 3
 
 **bstart**
 
@@ -31,20 +32,25 @@ that pass specific arguments to such a symlink. These are not included in the re
 
 **check-repo** (formerly check_local)
 
-    while a script by this name was replaced with a function in the fabfile, my creativity failed me in choosing a name for a somewhat similar but visual tool that does some things that hgview does (and more), but without needing to step into the repo first.
+    while a script by this name was replaced with a function in the fabfile, 
+    my creativity failed me in choosing a name for a somewhat similar but visual tool 
+    that does some things that hgview does (and more), 
+    but without needing to step into the repo first.
 
 **db.py**
 
-    `invoke` functions to manage database servers. Currently contains start/restart/stop functions for mongodb and postgres and a repair function for mongodb
+    `invoke` functions to manage database servers. Currently contains start/restart/stop functions 
+    for mongodb and postgres and a repair function for mongodb
 
 **dosomethingwith.py**
 
-    a general-purpose script - or at least meant as such - that I wrote for use from within Double Commander to apply some action on the selected files and/or directories.
+    a general-purpose script - or at least meant as such - that I wrote for use from within 
+    Double Commander to apply some action on the selected files and/or directories.
 
 **fabsrv**
 
     execute ``fab`` (fabric) using fabfile in nginx-config directory (for server
-    configuration stuff)
+    configuration stuff).
     the same applies as for **binfab**
 
 **i18n.py**
@@ -86,9 +92,20 @@ that pass specific arguments to such a symlink. These are not included in the re
     Without an argument, works in the current working directory.
     Without an extension specified, works on Python source files (extension .py).
 
+**pedit**
+    shortcut for starting up vi in a terminal using the 'Code Editor Shell' profile (100x54,
+    green on black)
+
+**peditl**
+    starts pedit on the left side of the screen instead of in the middle
+
+**peditr**
+    starts pedit on the right side of the screen instead of in the middle
+
 **pfind**
 
-    shortcut for a `binfab` command that starts up *filefindr* to search in all my Python software projects
+    shortcut for a `binfab` command that starts up *filefindr* to search in all my Python software 
+    projects
 
 **predit**
 
@@ -110,7 +127,8 @@ that pass specific arguments to such a symlink. These are not included in the re
 
 **repo.py**
 
-    `invoke` functions for managing source repositories, like the replaced check- and push-scripts mentioned below
+    `invoke` functions for managing source repositories, like the replaced check- and push-scripts 
+    mentioned below
 
 **runwithlog**
 
@@ -167,7 +185,8 @@ that pass specific arguments to such a symlink. These are not included in the re
 
 **www.py**
 
-    `invoke` functions to do with plain html sites; mostly local (nginx and apache server root) but also to setup transport to a remote site like magiokis.nl
+    `invoke` functions to do with plain html sites; mostly local (nginx and apache server root) 
+    but also to setup transport to a remote site like magiokis.nl
 
 **xmlp.py**
 
@@ -309,7 +328,8 @@ symlinks or short starter scripts for my own applications:
 
 **hotstuff**
 
-    starts up both hotkeys and hotrefs, since I'm using them simultaneously a lot (especially with VI)
+    starts up both hotkeys and hotrefs, since I'm using them simultaneously a lot (especially with
+    VI)
 
 **htmledit**
 
