@@ -15,6 +15,44 @@ HOME = pathlib.Path.home()
 root = HOME / 'projects'
 
 
+class CheckTextDialog(qtw.QDialog):
+    """dialoog voor het wijzigen van de commit (message en geselecteerde extra files
+    """
+    def __init__(self, parent, title='', message=''):
+        self._parent = parent
+        super().__init__(parent)
+        self.setWindowTitle(title)
+        vbox = qtw.QVBoxLayout()
+        hbox = qtw.QHBoxLayout()
+        self.check = qtw.QCheckBox('Add selected files to the last commit', self)
+        hbox.addWidget(self.check)
+        vbox.addLayout(hbox)
+        hbox = qtw.QHBoxLayout()
+        hbox.addWidget(qtw.QLabel('Modify the commit message if needed:', self))
+        vbox.addLayout(hbox)
+        hbox = qtw.QHBoxLayout()
+        self.text = qtw.QLineEdit(self)
+        self.text.setText(message)
+        hbox.addWidget(self.text)
+        vbox.addLayout(hbox)
+        hbox = qtw.QHBoxLayout()
+        hbox.addStretch(1)
+        ok_button = qtw.QPushButton('&Ok', self)
+        ok_button.clicked.connect(self.accept)
+        hbox.addWidget(ok_button)
+        cancel_button = qtw.QPushButton('&Cancel', self)
+        cancel_button.clicked.connect(self.reject)
+        hbox.addWidget(cancel_button)
+        hbox.addStretch(1)
+        vbox.addLayout(hbox)
+        self.setLayout(vbox)
+
+    def accept(self):
+        "gewijzigde waarden teruggeven aan de aanroeper"
+        self._parent.dialog_data = self.check.isChecked(), self.text.text()
+        super().accept()
+    
+
 class DiffViewDialog(qtw.QDialog):
     """dialoog voor het tonen van de diff output
     """
@@ -152,6 +190,9 @@ class Gui(qtw.QWidget):
         vbox2.addWidget(btn)
         btn = qtw.QPushButton('&Commit', self)
         btn.clicked.connect(self.commit_selected)
+        vbox2.addWidget(btn)
+        btn = qtw.QPushButton('A&mend', self)
+        btn.clicked.connect(self.amend_commit)
         vbox2.addWidget(btn)
         btn = qtw.QPushButton('Re&vert', self)
         btn.clicked.connect(self.revert_selected)
@@ -327,6 +368,23 @@ class Gui(qtw.QWidget):
                 self.run_and_report([self.repotype, 'commit'] + filenames + ['-m', message])
                 self.refresh_frame()
 
+    def amend_commit(self):
+        "add files to last commit or change commit message"
+        if self.repotype != 'git':
+            qtw.QMessageBox.information(self, self.title, 'Only implemented for git repos')
+            return
+        message = self.run_and_capture(['git', 'log', '-1', '--pretty=format:%s'])[0][0]  
+        self.dialog_data = None
+        if CheckTextDialog(self, self.title, message).exec_() != qtw.QDialog.Accepted:
+            return
+        add_files, commit_message = self.dialog_data
+        if add_files:
+            filenames = self.filter_tracked(self.get_selected_files())
+            if filenames:
+                self.run_and_report(['git', 'add'] + filenames)
+        self.run_and_report([self.repotype, 'commit', '--amend', '-m', commit_message])
+        self.refresh_frame()
+
     def revert_selected(self):
         """hg revert <selected files> uitvoeren
         """
@@ -414,7 +472,7 @@ class Gui(qtw.QWidget):
         self.refresh_frame()
 
     def merge_branch(self):
-        """merge the chosen brach with the current
+        """merge the chosen branch with the current
         """
         branch_name = self.cb_branch.currentText()
         current = self.find_current_branch()
