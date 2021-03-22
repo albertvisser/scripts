@@ -42,7 +42,6 @@ def get_project_root(name, context='local'):
 
     context can be 'local' or 'remote' or a repo type ('sf', 'bb', 'git')
     """
-    # TODO: add site repositories like 'bitbucket'
     is_private = name in private_repos
     is_private_value = name in private_repos.values()
     if is_private_value:
