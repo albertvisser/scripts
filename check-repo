@@ -157,7 +157,16 @@ class Gui(qtw.QWidget):
         btn = qtw.QPushButton('Delete', self)
         btn.clicked.connect(self.delete_branch)
         hbox.addWidget(btn)
+
         hbox.addStretch()
+        btn = qtw.QPushButton(gui.QIcon.fromTheme('document-multiple') , '', self)
+        menu = qtw.QMenu()
+        menu.addAction('Open project &Notes').triggered.connect(self.open_notes)
+        menu.addAction('Open project &Docs').triggered.connect(self.open_docs)
+        btn.setMenu(menu)
+        btn.setShortcut('Shift+F6')
+        hbox.addWidget(btn)
+
         vbox.addLayout(hbox)
 
         hbox = qtw.QHBoxLayout()
@@ -534,6 +543,14 @@ class Gui(qtw.QWidget):
         stash_id = self.select_stash()
         if stash_id:
             self.run_and_report(['git', 'stash', 'drop', stash_id])
+
+    def open_notes(self):
+        "open project notities (a-propos bestandje)"
+        self.just_run(['binfab', 'repo.mee-bezig'])
+
+    def open_docs(self):
+        "open project documentatie (treedocs bestandje)"
+        self.just_run(['binfab', 'repo.dtree'])
 
     def find_current_branch(self):
         out, err = self.run_and_capture(['git', 'branch'])
