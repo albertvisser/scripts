@@ -546,11 +546,14 @@ class Gui(qtw.QWidget):
 
     def open_notes(self):
         "open project notities (a-propos bestandje)"
-        self.just_run(['binfab', 'repo.mee-bezig'])
+        # self.run_and_continue(['binfab', 'repo.mee-bezig'])
+        name = self.path.resolve().name.title()
+        self.run_and_continue(['a-propos', '-n', 'Mee Bezig ({})'.format(name), '-f', 'mee-bezig'])
 
     def open_docs(self):
         "open project documentatie (treedocs bestandje)"
-        self.just_run(['binfab', 'repo.dtree'])
+        # self.run_and_continue(['binfab', 'repo.dtree'])
+        self.run_and_continue(['treedocs', 'projdocs.pck'])
 
     def find_current_branch(self):
         out, err = self.run_and_capture(['git', 'branch'])
@@ -560,6 +563,10 @@ class Gui(qtw.QWidget):
     def just_run(self, command_list):
         "shortcut for call to subprocess (no interest in result"
         subprocess.run(command_list, cwd=str(self.path))
+
+    def run_and_continue(self, command_list):
+        "shortcut for call to subprocess (don't wait for completion)"
+        subprocess.Popen(command_list, cwd=str(self.path))
 
     def run_and_report(self, command_list):
         "shortcut for call to subprocess (reports results from stdout and stderr)"
