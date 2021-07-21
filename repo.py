@@ -7,8 +7,8 @@ import functools
 import datetime
 import csv
 from invoke import task
-from settings import get_project_dir, all_repos, git_repos, private_repos, django_repos, \
-    cherrypy_repos
+from settings import (get_project_dir, all_repos, git_repos, private_repos, django_repos,
+                      cherrypy_repos)
 
 HOME = os.path.expanduser('~')
 TODAY = datetime.datetime.today()
