@@ -6,15 +6,13 @@ which I added to the system path for easy access.
 
 Also in this directory are starters for my own applications that are no more than
 symlinks to the actual starter in the application dir; as well as short scripts
-that pass specific arguments to such a symlink. These are not included in the repo.
+that pass specific arguments to such a symlink. These are not included in the repo,
+but I mention them here to show the type of starter files I use.
 
+**.gitignore**
 **.hgignore**
 
-    indicates which non-tracked files mercurial is to ignore
-
-**2panefm**
-
-    start Double Commander in workspace 2
+    indicates which non-tracked files mercurial / git is to ignore
 
 **arcstuff.conf.example**
 
@@ -25,10 +23,6 @@ that pass specific arguments to such a symlink. These are not included in the re
     execute ``fab`` (fabric) using fabfile in this directory
     actually `fabric` is now replaced by `invoke` so this now starts ``tasks.py`` 
     and runs under Python 3
-
-**bstart**
-
-    start music player (originally Banshee, now Clementine) in workspace 4
 
 **check-repo** (formerly check_local)
 
@@ -47,24 +41,23 @@ that pass specific arguments to such a symlink. These are not included in the re
     a general-purpose script - or at least meant as such - that I wrote for use from within 
     Double Commander to apply some action on the selected files and/or directories.
 
+**dtree**
+
+    starts up doctree for repo-related documentation (through a binfab command)
+
 **fabsrv**
 
     execute ``fab`` (fabric) using fabfile in nginx-config directory (for server
     configuration stuff).
     the same applies as for **binfab**
 
-**i18n.py**
-
-    a couple of `invoke` functions to help with the internalization of source files
-
-**iview**
-
-    starts up IrfanView under Wine.
-    Takes one argument, assuming this is the file to view.
-
 **jsonp.py**
 
     generate pretty-printed version of file with json data
+
+**lang.py**
+
+    a couple of `invoke` functions to help with the internalization of source files
 
 **list2scite**
 
@@ -74,10 +67,6 @@ that pass specific arguments to such a symlink. These are not included in the re
 **list2vi** 
 
     the same for VI in a terminal
-
-**lstart**
-
-    start LMMS on workspace 3
 
 **mee-bezig**
 
@@ -92,21 +81,6 @@ that pass specific arguments to such a symlink. These are not included in the re
     Without an argument, works in the current working directory.
     Without an extension specified, works on Python source files (extension .py).
 
-**pedit**
-    shortcut for starting up vi in a terminal using the 'Code Editor Shell' profile (100x54,
-    green on black)
-
-**peditl**
-    starts pedit on the left side of the screen instead of in the middle
-
-**peditr**
-    starts pedit on the right side of the screen instead of in the middle
-
-**pfind**
-
-    shortcut for a `binfab` command that starts up *filefindr* to search in all my Python software 
-    projects
-
 **predit**
 
     executing *binfab session-start <project-name>* starts a terminal session for that project
@@ -116,10 +90,6 @@ that pass specific arguments to such a symlink. These are not included in the re
 **prfind**
 
     uses the same environment variable to start *filefindr* in multiple file mode  
-
-**pycheck**
-
-    syntax check the specified python file(s)
 
 **readme.rst**
 
@@ -173,15 +143,6 @@ that pass specific arguments to such a symlink. These are not included in the re
     example present) to build an archive containing backups of selected data files.
 
     a function to set up a Python source tree in a standardized way (really?)
-    
-**totalcmd**
-
-    starts up Total Commander under Wine. takes no arguments.
-    Uses wmctrl to ensure which workspace it starts up in
-
-**vstart**
-
-    start Vivaldi browser on workspace 1
 
 **www.py**
 
@@ -200,11 +161,13 @@ Requirements
 - Fabric (where applicable) - the new version uses Invoke instead
 - Mercurial and/or Git (for the check and push scripts)
 
+
 Not in this repository:
 -----------------------
 
 scripts that were replaced by functions in the fabfile:
 .......................................................
+(not present in this working directory either)
 
 **check-local**
 
@@ -265,6 +228,7 @@ scripts that were replaced by functions in the fabfile:
 
 symlinks or short starter scripts for my own applications:
 ..........................................................
+(perhaps these should be included when installing these apps)
 
 **afrift**
 
@@ -318,6 +282,10 @@ symlinks or short starter scripts for my own applications:
 
     points notetree to a collection of text snippets
 
+**ganestuff**
+
+    starts a treedocs file with information for games I play
+
 **hotkeys**
 
     starts my viewer for keyboard shortcuts in various applications. No arguments.
@@ -338,10 +306,6 @@ symlinks or short starter scripts for my own applications:
 **lint-all**
         
     apply pylint or flake8 checks to all my software projects (under construction?)
-
-**lint_all.py**
-
-    the same but using lintergui
 
 **lintergui**
 
@@ -378,22 +342,6 @@ symlinks or short starter scripts for my own applications:
     XML file or 'sql' optionally followed by a project name. Without arguments:
     presents a file selection dialog. With only 'sql': presents a project selector.
 
-**probreg-sql**
-
-    shortcut for 'probreg sql'. Optional argument: project name.
-
-**probreg-jvs**
-
-    starter for *probreg* with a specific data file
-
-**probreg-leesjcl**
-
-    starter for *probreg* with a specific data file
-
-**probreg-todo**
-
-    starter for *probreg* with a specific data file
-
 **ramble**
 
     points doctree to a collection of ramblings
@@ -425,12 +373,52 @@ symlinks or short starter scripts for my own applications:
     starts up my tree-based xml editor. Takes one (optional) argument: the filename.
 
 
-other scripts not in repo:
-..........................
+other stuff not in repo:
+........................
 
+**2panefm**
+    start Double Commander in workspace 2
+**bigterm**
+    starts up VI in a bigger window
+**blist**
+   list the contents of blistt
+**blistt**
+   contains a few helpful commands
+**bstart**
+    start music player (originally Banshee, now Clementine) in workspace 4
+**covtest**
+    script to launch unittests and analyse testcoverage
+**iview**
+    starts up IrfanView under Wine.
+    Takes one argument, assuming this is the file to view.
 **latest-proprietary-media-future.sh**
 **latest-widevine.sh**
     two scripts (not by me) to facilitate viewing proprietary video formats in Vivaldi browser
+**lstart**
+    start LMMS on workspace 3
+**mdi**
+**mdi.py**
+    mdi starts up mdi.py which is a modified version of the pyqt mdi demo
+**mee_bezig.pck**
+    a-propos datafile
+**pedit**
+    shortcut for starting up vi in a terminal using the 'Code Editor Shell' profile (100x54,
+    green on black)
+**peditl**
+    starts pedit on the left side of the screen instead of in the middle
+**peditlr**
+    starts pedit two times side by side 
+**peditr**
+    starts pedit on the right side of the screen instead of in the middle
+**pfind**
+    shortcut for a `binfab` command that starts up *filefindr* to search in all my Python software 
+    projects
+**projdocs.pck**
+    treedocs datafile (with accompanying images zipfile and backups)
+**pycheck**
+    syntax check the specified python file(s) (using py_compile)
+**qtdemo**
+    starts up the Qt5 demo program
 **reaper**
     starts linux version of reaper
 **start-servers**
@@ -439,11 +427,16 @@ other scripts not in repo:
     calls fabsrv to stop all wsgi servers
 **t-ed**
     open a terminal in a "code editor" mode I defined
+**totalcmd**
+    starts up Total Commander under Wine. takes no arguments.
+    Uses wmctrl to ensure it starts up in workspace 2 
 **viref**
     starts vi showing vi documentation
 **vless**
     starts vi in a mode that is supposed to resemble the `less` program
-**winpdb3**
-    starter for winpdb under python 3
+**vstart**
+    start Vivaldi browser on workspace 1
+**widevi**
+    takes two filenames and starts vi practically full screen to edit the files side-by-side
 **wxdemo**
     starter for the wxPython demo program
