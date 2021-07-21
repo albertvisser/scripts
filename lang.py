@@ -15,10 +15,10 @@ def get_base_dir(project):
 
 
 @task(help={'project': 'project to create language support for',
-            'language': '(comma delimited list of) language(s) to use, if not provided then'
-                        ' en,nl is used',
+            'language': '(comma delimited list of) language(s) to use;'
+                        ' specify "." to use the default languages `en` and `nl` ',
             'check': 'check only'})
-def init(c, project, check=False, language=''):
+def init(c, project, language, check=False):
     """create directory structure to add language support for project
     """
     # get project location, cancel if project not known
@@ -26,10 +26,10 @@ def init(c, project, check=False, language=''):
     if not base:
         print('unknown project')
         return
-    if language:
-        langs = language.split(',')
-    else:
+    if language == '.':
         langs = ['en', 'nl']
+    else:
+        langs = language.split(',')
     # print(project, language, langs, check)
     # create locale subdirectory
     newpath = os.path.join(base, 'locale')
@@ -59,8 +59,8 @@ def init(c, project, check=False, language=''):
 
 
 @task(help={'project': 'project name',
-            'source': 'file to gather texts from (do not specify to check the entire project'})
-def gettext(c, project, source=''):
+            'source': 'file to gather texts from (specify "." to check the entire project'})
+def gettext(c, project, source):
     """gather strings from file
 
     verzamel gemarkeerde symbolen in het aangegeven source file
@@ -70,15 +70,13 @@ def gettext(c, project, source=''):
     if not base:
         print('unknown project')
         return
-    if source:
+    if source != '.':
         name, suffix = os.path.splitext(source)
         if not suffix:
             source += '.py'
         elif suffix != '.py':
             print('{} is not a python source file'.format(source))
             return
-    else:
-        source = '.'
     with c.cd(base):
         c.run("pygettext {}".format(source))
         if source == '.':
@@ -93,15 +91,15 @@ def gettext(c, project, source=''):
 
 @task(help={'project': 'project name',
             'language': 'language to update translation for',
-            'source': 'source file for catalog (do not specify if it is for the entire project)'})
-def merge(c, project, language, source=''):
+            'source': 'source file for catalog (specify "." if it is for the entire project)'})
+def merge(c, project, language, source):
     """merge new strings from catalog into language file
     """
     base = get_base_dir(project)
     if not base:
         print('unknown project')
         return
-    if not source:
+    if source == '.':
         source = 'all'
     else:
         source = source.replace('.', '-').replace('/', '-')
@@ -133,8 +131,8 @@ def poedit(c, project, language):
 
 @task(help={'project': 'project name',
             'language': 'designates language to create translation for',
-            'appname': 'application name if different from project name'})
-def place(c, project, language, appname=''):
+            'appname': 'application name if different from project name, otherwise use "*"'})
+def place(c, project, language, appname):
     """copy translation(s) into <appname>
 
     plaats het gecompileerde language file zodat het gebruikt kan worden
@@ -143,7 +141,7 @@ def place(c, project, language, appname=''):
     if not base:
         print('unknown project')
         return
-    if not appname:
+    if appname == '*':
         appname = os.path.basename(base)
     fromname = language + '.po'
     toname = os.path.join(language, 'LC_MESSAGES', appname + '.mo')
