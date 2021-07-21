@@ -120,9 +120,9 @@ def build_scite(c, version):
 def arcstuff(c, names):
     """backup selected files indicated in a .conf file
 
-    if no name(s) provided, select all arcstuff config files present
+    use the value 'all' to select all arcstuff config files present
     """
-    if not names:
+    if names == 'all':
         files = [x for x in os.listdir(os.path.dirname(__file__))
                  if x.startswith('arcstuff') and os.path.splitext(x)[1] == '.conf']
         names = []
