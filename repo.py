@@ -469,7 +469,7 @@ def check_and_run_for_project(c, name, command):
             with c.cd(where):
                 c.run(command)
         else:
-            print('{} is not a known project'.format(where))
+            print('{} is not a known project'.format(name))
     else:
         where = os.getcwd()
         name = os.path.basename(where)
@@ -481,8 +481,8 @@ def check_and_run_for_project(c, name, command):
 
 @task
 def dtree(c, name=''):
-    "Open project docs using treedocs"
-    check_and_run_for_project(c, name, 'treedocs projdocs.pck')
+    "Open project docs using treedocs, forcing qt mode"
+    check_and_run_for_project(c, name, '~/projects/doctree/ensure-qt projdocs.pck')
 
 
 @task
