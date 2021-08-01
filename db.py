@@ -1,4 +1,5 @@
-import os
+import pathlib
+import datetime
 from invoke import task
 
 
@@ -29,6 +30,19 @@ def repair_mongo(c):
     c.run('sudo chmod 777 /var/lib/mongodb')
 
 
+@task(help={'names': 'comma-separated list of database names'})
+def dump_mongo(c, names=''):
+    "dump mongo database(s) to a specific location"
+    date = datetime.datetime.today().strftime('%Y%m%d-%H%M%S')
+    path = pathlib.Path('~/mongodump/{}'.format(date)).expanduser()
+    path.mkdir(parents=True, exist_ok=True)
+    if not names:
+        c.run('mongodump -o ~/mongodump/{}/'.format(date))
+        return
+    for name in names.split(','):
+        result = c.run('mongodump -d {} -o ~/mongodump/{}/'.format(name, date))
+
+
 @task
 def start_pg(c):
     "start postgresql database server"
@@ -45,3 +59,17 @@ def stop_pg(c):
 def restart_pg(c):
     "restart postgresql database server"
     c.run('sudo service postgresql restart')
+
+
+@task(help={'names': 'comma-separated list of database names'})
+def dump_pg(c, names=''):
+    "dump postgres database(s) to a specific location"
+    timestamp = datetime.datetime.today().strftime('%Y%m%d:%H%M%S')
+    date, time = timestamp.split(':', 1)
+    path = pathlib.Path('~/pgdump/{}'.format(date)).expanduser()
+    path.mkdir(parents=True, exist_ok=True)
+    if not names:
+        c.run('pg_dumpall -f ~/pgdump/{}/all_{}.sql'.format(date, time))
+        return
+    for name in names.split(','):
+        c.run('pg_dump {0} -f ~/pgdump/{1}/{0}_{2}.sql'.format(name, date, time))
