@@ -8,7 +8,7 @@ import datetime
 import csv
 from invoke import task
 from settings import (get_project_dir, all_repos, git_repos, private_repos, django_repos,
-                      cherrypy_repos)
+                      cherrypy_repos, frozen_repos)
 
 HOME = os.path.expanduser('~')
 TODAY = datetime.datetime.today()
@@ -64,7 +64,8 @@ def _check(c, context='local', push='no', verbose=False, exclude=None, dry_run=F
     in het geval van git log -r -1
     """
     if exclude is None:
-        exclude = []
+        # exclude = []
+        exclude = frozen_repos
     local_ = context == 'local'
     remote = not local_
     if context not in ('local', 'remote'):
@@ -499,6 +500,8 @@ def rebuild_filenamelist(c):
     "build a list of all tracked Python files in all projects"
     all_files = []
     for repo in all_repos:
+        if repo in frozen_repos:
+            continue
         path, files = get_repofiles(c, repo)
         all_files.extend([os.path.join(path, x) for x in files])
     with open(FILELIST, 'w') as out:

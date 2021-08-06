@@ -26,6 +26,7 @@ sf_repos = ['apropos']
 git_repos = ['mylinter'] + bb_repos
 non_bb_repos = []  # non_deploy_repos
 all_repos = git_repos + [x for x in private_repos] + non_bb_repos
+frozen_repos = fcgi_repos + [cherrypy_repos[-1], django_repos[-1]]
 DO_NOT_LINT = fcgi_repos + non_deploy_repos  # + private_repos
 
 # VivaldiHooks settings
