@@ -1,9 +1,8 @@
 #! /usr/bin/env python3
-# -*- coding: utf-8 -*-
 """sort a given (text) file, line by line, alphabetically
 
 depending on the value of the second parameter, the resulting file is either saved
-in the same directory as the original (with the affix "sorted") or in the system's
+in the same directory as the original (with the suffix "sorted") or in the system's
 temporary directory
 """
 import sys
