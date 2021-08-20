@@ -475,7 +475,8 @@ def check_and_run_for_project(c, name, command):
         where = os.getcwd()
         name = os.path.basename(where)
         if get_project_dir(name) == where:
-            c.run(command)
+            with c.cd(where):
+                c.run(command)
         else:
             print('you are not in a known project directory')
 
@@ -494,6 +495,11 @@ def mee_bezig(c, name=''):
         name = os.path.basename(where)
     check_and_run_for_project(c, name, "a-propos -n 'Mee Bezig ({})' -f mee_bezig.pck".format(name))
 
+
+@task
+def preadme(c, name=''):
+    "Open readme for project"
+    check_and_run_for_project(c, name, 'pedit readme.rst')
 
 
 def rebuild_filenamelist(c):
