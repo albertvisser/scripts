@@ -44,6 +44,12 @@ def dump_mongo(c, names=''):
 
 
 @task
+def restore_mongo(c, dirname):
+    "restore mongo database(s) from given directory"
+    c.run('mongorestore {}'.format(dirname))
+
+
+@task
 def start_pg(c):
     "start postgresql database server"
     c.run('sudo service postgresql start')
