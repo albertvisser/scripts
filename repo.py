@@ -113,10 +113,11 @@ def _check(c, context='local', push='no', verbose=False, exclude=None, dry_run=F
             command = 'git status -uno --short' if (is_gitrepo or is_private) else 'hg status --quiet'
             if dry_run:
                 print('execute `{}` in directory `{}`'.format(command, pwd))
+                test = ''
             else:
                 with c.cd(pwd):
                     result = c.run(command, hide=True)
-            test = result.stdout
+                test = result.stdout
             if test.strip():
                 on_branch = ' (on branch {})'.format(not_on_master) if not_on_master else ''
                 stats.append('uncommitted changes' + on_branch)
