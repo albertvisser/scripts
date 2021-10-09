@@ -1,1 +1,8 @@
-gnome-terminal --profile='Code Editor Shell' -- vi $files &
+if test "$files"; then
+	gnome-terminal --profile='Code Editor Shell' -- vi $files &
+	if test "$tests"; then
+		gnome-terminal --profile='Code Editor Shell' -- vi $tests &
+	fi
+else 
+	echo "No definition of files to open"
+fi
