@@ -503,6 +503,12 @@ def preadme(c, name=''):
     check_and_run_for_project(c, name, 'pedit readme.rst')
 
 
+@task
+def prshell(c, name=''):
+    "Open terminal for project with geometry and profile"
+    check_and_run_for_project(c, name, 'gnome-terminal --geometry=132x43+4+40')
+
+
 def rebuild_filenamelist(c):
     "build a list of all tracked Python files in all projects"
     all_files = []
