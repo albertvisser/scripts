@@ -388,6 +388,8 @@ other stuff not in repo:
     start music player (originally Banshee, now Clementine) in workspace 4
 **covtest**
     script to launch unittests and analyse testcoverage
+**covtest_dj**
+    a similar script to start testing for django              
 **iview**
     starts up IrfanView under Wine.
     Takes one argument, assuming this is the file to view.
@@ -413,8 +415,12 @@ other stuff not in repo:
 **pfind**
     shortcut for a `binfab` command that starts up *filefindr* to search in all my Python software 
     projects
+**preadme**
+    edit readme file in a given repo
 **projdocs.pck**
     treedocs datafile (with accompanying images zipfile and backups)
+**prshell**
+    opens a terminal in a given repo with an enlarged window
 **pycheck**
     syntax check the specified python file(s) (using py_compile)
 **qtdemo**
@@ -435,7 +441,7 @@ other stuff not in repo:
 **vless**
     starts vi in a mode that is supposed to resemble the `less` program
 **vstart**
-    start Vivaldi browser on workspace 1
+    start Vivaldi (snapshot) browser on workspace 1
 **widevi**
     takes two filenames and starts vi practically full screen to edit the files side-by-side
 **wxdemo**
