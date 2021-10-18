@@ -1,7 +1,7 @@
 import os
 import datetime
 from invoke import task
-from settings import home_root, server_root, apache_root
+from settings import home_root, server_root, apache_root, webapps
 
 @task(help={'names': 'comma separated list of filenames'})
 def copy(c, names):
@@ -145,3 +145,11 @@ def stage(c, sitename, new_only=False, filename='', list_only=False):
             c.run('hg add {}'.format(' '.join(newfiles)))
         now = datetime.datetime.today().strftime('%d-%m-%Y %H:%M')
         c.run('hg ci -m "staged on {}"'.format(now))
+
+
+@task(help={'name': 'name of webapp to start'})
+def startapp(c, name):
+    if webapps[name]['start_server'] and not os.path.exists('/tmp/server-{}-ok'.format(name)):
+        c.run('fabsrv server.start {}'.format(name))
+    c.run('vivaldi-snapshot --app=http://{0} --class=WebApp-{1} --user-data-dir=/home/albert/'
+          '.local/share/ice/profiles/{1}'.format(webapps[name]['adr'], webapps[name]['profile']))
