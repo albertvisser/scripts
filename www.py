@@ -149,7 +149,11 @@ def stage(c, sitename, new_only=False, filename='', list_only=False):
 
 @task(help={'name': 'name of webapp to start'})
 def startapp(c, name):
-    if webapps[name]['start_server'] and not os.path.exists('/tmp/server-{}-ok'.format(name)):
-        c.run('fabsrv server.start {}'.format(name))
+    if name not in webapps:
+        print('unknown webapp')
+        return
+    test = name if webapps[name]['start_server'] == '=' else webapps[name]['start_server']
+    if webapps[name]['start_server'] and not os.path.exists('/tmp/server-{}-ok'.format(test)):
+        c.run('fabsrv server.start -n {}'.format(test))
     c.run('vivaldi-snapshot --app=http://{0} --class=WebApp-{1} --user-data-dir=/home/albert/'
           '.local/share/ice/profiles/{1}'.format(webapps[name]['adr'], webapps[name]['profile']))
