@@ -1,1 +1,1 @@
-binfab repo.mee-bezig $1
+binfab repo.mee-bezig -n $1
