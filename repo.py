@@ -238,7 +238,7 @@ def check_local(c, dry_run=False):
 @task
 def check_local_notes(c):
     with c.cd('~/projects'):
-        c.run("a-propos -n 'Ongoing stuff not needing to be committed yet' -f ongoing.pck &")
+        c.run("a-propos -n 'Ongoing stuff not needing to be committed yet' -f ongoing.apo &")
 
 
 @task
@@ -485,7 +485,7 @@ def check_and_run_for_project(c, name, command):
 @task
 def dtree(c, name=''):
     "Open project docs using treedocs, forcing qt mode"
-    check_and_run_for_project(c, name, '~/projects/doctree/ensure-qt projdocs.pck')
+    check_and_run_for_project(c, name, '~/projects/doctree/ensure-qt projdocs.trd')
 
 
 @task
@@ -494,7 +494,7 @@ def mee_bezig(c, name=''):
     if not name:
         where = os.getcwd()
         name = os.path.basename(where)
-    check_and_run_for_project(c, name, "a-propos -n 'Mee Bezig ({})' -f mee_bezig.pck".format(name))
+    check_and_run_for_project(c, name, "a-propos -n 'Mee Bezig ({})' -f mee_bezig.apo".format(name))
 
 
 @task
