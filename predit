@@ -1,7 +1,7 @@
 if test "$files"; then
-	gnome-terminal --profile='Code Editor Shell' -- vi $files &
+	gnome-terminal --profile='Code Editor Shell' -- vim $files &
 	if test "$tests"; then
-		gnome-terminal --profile='Code Editor Shell' -- vi $tests &
+		gnome-terminal --profile='Code Editor Shell' -- vim $tests &
 	fi
 else 
 	echo "No definition of files to open"

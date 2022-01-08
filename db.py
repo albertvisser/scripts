@@ -7,19 +7,22 @@ from invoke import task
 @task
 def start_mongo(c):
     "start mongo database server"
-    c.run('sudo service mongodb start')
+    # c.run('sudo service mongodb start')
+    c.run('sudo systemctl start mongodb.service')
 
 
 @task
 def stop_mongo(c):
     "stop mongo database server"
-    c.run('sudo service mongodb stop')
+    # c.run('sudo service mongodb stop')
+    c.run('sudo systemctl stop mongodb.service')
 
 
 @task
 def restart_mongo(c):
     "restart mongo database server"
-    c.run('sudo service mongodb restart')
+    # c.run('sudo service mongodb restart')
+    c.run('sudo systemctl restart mongodb.service')
 
 
 @task
@@ -52,19 +55,22 @@ def restore_mongo(c, dirname):
 @task
 def start_pg(c):
     "start postgresql database server"
-    c.run('sudo service postgresql start')
+    # c.run('sudo service postgresql start')
+    c.run('sudo systemctl start postgres.service')
 
 
 @task
 def stop_pg(c):
     "stop postgresql database server"
-    c.run('sudo service postgresql stop')
+    # c.run('sudo service postgresql stop')
+    c.run('sudo systemctl stop postgres.service')
 
 
 @task
 def restart_pg(c):
     "restart postgresql database server"
-    c.run('sudo service postgresql restart')
+    # c.run('sudo service postgresql restart')
+    c.run('sudo systemctl restart postgres.service')
 
 
 @task(help={'names': 'comma-separated list of database names'})

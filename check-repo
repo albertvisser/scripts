@@ -283,7 +283,7 @@ class Gui(qtw.QWidget):
         """Open selected files in a text editor"""
         command = [y for x, y in self.get_selected_files()]
         # command.insert(0, 'SciTE')
-        command[:0] = ['gnome-terminal', '--profile', 'Code Editor Shell', '--', 'vi']
+        command[:0] = ['gnome-terminal', '--profile', 'Code Editor Shell', '--', 'vim']
         self.just_run(command)
         self.refresh_frame()
 

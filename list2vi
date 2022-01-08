@@ -6,5 +6,5 @@ import subprocess
 
 with open(sys.argv[1]) as f_in:
     files = [x.strip() for x in f_in]
-command = ["gnome-terminal", "--profile", 'Code Editor Shell', "--", "vi"] + files
+command = ["gnome-terminal", "--profile", 'Code Editor Shell', "--", "vim"] + files
 subprocess.run(command)
