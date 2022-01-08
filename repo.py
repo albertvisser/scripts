@@ -236,6 +236,12 @@ def check_local(c, dry_run=False):
 
 
 @task
+def check_local_changes(c):
+    with c.cd('~/projects'):
+        c.run('gnome-terminal --geometry=100x40 -- view /tmp/hg_local_changes')
+
+
+@task
 def check_local_notes(c):
     with c.cd('~/projects'):
         c.run("a-propos -n 'Ongoing stuff not needing to be committed yet' -f ongoing.apo &")
