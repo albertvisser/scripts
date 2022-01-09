@@ -495,6 +495,12 @@ def dtree(c, name=''):
 
 
 @task
+def qgit(c, name=''):
+    "Open Git gui after changing to repository"
+    check_and_run_for_project(c, name, 'qgit')
+
+
+@task
 def mee_bezig(c, name=''):
     "Open Doing list for a project using a-propos"
     check_and_run_for_project(c, name, "a-propos -n 'Mee Bezig ({})' -f mee_bezig.apo".format(
