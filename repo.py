@@ -72,9 +72,9 @@ def _check(c, context='local', push='no', verbose=False, exclude=None, dry_run=F
         print('wrong context for this routine')
         return ''
     elif local_:
-        root, outfile = HOME, '/tmp/hg_local_changes'
+        root, outfile = HOME, '/tmp/repo_local_changes'
     else:
-        root, outfile = os.path.join(HOME, 'hg_repos'), '/tmp/hg_changes'
+        root, outfile = os.path.join(HOME, 'hg_repos'), '/tmp/repo_changes'
 
     changes = False
     with open(outfile, 'w') as _out:
@@ -85,27 +85,17 @@ def _check(c, context='local', push='no', verbose=False, exclude=None, dry_run=F
             is_gitrepo = name in git_repos
             is_private = name in private_repos
             stats = []
-            ## if context != 'local' and name in non_deploy_repos:  # non_bb_repos:
-                ## continue
             pwd = os.path.join(root, name)
-            if name == 'bitbucket':
-                if remote:
-                    pwd = os.path.join(root, 'avisser.bitbucket.org')
-                else:
-                    pwd = os.path.join(root, 'www', name)
-            elif remote:
+            if remote:
                 if is_gitrepo or is_private:
                     pwd = os.path.join(root.replace('hg', 'git'), name)
                     root = root.replace('hg', 'git')
-                # elif is_private:
-                #     pwd = os.path.join(root.replace('repos', 'private'), name)
             elif local_:
                 if is_private:
                     pwd = os.path.join(root, private_repos[name])
                 else:
                     pwd = os.path.join(root, 'projects', name)
 
-            ## tmp = '/tmp/hg_st_{}'.format(name)
             uncommitted = outgoing = False
             # check if we are on branch 'master'
             not_on_master = get_branchname(c, pwd) if is_gitrepo or is_private else ''
@@ -227,7 +217,7 @@ def _check(c, context='local', push='no', verbose=False, exclude=None, dry_run=F
 
 @task
 def check_local(c, dry_run=False):
-    """compare all hg repositories: working vs "central"
+    """compare all local repositories: working vs "central"
     """
     test = _check(c, dry_run=dry_run)
     if test:
@@ -238,7 +228,7 @@ def check_local(c, dry_run=False):
 @task
 def check_local_changes(c):
     with c.cd('~/projects'):
-        c.run('gnome-terminal --geometry=100x40 -- view /tmp/hg_local_changes')
+        c.run('gnome-terminal --geometry=100x40 -- view /tmp/repo_local_changes')
 
 
 @task
@@ -452,6 +442,8 @@ def overview(c, names=None):
     meant to help me decide on tags or versions
 
     """
+    print('niet uitgevoerd, moet herschreven worden o.a. naar gebruik van git')
+    return
     root = '/home/albert/hg_repos'
     if not names:
         names = [x for x in os.listdir(root)]
