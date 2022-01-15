@@ -60,7 +60,7 @@ def edit(c, name):
     """
     fname = os.path.join(SESSIONS, name)
     # c.run('scite {}'.format(fname))
-    c.run('edit {}'.format(fname))
+    c.run('pedit {}'.format(fname))
 
 
 @task
