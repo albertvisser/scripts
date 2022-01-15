@@ -1,1 +1,1 @@
-wmctrl -s 0 && vivaldi-snapshot
+wmctrl -s 0 && /usr/bin/vivaldi-snapshot
