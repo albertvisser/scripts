@@ -143,10 +143,13 @@ def _check(c, context='local', push='no', verbose=False, exclude=None, dry_run=F
                     _out.write(buf2 + "\n")
             else:
                 if is_gitrepo or is_private:
-                    if not_on_master:
-                        command = 'git log --not --branches=master --remotes=origin'
-                    else:
-                        command = 'git log --branches --not --remotes=origin'
+                    # if not_on_master:
+                    #     command = 'git log --not --branches=master --remotes=origin'
+                    # else:
+                    #     command = 'git log --branches --not --remotes=origin'
+                    # the following command lists commits that are on the local master branch but not
+                    # on the remote one - should work for both projects to git-repos and g-r to github
+                    command = 'git log origin/master..master'
                 else:
                     command = 'hg outgoing'
                 result = None
