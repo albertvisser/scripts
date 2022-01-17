@@ -114,7 +114,11 @@ def _check(c, context='local', push='no', verbose=False, exclude=None, dry_run=F
                 _out.write('\nuncommitted changes in {}{}\n'.format(pwd, on_branch))
                 uncommitted = True
                 _out.write(test + '\n')
-            if remote:
+            outgoing = use_tipfile = False
+            result = None
+            if is_gitrepo or is_private:
+                command = 'git log origin/master..master'
+            elif remote:
                 tmpfile = os.path.join('/tmp', '{}_tip'.format(name))
                 tipfile = os.path.join(root, '{}_tip'.format(name))
                 if not os.path.exists(tipfile):
@@ -123,39 +127,20 @@ def _check(c, context='local', push='no', verbose=False, exclude=None, dry_run=F
                         print('execute `{}`'.format(command))
                     else:
                         c.run(command)
-
-                command = 'git log -r -1' if is_gitrepo or is_private else 'hg tip'
-                if dry_run:
-                    print('execute `{}` in directory `{}`'.format(command, pwd))
-                else:
+                command = 'hg tip'
+                use_tipfile = True
+            else:
+                command = 'hg outgoing'
+            if dry_run:
+                print('execute `{}` in directory `{}`'.format(command, pwd))
+            else:
+                if use_tipfile:
                     with c.cd(pwd):
                         c.run('{} > {}'.format(command, tmpfile))
-                with open(tmpfile) as _in1, open(tipfile) as _in2:
-                    buf1 = _in1.read()
-                    buf2 = _in2.read()
-                outgoing = buf1 != buf2
-                if outgoing:
-                    stats.append('outgoing changes')
-                    _out.write('outgoing changes for {}\n'.format(name))
-                    _out.write("--local:\n")
-                    _out.write(buf1 + "\n")
-                    _out.write("-- remote:\n")
-                    _out.write(buf2 + "\n")
-            else:
-                if is_gitrepo or is_private:
-                    # if not_on_master:
-                    #     command = 'git log --not --branches=master --remotes=origin'
-                    # else:
-                    #     command = 'git log --branches --not --remotes=origin'
-                    # the following command lists commits that are on the local master branch but not
-                    # on the remote one - should work for both projects to git-repos and g-r to github
-                    command = 'git log origin/master..master'
-                else:
-                    command = 'hg outgoing'
-                result = None
-                if dry_run:
-                    print('execute `{}` in directory `{}`'.format(command, pwd))
-                    outgoing = False
+                    with open(tmpfile) as _in1, open(tipfile) as _in2:
+                        buf1 = _in1.read()
+                        buf2 = _in2.read()
+                    outgoing = buf1 != buf2
                 else:
                     with c.cd(pwd):
                         result = c.run(command, warn=True, hide=True)
@@ -164,10 +149,15 @@ def _check(c, context='local', push='no', verbose=False, exclude=None, dry_run=F
                             outgoing = result.stdout.strip()
                         else:
                             outgoing = result.ok
-                if outgoing:
-                    changes = True
-                    stats.append('outgoing changes')
-                    _out.write('\noutgoing changes for {}\n'.format(name))
+            if outgoing:
+                stats.append('outgoing changes')
+                _out.write('outgoing changes for {}\n'.format(name))
+                if use_tipfile:
+                    _out.write("--local:\n")
+                    _out.write(buf1 + "\n")
+                    _out.write("-- remote:\n")
+                    _out.write(buf2 + "\n")
+                elif result:
                     _out.write(result.stdout + '\n')
             if stats:
                 print(' and '.join(stats) + ' for {}'.format(name))
