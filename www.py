@@ -149,6 +149,7 @@ def stage(c, sitename, new_only=False, filename='', list_only=False):
 
 @task(help={'name': 'name of webapp to start'})
 def startapp(c, name):
+    "start webapp created from webpage"
     if name not in webapps:
         print('unknown webapp')
         return
