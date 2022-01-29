@@ -269,50 +269,57 @@ def pushthru(c, names):
     either name specific repos or check all
     when no name is specified, the "_check" variants are used
     """
-    print('niet uitgevoerd, moet herschreven worden o.a. naar gebruik van git')
-    return
     if not names:
         _check(c, push='yes')
         _check(c, 'remote', push='yes')
         with open('/tmp/pushthru_log', 'w') as _out:
-            for fname in ('/tmp/hg_local_changes', '/tmp/hg_changes'):
+            for fname in ('/tmp/repo_local_changes', '/tmp/repo_changes'):
                 with open(fname) as _in:
                     for line in _in:
                         _out.write(line)
         print('\nready, output in /tmp/pushthru_log')
         return
+    print('niet uitgevoerd, moet herschreven worden o.a. naar gebruik van git')
+    return
     errors = False
     with open('/tmp/pushthru_log', 'w') as _out:
         for name in names.split(','):
             if name not in all_repos:
-                logline = '{} not pushed: is not on bitbucket'.format(name)
+                # logline = '{} not pushed: is not on bitbucket'.format(name)
+                logline = '{} not pushed: is not registered as a remote repo'.format(name)
                 print(logline)
                 _out.write(logline + "\n")
                 errors = True
                 continue
             localpath = os.path.join('~', 'projects', name)
-            centralpath = os.path.join('~', 'hg_repos', name)
+            # centralpath = os.path.join('~', 'hg_repos', name)
+            centralpath = os.path.join('~', 'git_repos', name)
+            # TODO nog rekening houden met repos in .frozen?
             if name in private_repos:
                 localpath = os.path.join('~', name)
                 centralpath = centralpath.replace('repos', 'private')
-            elif name in django_repos:  # ??
-                localpath = localpath.replace('projects', os.path.join('www', 'django'))
-            elif name in cherrypy_repos:  # ??
-                localpath = localpath.replace('projects', os.path.join('www', 'cherrypy'))
-            elif name == 'bitbucket':
-                localpath = localpath.replace('projects', 'www')
-                centralpath = centralpath.replace(name, 'avisser.bitbucket.org')
+            # elif name in django_repos:  # ??
+            #     localpath = localpath.replace('projects', os.path.join('www', 'django'))
+            # elif name in cherrypy_repos:  # ??
+            #     localpath = localpath.replace('projects', os.path.join('www', 'cherrypy'))
+            # elif name == 'bitbucket':
+            #     localpath = localpath.replace('projects', 'www')
+            #     centralpath = centralpath.replace(name, 'avisser.bitbucket.org')
             with c.cd(localpath):
-                result = c.run('hg outgoing', warn=True, hide=True)
+                # TODO dit moet nog met git log zoals in _check
+                # result = c.run('hg outgoing', warn=True, hide=True)
+                result = c.run('git log origin/master..master', warn=True, hide=True)
             _out.write(result.stdout + "\n")
             if result.failed:
-                logline = '{} - hg outgoing failed'.format(name)
+                # logline = '{} - hg outgoing failed'.format(name)
+                logline = '{} - git outgoing check failed'.format(name)
                 _out.write(logline + "\n")
                 _out.write(result.stderr + "\n")
                 errors = True
             else:
                 with c.cd(localpath):
-                    result = c.run('hg push --remotecmd update', warn=True, hide=True)
+                    # result = c.run('hg push --remotecmd update', warn=True, hide=True)
+                    result = c.run('git push', warn=True, hide=True)
                 _out.write(result.stdout + "\n")
                 if result.failed:
                     logline = '{} - pushing failed'.format(name)
@@ -321,10 +328,12 @@ def pushthru(c, names):
                     errors = True
                     continue
             with c.cd(centralpath):
-                result = c.run('hg push', warn=True, hide=True)
+                # result = c.run('hg push', warn=True, hide=True)
+                result = c.run('git push', warn=True, hide=True)
             _out.write(result.stdout + "\n")
             if result.failed:
-                logline = '{} - pushing to bitbucket failed'.format(name)
+                # logline = '{} - pushing to bitbucket failed'.format(name)
+                logline = '{} - pushing to github failed'.format(name)
                 _out.write(logline + "\n")
                 _out.write(result.stderr + "\n")
                 errors = True
