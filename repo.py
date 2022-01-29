@@ -183,7 +183,7 @@ def _check(c, context='local', push='no', verbose=False, exclude=None, dry_run=F
                     result = c.run(command)
             if result.ok:
                 _out.write(result.stdout + '\n')
-                if remote:
+                if remote and use_tipfile:
                     command = 'git log -r -1' if is_gitrepo or is_private else 'hg tip'
                     if dry_run:
                         print('execute `{}` in directory `{}`'.format(command, pwd))
