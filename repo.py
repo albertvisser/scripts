@@ -229,7 +229,8 @@ def check_local_changes(c):
 def check_local_notes(c):
     "view remarks on repofiles not to be committed / pushed yet"
     with c.cd('~/projects'):
-        c.run("a-propos -n 'Ongoing stuff not needing to be committed yet' -f ongoing.apo &")
+        # c.run("a-propos -n 'Ongoing stuff not needing to be committed yet' -f ongoing.apo &")
+        c.run('treedocs projects.trd')
 
 
 @task
@@ -490,8 +491,9 @@ def qgit(c, name=''):
 @task
 def mee_bezig(c, name=''):
     "Open Doing list for a project using a-propos"
-    check_and_run_for_project(c, name, "a-propos -n 'Mee Bezig ({})' -f mee_bezig.apo".format(
-        name or os.path.basename(os.getcwd())))
+    # check_and_run_for_project(c, name, "a-propos -n 'Mee Bezig ({})' -f mee_bezig.apo".format(
+    #     name or os.path.basename(os.getcwd())))
+    c.run('treedocs ~/projects/projects.trd')
 
 
 @task
