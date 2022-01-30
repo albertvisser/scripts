@@ -1,2 +1,2 @@
 #! /bin/bash
-inv -c ~/nginx-config/tasks $1 $2 $3 $4 $5 $6 $7 $8
+inv -c ~/nginx-config/tasks $@
