@@ -341,8 +341,58 @@ def pushthru(c, names):
     print('ready{}, output in /tmp/pushthru_log'.format(extra))
 
 
-def _make_repolist(c, path):
-    """turn the repo log into a history
+@task(help={'names': 'comma separated list of repostories to list',
+            'outtype': 'format for output list - `csv` (default) or `txt`'})
+def overview(c, names=None, outtype=''):
+    """Try to build a history file from one or more repository logs
+    meant to help me decide on tags or versions
+    """
+    print('uitgevoerd voor oude hg repo, moet herschreven worden o.a. naar gebruik van git')
+    # print('niet uitgevoerd, moet herschreven worden o.a. naar gebruik van git')
+    # return
+    outtype = outtype or 'csv'
+    if outtype not in ('txt', 'csv'):
+        print('wrong spec for output type')
+    root = '/home/albert/hg_repos'
+    # root = '/home/albert/git_repos'
+    # root = '/home/albert/projects'
+    if not names:
+        names = [x for x in os.listdir(root)]
+    else:
+        names = names.split(',')
+    for item in names:
+        path = os.path.join(root, item)
+        outdir = repo_overzicht(c, item, path, outtype)
+    print('output in {}'.format(outdir))  # os.path.join(os.path.dirname(path), ".overzicht")))
+
+
+def repo_overzicht(c, name, path, outtype):
+    """Try to build a history file from a repository log
+    currently it shows which commits contain which files
+    """
+    repotype = ''
+    if not os.path.isdir(path):
+        return
+    if '.hg' in os.listdir(path):
+        outdict = make_repolist_hg(c, path)
+        repotype = 'hg'
+    elif '.hg' in os.listdir(path):
+        outdict = make_repolist_git(c, path)
+        repotype = 'git'
+    else:
+        return
+    outdir = os.path.join(os.path.dirname(path), ".overzicht")
+    if outtype == 'txt':
+        outfile = os.path.join(outdir, "{}_repo.ovz".format(name))
+        make_repo_ovz(outdict, outfile)
+    elif outtype == 'csv':
+        outfile = os.path.join(outdir, "{}_repo.csv".format(name))
+        make_repocsv(outdict, outfile)
+    return outdir
+
+
+def make_repolist_hg(c, path):
+    """turn the repo log into a history - mercurial version
 
     input: pathname to the repository
     output: dictionary containing the history
@@ -365,7 +415,7 @@ def _make_repolist(c, path):
             key, _ = words[1].split(':', 1)
             key = int(key)
         elif words[0] == 'date:':
-            outdict[key]['date'] = ' '.join(words[1:])
+            outdict[key]['date'] = ' '.join(words[1:4] + [words[5], words[4], words[6]])
         elif words[0] == 'files:':
             outdict[key]['files'] = words[1:]
         elif words[0] == 'description:':
@@ -374,7 +424,15 @@ def _make_repolist(c, path):
     return outdict
 
 
-def _make_repo_ovz(outdict, outfile):
+def make_repolist_git(c, path):
+    """turn the repo log into a history - git version
+
+    input: pathname to the repository
+    output: dictionary containing the history
+    """
+
+
+def make_repo_ovz(outdict, outfile):
     """write the history to a file
 
     input: history in the form of a dictionary, output filename
@@ -382,8 +440,7 @@ def _make_repo_ovz(outdict, outfile):
     """
     with open(outfile, "w") as _out:
         for key in sorted(outdict.keys()):
-            _out.write('{}: {}\n'.format(outdict[key]['date'],
-                                         '\n'.join(outdict[key]['desc'])))
+            _out.write('{}: {}\n'.format(outdict[key]['date'], '\n'.join(outdict[key]['desc'])))
             try:
                 for item in outdict[key]['files']:
                     _out.write('    {}\n'.format(item))
@@ -391,7 +448,7 @@ def _make_repo_ovz(outdict, outfile):
                 pass
 
 
-def _make_repocsv(outdict, outfile):
+def make_repocsv(outdict, outfile):
     """turn the repo history into a comma delimited file
 
     input: history in the form of a dictionary, output filename
@@ -424,40 +481,6 @@ def _make_repocsv(outdict, outfile):
         for key in sorted(in_changeset_dict):
             out = [key] + in_changeset_dict[key]
             writer.writerow(out)
-
-
-def _repos_overzicht(c, name, path):
-    """Try to build a history file from a repository log
-    """
-    if not os.path.isdir(path):
-        return
-    if '.hg' not in os.listdir(path):
-        return
-    # print('processing repository: {}'.format(name))
-    outdict = _make_repolist(c, path)
-    ## outfile = os.path.join(root, ".overzicht", "{}.repo_ovz".format(name))
-    ## _make_repo_ovz(outdict, outfile)
-    outfile = os.path.join(os.path.dirname(path), ".overzicht", "{}.csv".format(name))
-    _make_repocsv(outdict, outfile)
-
-
-@task(help={'names': 'comma separated list of repostories to list'})
-def overview(c, names=None):
-    """Try to build a history file from one or more repository logs
-    meant to help me decide on tags or versions
-
-    """
-    print('niet uitgevoerd, moet herschreven worden o.a. naar gebruik van git')
-    return
-    root = '/home/albert/hg_repos'
-    if not names:
-        names = [x for x in os.listdir(root)]
-    else:
-        names = names.split(',')
-    for item in names:
-        path = os.path.join(root, item)
-        _repos_overzicht(c, item, path)
-    print('output in {}'.format(os.path.join(os.path.dirname(path), ".overzicht")))
 
 
 @task(help={'name': 'repository name'})
