@@ -484,9 +484,10 @@ def make_repocsv(outdict, outfile):
 
 
 @task(help={'name': 'repository name'})
-def add2gitweb(c, name):
+def add2gitweb(c, name, frozen=False):
     "make a repository visible with gitweb"
-    c.run('sudo ln -s ~/git_repos/{0}/.git /var/lib/git/{0}.git'.format(name))
+    loc = '/.frozen' if frozen else ''
+    c.run('sudo ln -s ~/git_repos{0}/{1}/.git /var/lib/git/{1}.git'.format(loc, name))
 
 
 def check_and_run_for_project(c, name, command):
