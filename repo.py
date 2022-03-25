@@ -7,12 +7,15 @@ import functools
 import datetime
 import csv
 from invoke import task
-from settings import (get_project_dir, all_repos, git_repos, private_repos, django_repos,
-                      cherrypy_repos, frozen_repos)
+from settings import (get_project_dir, get_project_root, all_repos, git_repos, private_repos,
+                      django_repos, cherrypy_repos, frozen_repos)
 
 HOME = os.path.expanduser('~')
 TODAY = datetime.datetime.today()
 FILELIST = '/tmp/~~pfind'
+P2ULOG = '/tmp/pushthru_log'
+REPOCHG = '/tmp/repo_changes'
+LOCALCHG = '/tmp/repo_local_changes'
 
 
 def get_repofiles(c, reponame):
@@ -72,9 +75,9 @@ def _check(c, context='local', push='no', verbose=False, exclude=None, dry_run=F
         print('wrong context for this routine')
         return ''
     elif local_:
-        root, outfile = HOME, '/tmp/repo_local_changes'
+        root, outfile = HOME, LOCALCHG
     else:
-        root, outfile = os.path.join(HOME, 'hg_repos'), '/tmp/repo_changes'
+        root, outfile = os.path.join(HOME, 'hg_repos'), REPOCHG
 
     changes = False
     with open(outfile, 'w') as _out:
@@ -222,7 +225,7 @@ def check_local(c, dry_run=False):
 def check_local_changes(c):
     "view output of check_local command"
     with c.cd('~/projects'):
-        c.run('gnome-terminal --geometry=100x40 -- view /tmp/repo_local_changes')
+        c.run('gnome-terminal --geometry=100x40 -- view {}'.format(LOCALCHG))
 
 
 @task
@@ -272,17 +275,17 @@ def pushthru(c, names):
     if not names:
         _check(c, push='yes')
         _check(c, 'remote', push='yes')
-        with open('/tmp/pushthru_log', 'w') as _out:
-            for fname in ('/tmp/repo_local_changes', '/tmp/repo_changes'):
+        with open(P2ULOG, 'w') as _out:
+            for fname in (LOCALCHG, REPOCHG):
                 with open(fname) as _in:
                     for line in _in:
                         _out.write(line)
-        print('\nready, output in /tmp/pushthru_log')
+        print('\nready, output in', P2ULOG )
         return
     print('niet uitgevoerd, moet herschreven worden o.a. naar gebruik van git')
     return
     errors = False
-    with open('/tmp/pushthru_log', 'w') as _out:
+    with open(P2ULOG, 'w') as _out:
         for name in names.split(','):
             if name not in all_repos:
                 # logline = '{} not pushed: is not on bitbucket'.format(name)
@@ -338,7 +341,7 @@ def pushthru(c, names):
                 _out.write(result.stderr + "\n")
                 errors = True
     extra = ' with errors' if errors else ''
-    print('ready{}, output in /tmp/pushthru_log'.format(extra))
+    print('ready{}, output in {}'.format(extra, P2ULOG))
 
 
 @task(help={'names': 'comma separated list of repostories to list',
@@ -347,15 +350,16 @@ def overview(c, names=None, outtype=''):
     """Try to build a history file from one or more repository logs
     meant to help me decide on tags or versions
     """
-    print('uitgevoerd voor oude hg repo, moet herschreven worden o.a. naar gebruik van git')
+    # print('gemaakt voor oude hg repo, moet herschreven worden o.a. naar gebruik van git')
     # print('niet uitgevoerd, moet herschreven worden o.a. naar gebruik van git')
     # return
     outtype = outtype or 'csv'
     if outtype not in ('txt', 'csv'):
         print('wrong spec for output type')
-    root = '/home/albert/hg_repos'
-    # root = '/home/albert/git_repos'
-    # root = '/home/albert/projects'
+        return
+    root = get_project_root('bb')  # '/home/albert/hg_repos'
+    # root = get_project_root('git')  # '/home/albert/git_repos'
+    # root = get_project_root('local')  # '/home/albert/projects'
     if not names:
         names = [x for x in os.listdir(root)]
     else:
@@ -376,7 +380,7 @@ def repo_overzicht(c, name, path, outtype):
     if '.hg' in os.listdir(path):
         outdict = make_repolist_hg(c, path)
         repotype = 'hg'
-    elif '.hg' in os.listdir(path):
+    elif '.git' in os.listdir(path):
         outdict = make_repolist_git(c, path)
         repotype = 'git'
     else:
@@ -522,7 +526,7 @@ def qgit(c, name=''):
 
 
 @task
-def mee_bezig(c, name=''):
+def mee_bezig(c):  # , name=''):
     "Open Doing list for a project using a-propos"
     # check_and_run_for_project(c, name, "a-propos -n 'Mee Bezig ({})' -f mee_bezig.apo".format(
     #     name or os.path.basename(os.getcwd())))
@@ -563,4 +567,3 @@ def search(c, find='', rebuild=False):
     if find:
         command += 'N -s ' + find
     c.run(command)
-

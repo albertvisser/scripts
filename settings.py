@@ -107,8 +107,6 @@ def get_project_root(name, context='local'):
             if private_repos[name] == value:
                 is_private = True
                 break
-        else:
-            name = ''
     git_repo = name in git_repos
     sf_repo = name in sf_repos
     import pathlib

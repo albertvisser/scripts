@@ -13,12 +13,14 @@ import tags
 import www
 import lang
 import db
-
+HERE = os.path.expanduser('~/bin')
+SCITELOC = os.path.expanduser('~/Downloads/SciTE/scite{}.tgz')
+GSCITELOC = os.path.expanduser('~/Downloads/SciTE/gscite{}.tgz')
 
 @task
 def listbin(c):
     "list command files in scripts directory (~/bin) (based on readme file)"
-    with open(os.path.expanduser('~/bin/readme.rst')) as _in:
+    with open(os.path.join(HERE, 'readme.rst')) as _in:
         lines = _in.readlines()
     commands = {}
     lastcommand = get_starters = False
@@ -58,7 +60,7 @@ def listbin(c):
 def install_scite(c, version):
     """upgrade SciTE. argument: version number as used in filename
     """
-    filename = os.path.expanduser('~/Downloads/SciTE/gscite{}.tgz'.format(version))
+    filename = GSCITELOC.format(version)
     if not os.path.exists(filename):
         print('{} does not exist'.format(filename))
         return
@@ -80,7 +82,7 @@ def build_scite(c, version):
 
     standard binary is 32-bit and my system is 64-bit, so I need this now
     """
-    filename = os.path.expanduser('~/Downloads/SciTE/scite{}.tgz'.format(version))
+    filename = SCITELOC.format(version)
     if not os.path.exists(filename):
         print('{} does not exist'.format(filename))
         return
@@ -124,7 +126,7 @@ def arcstuff(c, names):
     use the value 'all' to select all arcstuff config files present
     """
     if names == 'all':
-        files = [x for x in os.listdir(os.path.dirname(__file__))
+        files = [x for x in os.listdir(HERE)
                  if x.startswith('arcstuff') and os.path.splitext(x)[1] == '.conf']
         names = []
         for x in files:
@@ -177,7 +179,7 @@ def chmodrecursive(c, path=None):
     if path is None:
         path = os.getcwd()
     for entry in os.listdir(path):
-        if entry in ('__pycache__', '.hg'):
+        if entry in ('__pycache__',) or entry.startswith('.'):
             continue
         fnaam = os.path.join(path, entry)
         if os.path.isfile(fnaam):
@@ -200,7 +202,7 @@ def chmodrecursive(c, path=None):
 def create_bin_shortcuts(c):
     """(re)build script shortcuts in bin directory
     """
-    os.chdir(os.path.expanduser('~/bin'))
+    os.chdir(HERE)
     for dst, src in settings.symlinks_bin:
         os.symlink(src, dst)
 
