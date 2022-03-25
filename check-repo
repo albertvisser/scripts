@@ -451,6 +451,8 @@ class Gui(qtw.QWidget):
     def update_branches(self):
         """build a list of branches and update combobox
         """
+        if self.repotype != 'git':
+            return
         stdout, stderr = self.run_and_capture(['git', 'branch'])
         if stderr:
             qtw.QMessageBox.information(self, self.title, '\n'.join(stderr))
@@ -469,6 +471,10 @@ class Gui(qtw.QWidget):
         """create a new branch
         """
         branch_name = self.cb_branch.currentText()
+        if not branch_name or branch_name == self.find_current_branch():
+            qtw.QMessageBox.information(self, self.title,
+                                        'Enter a new branch name in the combobox first')
+            return
         self.run_and_report(['git', 'branch', branch_name])
         self.update_branches()
 
@@ -476,6 +482,10 @@ class Gui(qtw.QWidget):
         """switch to the chosen branch
         """
         branch_name = self.cb_branch.currentText()
+        if not branch_name or branch_name == self.find_current_branch():
+            qtw.QMessageBox.information(self, self.title,
+                                        'Select a branch different from the current one first')
+            return
         self.run_and_report(['git', 'checkout', branch_name])
         # self.update_branches()
         self.refresh_frame()
@@ -485,6 +495,10 @@ class Gui(qtw.QWidget):
         """
         branch_name = self.cb_branch.currentText()
         current = self.find_current_branch()
+        if not branch_name or branch_name == current:
+            qtw.QMessageBox.information(self, self.title,
+                                        'Select a branch different from the current one first')
+            return
         ok = qtw.QMessageBox.question(self, self.title,
                                       'Merge {} into {}?'.format(branch_name, current)) 
         if ok == qtw.QMessageBox.Yes:
@@ -625,8 +639,7 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('project', help="name of a software project", nargs='?',
-                        default="")
+    parser.add_argument('project', help="name of a software project", nargs='?', default="")
     results = main(parser.parse_args())
     if results:
         print(results)
