@@ -1,0 +1,24 @@
+#! /bin/sh
+# edit a single file using vi in a profiled console
+
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+  echo "usage: pedit [ -l | -lm | -rm | -r  ] FILE"
+  echo "  geometry options to show window in specific positions:"
+  echo "   -l = leftmost, -lm = adjacent to leftmost"
+  echo "   -r = rightmost, -rm = adjacent to rightmost"
+  exit
+fi   
+todo=${@:2}
+if [ "$1" = "-l" ]; then
+  geo='--geometry=+2+0'; 
+elif [ "$1" = "-r" ]; then
+  geo='--geometry=+1072+0'; 
+elif [ "$1" = "-ml" ]; then
+  geo='--geometry=+848+0'; 
+elif [ "$1" = "-mr" ]; then
+  geo='--geometry=+224+0'; 
+elif [ -z $2 ]; then 
+  todo=$1;
+  geo='';
+fi
+gnome-terminal --profile='Code Editor Shell' $geo -- vim $todo &
