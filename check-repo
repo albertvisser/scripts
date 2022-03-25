@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 """examine uncommitted changes in source repository
 """
+import os
 import sys
 import pathlib
 import argparse
@@ -159,12 +160,14 @@ class Gui(qtw.QWidget):
         hbox.addWidget(btn)
 
         hbox.addStretch()
-        btn = qtw.QPushButton(gui.QIcon.fromTheme('document-multiple') , '', self)
-        menu = qtw.QMenu()
-        menu.addAction('Open project &Notes').triggered.connect(self.open_notes)
-        menu.addAction('Open project &Docs').triggered.connect(self.open_docs)
-        btn.setMenu(menu)
-        btn.setShortcut('Shift+F6')
+        # btn = qtw.QPushButton(gui.QIcon.fromTheme('document-multiple') , '', self)
+        btn = qtw.QPushButton('&Open Docs', self)
+        # menu = qtw.QMenu()
+        # menu.addAction('Open project &Notes').triggered.connect(self.open_notes)
+        # menu.addAction('Open project &Docs').triggered.connect(self.open_docs)
+        btn = qtw.QPushButton('&Open Docs', self)
+        # btn.setMenu(menu)
+        # btn.setShortcut('Shift+F6')
         hbox.addWidget(btn)
 
         vbox.addLayout(hbox)
@@ -566,12 +569,14 @@ class Gui(qtw.QWidget):
 
     def open_docs(self):
         "open project documentatie (treedocs bestandje)"
-        # self.run_and_continue(['binfab', 'repo.dtree'])
-        self.run_and_continue(['treedocs', 'projdocs.pck'])
+        if len(sys.argv) == 1 or sys.argv[1] == '.':
+            where = os.getcwd()
+        else:
+            where = settings.get_project_dir(sys.argv[1])
+        self.run_and_continue(['treedocs', '{}/projdocs.trd'.format(where)])
 
     def find_current_branch(self):
         out, err = self.run_and_capture(['git', 'branch'])
-        print(out, err)
         return out[0].strip().split()[-1]
 
     def just_run(self, command_list):
