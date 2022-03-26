@@ -37,13 +37,15 @@ def repair_mongo(c):
 def dump_mongo(c, names=''):
     "dump mongo database(s) to a specific location"
     date = datetime.datetime.today().strftime('%Y%m%d-%H%M%S')
-    path = pathlib.Path('~/mongodump/{}'.format(date)).expanduser()
-    path.mkdir(parents=True, exist_ok=True)
+    path = pathlib.Path('~/mongodump/{}'.format(date))
+    path.expanduser().mkdir(parents=True, exist_ok=True)
     if not names:
-        c.run('mongodump -o ~/mongodump/{}/'.format(date))
+        # c.run('mongodump -o ~/mongodump/{}/'.format(date))
+        c.run('mongodump -o {}/'.format(path))
         return
     for name in names.split(','):
-        result = c.run('mongodump -d {} -o ~/mongodump/{}/'.format(name, date))
+        # result = c.run('mongodump -d {} -o ~/mongodump/{}/'.format(name, date))
+        result = c.run('mongodump -d {} -o {}/'.format(name, path))
 
 
 @task
@@ -78,8 +80,8 @@ def dump_pg(c, names=''):
     "dump postgres database(s) to a specific location"
     timestamp = datetime.datetime.today().strftime('%Y%m%d:%H%M%S')
     date, time = timestamp.split(':', 1)
-    path = pathlib.Path('~/pgdump/{}'.format(date)).expanduser()
-    path.mkdir(parents=True, exist_ok=True)
+    path = pathlib.Path('~/pgdump/{}'.format(date))
+    path.expanduser().mkdir(parents=True, exist_ok=True)
     if not names:
         c.run('pg_dumpall -f ~/pgdump/{}/all_{}.sql'.format(date, time))
         return

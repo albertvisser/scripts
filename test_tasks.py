@@ -120,7 +120,6 @@ def _test_chmodrecursive(monkeypatch, capsys):
                                        'entering recursive call')
 
 
-
 def test_create_bin_shortcuts(monkeypatch, capsys):
     def mock_chdir(*args):
         print('change to directory:', args[0])

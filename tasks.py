@@ -175,6 +175,7 @@ def chmodrecursive(c, path=None):
     dat geen unix permits kan onthouden (zoals een mobiele FAT-harddisk)
 
     eenvoudigst om uit te voeren in de root van de betreffende tree
+    kan wellicht ook met `find -name *.py -exec chmod 766`...
     """
     if path is None:
         path = os.getcwd()

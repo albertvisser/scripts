@@ -12,21 +12,21 @@ def test_get_project_root(monkeypatch):
     assert str(settings.get_project_root('git-repo')) == 'home/base'
     assert str(settings.get_project_root('sf-repo')) == 'home/base'
     assert str(settings.get_project_root('hg-repo')) == 'home/base'
-    assert str(settings.get_project_root('name', 'remote')) == 'home/hg_private'
-    assert str(settings.get_project_root('git-repo', 'remote')) == 'home/git-repos'  # m.z. git_repos?
-    assert str(settings.get_project_root('sf-repo', 'remote')) == 'home/hg_repos'
+    assert str(settings.get_project_root('name', 'remote')) == 'home/git_repos'
+    assert str(settings.get_project_root('git-repo', 'remote')) == 'home/git_repos'
+    assert str(settings.get_project_root('sf-repo', 'remote')) == 'home/sf_repos'
     assert str(settings.get_project_root('hg-repo', 'remote')) == 'home/hg_repos'
-    assert str(settings.get_project_root('name', 'sf')) == 'home/hg_private'         # eh?
-    assert str(settings.get_project_root('git-repo', 'sf')) == 'home/base'           # m.z. n/a?
+    assert str(settings.get_project_root('name', 'sf')) == 'n/a'
+    assert str(settings.get_project_root('git-repo', 'sf')) == 'n/a'
     assert str(settings.get_project_root('sf-repo', 'sf')) == 'home/sf_repos'
-    assert str(settings.get_project_root('hg-repo', 'sf')) == 'home/base'            # m.z. n/a?
-    assert str(settings.get_project_root('name', 'git')) == 'home/hg_private'        # eh?
-    assert str(settings.get_project_root('git-repo', 'git')) == 'home/git-repos'     # m.z. git_repos?
-    assert str(settings.get_project_root('sf-repo', 'git')) == 'home/base'           # m.z. n/a?
-    assert str(settings.get_project_root('hg-repo', 'git')) == 'home/base'           # m.z. n/a?
-    assert str(settings.get_project_root('name', 'bb')) == 'home/hg_private'         # eh?
-    assert str(settings.get_project_root('git-repo', 'bb')) == 'home/hg_repos'       # eh?
-    assert str(settings.get_project_root('sf-repo', 'bb')) == 'home/hg_repos'        # eh?
+    assert str(settings.get_project_root('hg-repo', 'sf')) == 'n/a'
+    assert str(settings.get_project_root('name', 'git')) == 'home/git_repos'
+    assert str(settings.get_project_root('git-repo', 'git')) == 'home/git_repos'
+    assert str(settings.get_project_root('sf-repo', 'git')) == 'n/a'
+    assert str(settings.get_project_root('hg-repo', 'git')) == 'n/a'
+    assert str(settings.get_project_root('name', 'bb')) == 'home/hg_private'
+    assert str(settings.get_project_root('git-repo', 'bb')) == 'n/a'
+    assert str(settings.get_project_root('sf-repo', 'bb')) == 'n/a'
     assert str(settings.get_project_root('hg-repo', 'bb')) == 'home/hg_repos'
 
 

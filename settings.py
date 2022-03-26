@@ -116,13 +116,14 @@ def get_project_root(name, context='local'):
             root = root.parent
     else:  # if context in ('remote', 'bb'):
         if is_private:
-            root = root.parent / 'hg_private'
-        elif git_repo and context not in ('sf', 'bb'):
-            root = root.parent / 'git-repos'
-        elif sf_repo and context == 'sf':
-            root = root.parent / 'sf_repos'
-        elif context not in ('git', 'sf'):
-            root = root.parent / 'hg_repos'
+            where = 'hg_private' if context == 'bb' else 'git_repos'
+            root = root.parent / where if context != 'sf' else 'n/a'
+        elif git_repo:
+            root = root.parent / 'git_repos' if context not in ('sf', 'bb') else 'n/a'
+        elif sf_repo:
+            root = root.parent / 'sf_repos' if context not in ('bb', 'git') else 'n/a'
+        else:
+            root = root.parent / 'hg_repos' if context not in ('git', 'sf') else 'n/a'
     return root
 
 
