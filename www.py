@@ -31,7 +31,7 @@ def update_sites(c):
     "update mydomains database and localhost/sites.html from /etc/hosts"
     with c.cd('~/projects/mydomains'):
         c.run('python check_hosts.py')
-    wwwcopy('sites.html')
+    copy(c, 'sites.html')
 
 
 @task
@@ -52,7 +52,7 @@ def edit_apache(c, names):
     for name in names.split(','):
         c.run('cp {1}/{0} /tmp/{0}'.format(name, apache_root))
         ## get('{1}/{0} /tmp'.format(name, apache_root))
-        c.run('scite /tmp/{0}'.format(name))
+        c.run('pedit /tmp/{0}'.format(name))
         c.run('sudo cp /tmp/{0} {1}/{0}'.format(name, apache_root))
         ## put('/tmp/{0} {1}'.format(name, apache_root), use_sudo=True)
 
