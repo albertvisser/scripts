@@ -165,9 +165,9 @@ class Gui(qtw.QWidget):
         # menu = qtw.QMenu()
         # menu.addAction('Open project &Notes').triggered.connect(self.open_notes)
         # menu.addAction('Open project &Docs').triggered.connect(self.open_docs)
-        btn = qtw.QPushButton('&Open Docs', self)
+        btn.clicked.connect(self.open_docs)
         # btn.setMenu(menu)
-        # btn.setShortcut('Shift+F6')
+        btn.setShortcut('Shift+F6')
         hbox.addWidget(btn)
 
         vbox.addLayout(hbox)
