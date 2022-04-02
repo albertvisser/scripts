@@ -33,12 +33,6 @@ def newproject(c, name):
         return
     shutil.copytree(os.path.join(PROJECTS_BASE, 'skeleton'), loc)
     os.rename(os.path.join(loc, 'projectname'), os.path.join(loc, name))
-    tests_file = os.path.join(loc, 'tests', name + '_tests.py')
-    os.rename(os.path.join(loc, 'tests', 'projectname_tests.py'), tests_file)
-    with open(tests_file) as _in:
-        data = _in.read()
-    with open(tests_file, 'w') as _out:
-        _out.write(data.replace('projectname', name))
 
 
 @task(help={'name': 'name of session file'})

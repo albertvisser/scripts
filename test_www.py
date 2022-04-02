@@ -23,21 +23,15 @@ def test_copy(monkeypatch, capsys):
                                        'sudo cp home/file server/file\n')
 
 
-def _test_link(monkeypatch, capsys):
-    def mock_join(*args):
-        return '/'.join(args)
-    def mock_readlink(*args):
-        return 'link to dest of {}'.format(args[0])
+def test_link(monkeypatch, capsys):
     monkeypatch.setattr(www, 'home_root', 'home')
     monkeypatch.setattr(www, 'server_root', 'server')
-    # waarom gaat hier mocken van os nu ineens mis?
-    monkeypatch.setattr(os.path, 'join', 'mock_join')
-    monkeypatch.setattr(os, 'readlink', 'mock_readlink')
+    monkeypatch.setattr(os, 'readlink', lambda x: 'link to dest of {}'.format(x))
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
     www.link(c, 'html,file')
-    assert capsys.readouterr().out == ('sudo ln -s home/html server\n'
-                                       'sudo ln -s home/file server\n')
+    assert capsys.readouterr().out == ('sudo ln -s link to dest of home/html server\n'
+                                       'sudo ln -s link to dest of home/file server\n')
 
 
 def test_edit(monkeypatch, capsys):
@@ -85,9 +79,30 @@ def test_edit_apache(monkeypatch, capsys):
                                        'pedit /tmp/file\nsudo cp /tmp/file apache/file\n')
 
 
-def _test_permits(monkeypatch, capsys):
-    monkeypatch.setattr(MockContext, 'run', mock_run)
+def test_permits(monkeypatch, capsys):
+    def mock_run_fail(c, *args):
+        print(*args)
+        return types.SimpleNamespace(failed=True)
+    def mock_run_ok(c, *args):
+        print(*args)
+        return types.SimpleNamespace(failed=False)
+    monkeypatch.setattr(www.os.path, 'abspath', lambda x: 'abs/{}'.format(x))
+    monkeypatch.setattr(www.os, 'listdir', lambda x: ['name'])
+    monkeypatch.setattr(www.os.path, 'isfile', lambda x: True)
+    monkeypatch.setattr(www.os.path, 'isdir', lambda x: True)
+    monkeypatch.setattr(MockContext, 'run', mock_run_fail)
     c = MockContext()
+    www.permits(c, 'here', do_files=True)
+    assert capsys.readouterr().out == 'chmod 644 abs/here/name\nchmod failed on file abs/here/name\n'
+    www.permits(c, 'here')
+    assert capsys.readouterr().out == ('chmod 755 abs/here/name\n'
+                                       'chmod failed on directory abs/here/name\n')
+    monkeypatch.setattr(MockContext, 'run', mock_run_ok)
+    c = MockContext()
+    www.permits(c, 'here', do_files=True)
+    assert capsys.readouterr().out == 'chmod 644 abs/here/name\n'
+    # www.permits(c, 'here')
+    # TODO nog iets doen om de recusrieve aanroep niet te laten vastlopen
 
 
 def _test_stage(monkeypatch, capsys):
@@ -95,9 +110,28 @@ def _test_stage(monkeypatch, capsys):
     c = MockContext()
 
 
-def _test_startapp(monkeypatch, capsys):
+def test_startapp(monkeypatch, capsys):
+    monkeypatch.setattr(www, 'webapps', [])
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
-
-
-
+    www.startapp(c, 'name')
+    assert capsys.readouterr().out == 'unknown webapp\n'
+    monkeypatch.setattr(www, 'webapps', {'name': {'profile': 'appname', 'adr': 'domain',
+                                                  'start_server': False}})
+    www.startapp(c, 'name')
+    assert capsys.readouterr().out == ('vivaldi-snapshot --app=http://domain --class=WebApp-appname '
+                                       '--user-data-dir=/home/albert/.local/share/ice/profiles/'
+                                       'appname\n')
+    monkeypatch.setattr(www, 'webapps', {'name': {'profile': 'appname', 'adr': 'domain',
+                                                  'start_server': '='}})
+    monkeypatch.setattr(www.os.path, 'exists', lambda x: False)
+    www.startapp(c, 'name')
+    assert capsys.readouterr().out == ('fabsrv server.start -n name\n'
+                                       'vivaldi-snapshot --app=http://domain --class=WebApp-appname '
+                                       '--user-data-dir=/home/albert/.local/share/ice/profiles/'
+                                       'appname\n')
+    monkeypatch.setattr(www.os.path, 'exists', lambda x: True)
+    www.startapp(c, 'name')
+    assert capsys.readouterr().out == ('vivaldi-snapshot --app=http://domain --class=WebApp-appname '
+                                       '--user-data-dir=/home/albert/.local/share/ice/profiles/'
+                                       'appname\n')

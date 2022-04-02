@@ -58,6 +58,18 @@ def init(c, project, language, check=False):
         print(mld)
 
 
+def uses_gettext(filename):
+    # TODO: kijken of het py file gettext importeert (zo nee dan heeft de rest geen zin)
+    # quick-n-dirty test if gettext is used
+    use_gettext = False
+    with open(filename) as f:
+        for line in f:
+            if 'import' in line and 'gettext' in line:
+                use_gettext = True
+                break
+    return use_gettext
+
+
 @task(help={'project': 'project name',
             'source': 'file to gather texts from (specify "." to check the entire project'})
 def gettext(c, project, source):
@@ -76,6 +88,9 @@ def gettext(c, project, source):
             source += '.py'
         elif suffix != '.py':
             print('{} is not a python source file'.format(source))
+            return
+        if not uses_gettext(source):
+            print('{} does not import gettext'.format(source))
             return
     with c.cd(base):
         c.run("pygettext {}".format(source))
@@ -133,7 +148,7 @@ def poedit(c, project, language):
             'language': 'designates language to create translation for',
             'appname': 'application name if different from project name, otherwise use "*"'})
 def place(c, project, language, appname):
-    """copy translation(s) into <appname>
+    """copy translation(s) into <appname> (* = equal to project, ! = project starting with cap letter)
 
     plaats het gecompileerde language file zodat het gebruikt kan worden
     """
@@ -143,14 +158,16 @@ def place(c, project, language, appname):
         return
     if appname == '*':
         appname = os.path.basename(base)
+    elif appname == '!':
+        appname = os.path.basename(base).title()
     fromname = language + '.po'
     toname = os.path.join(language, 'LC_MESSAGES', appname + '.mo')
     # kijken of er al een werkend .mo file bestaat, voor het geval die eigenlijk in mixed-case is
-    # helaas werkt dit nog niet
+    # helaas werkt dit nog niet  waarschijnlijk omdat ik de hele splitext uitvroeg i.p.v. deel 2
     loc = os.path.join(language, 'LC_MESSAGES')
     for name in os.listdir(os.path.join(base, 'locale', loc)):
         print(name)
-        if os.path.splitext(name) == '.mo':
+        if os.path.splitext(name)[1] == '.mo':
             toname = os.path.join(loc, name)
             break
     command = 'msgfmt {} -o {}'.format(fromname, toname)

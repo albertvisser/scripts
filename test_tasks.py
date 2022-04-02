@@ -61,30 +61,90 @@ def test_install_scite(monkeypatch, capsys):
                                                fname)
 
 
-def _test_build_scite(monkeypatch, capsys):
+def test_build_scite(monkeypatch, capsys):
     def mock_run_1(c, *args):
-        print(*args)
-        return types.SimpleNamespace(failed=True, stdout='results')
+        nonlocal counter
+        print(*args, 'in', c.cwd)
+        counter += 1
+        return types.SimpleNamespace(failed=True, stdout='results from call {}'.format(counter),
+                                     stderr='errors on call {}'.format(counter))
     def mock_run_2(c, *args):
-        print(*args)
-        return types.SimpleNamespace(failed=False, stdout='results')
+        nonlocal counter
+        print(*args, 'in', c.cwd)
+        counter += 1
+        if counter > 2:
+            return types.SimpleNamespace(failed=True, stdout='results from call {}'.format(counter),
+                                         stderr='errors on call {}'.format(counter))
+        return types.SimpleNamespace(failed=False, stdout='results from call {}'.format(counter))
+    def mock_run_3(c, *args):
+        nonlocal counter
+        print(*args, 'in', c.cwd)
+        counter += 1
+        if counter > 3:
+            return types.SimpleNamespace(failed=True, stdout='results from call {}'.format(counter),
+                                         stderr='errors on call {}'.format(counter))
+        return types.SimpleNamespace(failed=False, stdout='results from call {}'.format(counter))
+    def mock_run_4(c, *args):
+        nonlocal counter
+        print(*args, 'in', c.cwd)
+        counter += 1
+        return types.SimpleNamespace(failed=False, stdout='results from call {}'.format(counter))
     monkeypatch.setattr(tasks, 'SCITELOC', '/tmp/scite{}_test')
-    fname = tasks.SCITELOC.format('x')
-
-    try:
-        os.remove(tasks.SCITELOC.format('x'))
-    except FileNotFoundError:
-        pass
+    monkeypatch.setattr(tasks.os.path, 'exists', lambda x: False)
     c = MockContext()
     tasks.build_scite(c, 'x')
     assert capsys.readouterr().out == '/tmp/scitex_test does not exist\n'
+    monkeypatch.setattr(tasks.os.path, 'exists', lambda x: True)
 
-    with open(fname, 'w') as f:
-        f.write('')
+    counter = 0
     monkeypatch.setattr(MockContext, 'run', mock_run_1)
     c = MockContext()
     tasks.build_scite(c, 'x')
-    assert capsys.readouterr().out == '/tmp/scitex_test does not exist\n'
+    assert capsys.readouterr().out == ('tar -zxf /tmp/scitex_test in /tmp\n'
+                                       'tar -xf /tmp/scitex_test in /tmp\n'
+                                       'make in /tmp/scintilla/gtk\n'
+                                       'make scintilla failed, see /tmp/scite_build.log\n')
+    with open('/tmp/scite_build.log') as f:
+        data = f.read()
+    assert data == "results from call 3\nerrors on call 3\n"
+
+    counter = 0
+    monkeypatch.setattr(MockContext, 'run', mock_run_2)
+    c = MockContext()
+    tasks.build_scite(c, 'x')
+    assert capsys.readouterr().out == ('tar -zxf /tmp/scitex_test in /tmp\n'
+                                       'make in /tmp/scintilla/gtk\n'
+                                       'make in /tmp/scite/gtk\n'
+                                       'make scite failed, see /tmp/scite_build.log\n')
+    with open('/tmp/scite_build.log') as f:
+        data = f.read()
+    assert data == "results from call 2\nresults from call 3\nerrors on call 3\n"
+
+    counter = 0
+    monkeypatch.setattr(MockContext, 'run', mock_run_3)
+    c = MockContext()
+    tasks.build_scite(c, 'x')
+    assert capsys.readouterr().out == ('tar -zxf /tmp/scitex_test in /tmp\n'
+                                       'make in /tmp/scintilla/gtk\n'
+                                       'make in /tmp/scite/gtk\n'
+                                       'sudo make install in /tmp/scite/gtk\n'
+                                       'make install failed, see /tmp/scite_build.log\n')
+    with open('/tmp/scite_build.log') as f:
+        data = f.read()
+    assert data == "results from call 2\nresults from call 3\nresults from call 4\nerrors on call 4\n"
+
+    counter = 0
+    monkeypatch.setattr(MockContext, 'run', mock_run_4)
+    c = MockContext()
+    tasks.build_scite(c, 'x')
+    assert capsys.readouterr().out == ('tar -zxf /tmp/scitex_test in /tmp\n'
+                                       'make in /tmp/scintilla/gtk\n'
+                                       'make in /tmp/scite/gtk\n'
+                                       'sudo make install in /tmp/scite/gtk\n'
+                                       'ready, see /tmp/scite_build.log\n')
+    with open('/tmp/scite_build.log') as f:
+        data = f.read()
+    assert data == 'results from call 2\nresults from call 3\nresults from call 4\n'
 
 
 def _test_arcstuff(monkeypatch, capsys):
@@ -92,7 +152,7 @@ def _test_arcstuff(monkeypatch, capsys):
     c = MockContext()
 
 
-def _test_chmodrecursive(monkeypatch, capsys):
+def test_chmodrecursive(monkeypatch, capsys):
     def mock_recursive(*args):
         print('entering recursive call')
     def mock_chmod(*args):
@@ -101,17 +161,18 @@ def _test_chmodrecursive(monkeypatch, capsys):
             raise PermissionError
         elif args[0] == 'map':
             monkeypatch.setattr(tasks, 'chmodrecursive', mock_recursive)
-    monkeypatch.setattr(os, 'getcwd', lambda x: 'current_dir')
-    monkeypatch.setattr(os, 'listdir', lambda x: ['file', 'name', '__pycache__', '.hg', 'link', 'dir',
-                                                  'map'])
-    monkeypatch.setattr(os.path, 'isfile', lambda x: True if x.endswith('file') or x.endswith('name')
-                                                     else False)
-    monkeypatch.setattr(os.path, 'islink', lambda x: True if x.endswith('link') else False)
-    monkeypatch.setattr(os.path, 'isdir', lambda x: True if x.endswith('dir') or x.endswith('map')
-                                                    else False)
-    monkeypatch.setattr(os, 'chmod', mock_chmod)
+    monkeypatch.setattr(tasks.os, 'getcwd', lambda x: 'current_dir')
+    monkeypatch.setattr(tasks.os, 'listdir', lambda x: ['file', 'name', '__pycache__', '.hg', 'link',
+                                                        'dir', 'map'])
+    monkeypatch.setattr(tasks.os.path, 'isfile',
+                        lambda x: True if x.endswith('file') or x.endswith('name') else False)
+    monkeypatch.setattr(tasks.os.path, 'islink', lambda x: True if x.endswith('link') else False)
+    monkeypatch.setattr(tasks.os.path, 'isdir',
+                        lambda x: True if x.endswith('dir') or x.endswith('map') else False)
+    monkeypatch.setattr(tasks.os, 'chmod', mock_chmod)
     # monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
+    breakpoint()
     tasks.chmodrecursive(c)
     assert capsys.readouterr().out == ('changing file permissions for current_dir/file\n'
                                        'changing file permissions for current_dir/name\n'

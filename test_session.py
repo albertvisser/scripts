@@ -33,9 +33,24 @@ def test_get_regfile_name(monkeypatch, capsys):
     assert session.get_regfile_name('name') == 'project/.tickets'
 
 
-def _test_newproject(monkeypatch, capsys):
+def test_newproject(monkeypatch, capsys):
+    def mock_copytree(*args):
+        print('call copytree for `{}` to `{}`'.format(*args))
+    def mock_rename(*args):
+        print('call rename of `{}` to `{}`'.format(*args))
+    monkeypatch.setattr(session.os.path, 'exists', lambda x: True)
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
+    session.newproject(c, 'name')
+    assert capsys.readouterr().out == 'sorry, this project name is already in use\n'
+    monkeypatch.setattr(session.os.path, 'exists', lambda x: False)
+    monkeypatch.setattr(session.shutil, 'copytree', mock_copytree)
+    monkeypatch.setattr(session.os, 'rename', mock_rename)
+    session.newproject(c, 'name')
+    assert capsys.readouterr().out == ('call copytree for `/home/albert/projects/skeleton`'
+                                       ' to `/home/albert/projects/name`\n'
+                                       'call rename of `/home/albert/projects/name/projectname`'
+                                       ' to `/home/albert/projects/name/name`\n')
 
 
 def test_start(monkeypatch, capsys):
@@ -121,7 +136,36 @@ def test_pull(monkeypatch, capsys):
                                         'hg up in project_dir\n')
 
 
-def _test_cleanup(monkeypatch, capsys):
-    monkeypatch.setattr(MockContext, 'run', mock_run)
+def test_cleanup(monkeypatch, capsys):
+    def mock_remove(*args):
+        print('call remove of `{}`'.format(*args))
+    def mock_rmtree(*args):
+        print('call rmtree of `{}`'.format(*args))
+    monkeypatch.setattr(session, 'get_project_name', lambda x: 'projname')
+    monkeypatch.setattr(session.os, 'remove', mock_remove)
+    monkeypatch.setattr(session.shutil, 'rmtree', mock_rmtree)
+    regfile = '/tmp/session_test_regfile'
+    monkeypatch.setattr(session, 'get_regfile_name', lambda x: regfile)
+    with open(regfile, 'w') as f:
+        f.write('testname1\nprojname\ntestname2\n')
     c = MockContext()
-
+    session.cleanup(c, 'projname')
+    assert capsys.readouterr().out == ('call remove of `/home/albert/bin/.sessions/projname`\n'
+                                       'call rmtree of `/home/albert/devel/_projname`\n')
+    with open(regfile) as f:
+        data = f.read()
+    assert data == 'testname1\ntestname2\n'
+    with open(regfile, 'w') as f:
+        f.write('projname\n')
+    session.cleanup(c, 'projname')
+    assert capsys.readouterr().out == ('call remove of `/home/albert/bin/.sessions/projname`\n'
+                                       'call rmtree of `/home/albert/devel/_projname`\n'
+                                       'call remove of `/tmp/session_test_regfile`\n')
+    with open(regfile, 'w') as f:
+        f.write('testname1\ntestname2\n')
+    session.cleanup(c, 'projname')
+    assert capsys.readouterr().out == ('call remove of `/home/albert/bin/.sessions/projname`\n'
+                                       'call rmtree of `/home/albert/devel/_projname`\n')
+    with open(regfile) as f:
+        data = f.read()
+    assert data == 'testname1\ntestname2\n'

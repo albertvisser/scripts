@@ -87,9 +87,8 @@ def update(c, names):
         names = names.split(',')
     for name in names:
         path, files = list_repofiles(c, name)
-        if path is None:
-            continue
-        if check_changes(path, files):
-            print('rebuilding .tags file for project', name)
-            with c.cd(path):
-                c.run('ctags -f .tags ' + ' '.join(files))
+        if path:
+            if check_changes(path, files):
+                print('rebuilding .tags file for project', name)
+                with c.cd(path):
+                    c.run('ctags -f .tags ' + ' '.join(files))
