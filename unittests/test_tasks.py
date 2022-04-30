@@ -152,7 +152,7 @@ def _test_arcstuff(monkeypatch, capsys):
     c = MockContext()
 
 
-def test_chmodrecursive(monkeypatch, capsys):
+def _test_chmodrecursive(monkeypatch, capsys):
     def mock_recursive(*args):
         print('entering recursive call')
     def mock_chmod(*args):
