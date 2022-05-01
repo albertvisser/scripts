@@ -52,7 +52,7 @@ class CheckTextDialog(qtw.QDialog):
         "gewijzigde waarden teruggeven aan de aanroeper"
         self._parent.dialog_data = self.check.isChecked(), self.text.text()
         super().accept()
-    
+
 
 class DiffViewDialog(qtw.QDialog):
     """dialoog voor het tonen van de diff output
@@ -131,8 +131,18 @@ class Gui(qtw.QWidget):
         self.filelist = self.get_repofiles()
 
         project = path.stem
+        self.app = qtw.QApplication(sys.argv)
         super().__init__()
         self.title = 'Uncommitted changes for `{}`'.format(project)
+        self.setup_visual()
+
+        # start assuming Meld is present
+        self.got_meld = True
+        self.refresh_frame()
+
+    def setup_visual(self):
+        """definieer het scherm en een aantal andere zaken
+        """
         self.setWindowTitle(self.title)
         self.setWindowIcon(gui.QIcon('/home/albert/.icons/task.png'))
         vbox = qtw.QVBoxLayout()
@@ -252,9 +262,6 @@ class Gui(qtw.QWidget):
         do.triggered.connect(self.close)
         do.setShortcut('Ctrl+Q')
         self.addAction(do)
-        # start assuming Meld is present
-        self.got_meld = True
-        self.refresh_frame()
 
     def get_repofiles(self):
         """return results of "status" command -- list uncommitted / untracked files
@@ -281,7 +288,7 @@ class Gui(qtw.QWidget):
         if self.outtype == 'status':
             return [item.text().split(None, 1) for item in self.list.selectedItems()]
         return [('', item.text()) for item in self.list.selectedItems()]
-        
+
     def edit_selected(self):
         """Open selected files in a text editor"""
         command = [y for x, y in self.get_selected_files()]
@@ -385,7 +392,7 @@ class Gui(qtw.QWidget):
         if self.repotype != 'git':
             qtw.QMessageBox.information(self, self.title, 'Only implemented for git repos')
             return
-        message = self.run_and_capture(['git', 'log', '-1', '--pretty=format:%s'])[0][0]  
+        message = self.run_and_capture(['git', 'log', '-1', '--pretty=format:%s'])[0][0]
         self.dialog_data = None
         if CheckTextDialog(self, self.title, message).exec_() != qtw.QDialog.Accepted:
             return
@@ -503,7 +510,7 @@ class Gui(qtw.QWidget):
                                         'Select a branch different from the current one first')
             return
         ok = qtw.QMessageBox.question(self, self.title,
-                                      'Merge {} into {}?'.format(branch_name, current)) 
+                                      'Merge {} into {}?'.format(branch_name, current))
         if ok == qtw.QMessageBox.Yes:
             self.run_and_report(['git', 'merge', branch_name])
             # self.update_branches()
@@ -619,8 +626,6 @@ def main(args):
         args.project = '.'
     if args.project == '.':
         path = pathlib.Path.cwd()  # .resolve()
-    elif args.project == 'bitbucket':  # in ('bitbucket', 'magiokisnl'):
-        path = HOME / 'www' / args.project
     elif args.project in settings.private_repos:
         path = HOME / settings.private_repos[args.project]
     elif args.project in settings.private_repos.values():
@@ -636,10 +641,9 @@ def main(args):
             repotype = 'hg'
     if not repotype:
         return args.project + ' is not a repository'
-    app = qtw.QApplication(sys.argv)
     win = Gui(path, repotype)
     win.show()
-    sys.exit(app.exec_())
+    sys.exit(win.app.exec_())
 
 
 if __name__ == '__main__':
