@@ -128,7 +128,7 @@ class Gui(qtw.QWidget):
         self.path = path
         self.repotype = repotype
         self.outtype = 'status'
-        self.filelist = self.get_repofiles()
+        # self.filelist = self.get_repofiles() deze zit ook in refresh_frame
 
         project = path.stem
         self.app = qtw.QApplication(sys.argv)
