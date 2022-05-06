@@ -11,27 +11,21 @@ def setup_app(monkeypatch):
     # return check_repo.Gui(MockGui(pathlib.Path('base'), 'git'))
     return check_repo.Gui(pathlib.Path('base'), 'git')
 
-
 def mock_run(*args, **kwargs):
     print('run with args:', args, kwargs)
     return types.SimpleNamespace(stdout=b'hallo\ndaar\njongens\n')
 
-
 def mock_setup_visual(self, *args):
     print('called Gui.setup_visual()')
-
 
 def mock_refresh_frame(self, *args):
     print('called Gui.refresh_frame()')
 
-
 def mock_get_repofiles(self):
     return 'file1.py', 'file2.py'
 
-
 def mock_update_branches(self):
     print('called Gui.update_branches()')
-
 
 # --- redefine gui elements to make testing easier (or possible at all)
 class MockApplication:
@@ -209,7 +203,7 @@ class MockCheckBox:
 class MockComboBox:
     def __init__(self, *args, **kwargs):
         print('called MockComboBox.__init__()')
-        self._items = []
+        self._items = kwargs.get('items', [])
     def clear(self):
         print('called combo.clear()')
     def clearEditText(self):
@@ -491,4 +485,250 @@ class TestGui:
         assert capsys.readouterr().out == ('called list.selectedItems() on `[]`\n'
                                            'called listitem.__init__()\n'
                                            'called listitem.__init__()\n')
+
+    def test_edit_selected(self, monkeypatch, capsys):
+        def mock_just_run(self, command):
+            print('call just_run() for `{}`'.format(command))
+        def mock_get_selected(self):
+            return ('', 'file1'), ('' ,'file2')
+        monkeypatch.setattr(check_repo.Gui, 'get_repofiles', mock_get_repofiles)
+        monkeypatch.setattr(check_repo.Gui, 'setup_visual', mock_setup_visual)
+        monkeypatch.setattr(check_repo.Gui, 'refresh_frame', mock_refresh_frame)
+        monkeypatch.setattr(check_repo.Gui, 'get_selected_files', mock_get_selected)
+        monkeypatch.setattr(check_repo.Gui, 'just_run', mock_just_run)
+        testobj = setup_app(monkeypatch)
+        testobj.edit_selected()
+        assert capsys.readouterr().out == ('called Gui.setup_visual()\n'
+                                           'called Gui.refresh_frame()\n'
+                                           "call just_run() for `['gnome-terminal', '--profile',"
+                                           " 'Code Editor Shell', '--', 'vim', 'file1', 'file2']`\n"
+                                           'called Gui.refresh_frame()\n')
+
+    def test_diff_all(self, monkeypatch, capsys):
+        def mock_just_run(self, command):
+            print('call just_run() for `{}`'.format(command))
+        def mock_just_run_exc(self, command):
+            raise OSError('run commando gaat fout')
+        def mock_information(self, title, message):
+            print('display message `{}`'.format(message))
+        monkeypatch.setattr(check_repo.Gui, 'get_repofiles', mock_get_repofiles)
+        monkeypatch.setattr(check_repo.Gui, 'setup_visual', mock_setup_visual)
+        monkeypatch.setattr(check_repo.Gui, 'refresh_frame', mock_refresh_frame)
+        monkeypatch.setattr(check_repo.Gui, 'just_run', mock_just_run)
+        monkeypatch.setattr(check_repo.qtw.QMessageBox, 'information', mock_information)
+
+        testobj = setup_app(monkeypatch)
+        testobj.got_meld = False
+        testobj.diff_all()
+        assert capsys.readouterr().out == ('called Gui.setup_visual()\n'
+                                           'called Gui.refresh_frame()\n'
+                                           'display message `Sorry, not possible at this time'
+                                           ' - Meld not installed`\n')
+
+    def test_diff_all_2(self, monkeypatch, capsys):
+        "werkt blijkbaar alleen als ik deze tests als aparte methoden definieer"
+        def mock_just_run(self, command):
+            print('call just_run() for `{}`'.format(command))
+        def mock_just_run_exc(self, command):
+            raise OSError('run commando gaat fout')
+        def mock_information(self, title, message):
+            print('display message `{}`'.format(message))
+        monkeypatch.setattr(check_repo.Gui, 'get_repofiles', mock_get_repofiles)
+        monkeypatch.setattr(check_repo.Gui, 'setup_visual', mock_setup_visual)
+        monkeypatch.setattr(check_repo.Gui, 'refresh_frame', mock_refresh_frame)
+        monkeypatch.setattr(check_repo.Gui, 'just_run', mock_just_run_exc)
+        monkeypatch.setattr(check_repo.qtw.QMessageBox, 'information', mock_information)
+
+        testobj = setup_app(monkeypatch)
+        testobj.got_meld = True
+        testobj.diff_all()
+        assert capsys.readouterr().out == ('called Gui.setup_visual()\n'
+                                           'called Gui.refresh_frame()\n'
+                                           'display message `Sorry, not possible at this time'
+                                           ' - Meld not installed`\n')
+
+    def test_diff_all_3(self, monkeypatch, capsys):
+        def mock_just_run(self, command):
+            print('call just_run() for `{}`'.format(command))
+        def mock_just_run_exc(self, command):
+            raise OSError('run commando gaat fout')
+        def mock_information(self, title, message):
+            print('display message `{}`'.format(message))
+        monkeypatch.setattr(check_repo.Gui, 'get_repofiles', mock_get_repofiles)
+        monkeypatch.setattr(check_repo.Gui, 'setup_visual', mock_setup_visual)
+        monkeypatch.setattr(check_repo.Gui, 'refresh_frame', mock_refresh_frame)
+        monkeypatch.setattr(check_repo.Gui, 'just_run', mock_just_run)
+        monkeypatch.setattr(check_repo.qtw.QMessageBox, 'information', mock_information)
+
+        testobj = setup_app(monkeypatch)
+        testobj.got_meld = True
+        testobj.diff_all()
+        assert capsys.readouterr().out == ('called Gui.setup_visual()\n'
+                                           'called Gui.refresh_frame()\n'
+                                           "call just_run() for `['meld', '.']`\n")
+
+    def _test_diff_selected(self, monkeypatch, capsys):
+        pass
+
+    def test_add_ignore(self, monkeypatch, capsys):
+        def mock_filter(self, *args):
+            print('called Gui.filter_tracked() for `{}`'.format(args))
+            return 'file1', 'file2'
+        def mock_get_selected(self):
+            print('called Gui.get_selected_files')
+            # return 'selected files'
+            return ('??', 'file1'), ('', 'file2')
+
+        monkeypatch.setattr(check_repo.Gui, 'get_repofiles', mock_get_repofiles)
+        monkeypatch.setattr(check_repo.Gui, 'setup_visual', mock_setup_visual)
+        monkeypatch.setattr(check_repo.Gui, 'refresh_frame', mock_refresh_frame)
+        monkeypatch.setattr(check_repo.Gui, 'get_selected_files', mock_get_selected)
+        monkeypatch.setattr(check_repo.Gui, 'filter_tracked', mock_filter)
+        testobj = setup_app(monkeypatch)
+        testobj.repotype = 'hg'
+        testobj.path = pathlib.Path('/tmp')
+        ignorefile = pathlib.Path('/tmp/.hgignore')
+        assert not ignorefile.exists()
+        testobj.add_ignore()
+        assert ignorefile.exists()
+        assert capsys.readouterr().out == ('called Gui.setup_visual()\n'
+                                           'called Gui.refresh_frame()\n'
+                                           'called Gui.get_selected_files\n'
+                                           # 'called Gui.filter_tracked() for `()`\n'
+                                           'called Gui.refresh_frame()\n')
+        assert ignorefile.read_text() == ('file1\nfile2\n')
+        ignorefile.unlink()
+
+    def test_add_ignore_2(self, monkeypatch, capsys):
+        def mock_filter(self, *args):
+            print('called Gui.filter_tracked() for `{}`'.format(args))
+            return 'file1', 'file2'
+        def mock_get_selected(self):
+            print('called Gui.get_selected_files')
+            # return 'selected files'
+            return ('??', 'file1'), ('', 'file2')
+
+        monkeypatch.setattr(check_repo.Gui, 'get_repofiles', mock_get_repofiles)
+        monkeypatch.setattr(check_repo.Gui, 'setup_visual', mock_setup_visual)
+        monkeypatch.setattr(check_repo.Gui, 'refresh_frame', mock_refresh_frame)
+        monkeypatch.setattr(check_repo.Gui, 'get_selected_files', mock_get_selected)
+        monkeypatch.setattr(check_repo.Gui, 'filter_tracked', mock_filter)
+        testobj = setup_app(monkeypatch)
+        testobj.repotype = 'not hg'
+        testobj.path = pathlib.Path('/tmp')
+        ignorefile = pathlib.Path('/tmp/.gitignore')
+        assert not ignorefile.exists()
+        testobj.add_ignore()
+        assert ignorefile.exists()
+        assert capsys.readouterr().out == ('called Gui.setup_visual()\n'
+                                           'called Gui.refresh_frame()\n'
+                                           'called Gui.get_selected_files\n'
+                                           # 'called Gui.filter_tracked() for `()`\n'
+                                           'called Gui.refresh_frame()\n')
+        assert ignorefile.read_text() == ('file1\nfile2\n')
+        ignorefile.unlink()
+
+    def test_add_new(self, monkeypatch, capsys):
+        def mock_run(self, *args):
+            print('run_and_report with args:', *args)
+        def mock_get_selected(self):
+            print('called Gui.get_selected_files')
+            return ('??', 'file1'), ('', 'file2')
+
+        monkeypatch.setattr(check_repo.Gui, 'get_repofiles', mock_get_repofiles)
+        monkeypatch.setattr(check_repo.Gui, 'setup_visual', mock_setup_visual)
+        monkeypatch.setattr(check_repo.Gui, 'refresh_frame', mock_refresh_frame)
+        monkeypatch.setattr(check_repo.Gui, 'get_selected_files', mock_get_selected)
+        monkeypatch.setattr(check_repo.Gui, 'run_and_report', mock_run)
+        testobj = setup_app(monkeypatch)
+        testobj.add_new()
+        assert capsys.readouterr().out == ('called Gui.setup_visual()\n'
+                                           'called Gui.refresh_frame()\n'
+                                           'called Gui.get_selected_files\n'
+                                           "run_and_report with args:"
+                                           " ['git', 'add', 'file1', 'file2']\n"
+                                           'called Gui.refresh_frame()\n')
+
+    def test_forget(self, monkeypatch, capsys):
+        def mock_run(self, *args):
+            print('run_and_report with args:', *args)
+        def mock_get_selected(self):
+            print('called Gui.get_selected_files')
+            return ('??', 'file1'), ('', 'file2')
+
+        monkeypatch.setattr(check_repo.Gui, 'get_repofiles', mock_get_repofiles)
+        monkeypatch.setattr(check_repo.Gui, 'setup_visual', mock_setup_visual)
+        monkeypatch.setattr(check_repo.Gui, 'refresh_frame', mock_refresh_frame)
+        monkeypatch.setattr(check_repo.Gui, 'get_selected_files', mock_get_selected)
+        monkeypatch.setattr(check_repo.Gui, 'run_and_report', mock_run)
+        testobj = setup_app(monkeypatch)
+        testobj.repotype = 'hg'
+        testobj.forget()
+        assert capsys.readouterr().out == ('called Gui.setup_visual()\n'
+                                           'called Gui.refresh_frame()\n'
+                                           'called Gui.get_selected_files\n'
+                                           "run_and_report with args:"
+                                           " ['hg', 'forget', 'file1', 'file2']\n"
+                                           'called Gui.refresh_frame()\n')
+
+    def test_forget_2(self, monkeypatch, capsys):
+        def mock_run(self, *args):
+            print('run_and_report with args:', *args)
+        def mock_get_selected(self):
+            print('called Gui.get_selected_files')
+            return ('??', 'file1'), ('', 'file2')
+
+        monkeypatch.setattr(check_repo.Gui, 'get_repofiles', mock_get_repofiles)
+        monkeypatch.setattr(check_repo.Gui, 'setup_visual', mock_setup_visual)
+        monkeypatch.setattr(check_repo.Gui, 'refresh_frame', mock_refresh_frame)
+        monkeypatch.setattr(check_repo.Gui, 'get_selected_files', mock_get_selected)
+        monkeypatch.setattr(check_repo.Gui, 'run_and_report', mock_run)
+        testobj = setup_app(monkeypatch)
+        testobj.repotype = 'git'
+        testobj.forget()
+        assert capsys.readouterr().out == ('called Gui.setup_visual()\n'
+                                           'called Gui.refresh_frame()\n'
+                                           'called Gui.get_selected_files\n'
+                                           "run_and_report with args:"
+                                           " ['git', 'rm', '--cached', 'file1', 'file2']\n"
+                                           'called Gui.refresh_frame()\n')
+
+    def test_forget_3(self, monkeypatch, capsys):
+        def mock_run(self, *args):
+            print('run_and_report with args:', *args)
+        def mock_get_selected(self):
+            print('called Gui.get_selected_files')
+            return ('??', 'file1'), ('', 'file2')
+
+        monkeypatch.setattr(check_repo.Gui, 'get_repofiles', mock_get_repofiles)
+        monkeypatch.setattr(check_repo.Gui, 'setup_visual', mock_setup_visual)
+        monkeypatch.setattr(check_repo.Gui, 'refresh_frame', mock_refresh_frame)
+        monkeypatch.setattr(check_repo.Gui, 'get_selected_files', mock_get_selected)
+        monkeypatch.setattr(check_repo.Gui, 'run_and_report', mock_run)
+        testobj = setup_app(monkeypatch)
+        testobj.repotype = 'something else'
+        with pytest.raises(KeyError):
+            testobj.forget()
+        assert capsys.readouterr().out == ('called Gui.setup_visual()\n'
+                                           'called Gui.refresh_frame()\n'
+                                           'called Gui.get_selected_files\n')
+
+    def test_set_outtype(self, monkeypatch, capsys):
+        monkeypatch.setattr(check_repo.Gui, 'get_repofiles', mock_get_repofiles)
+        monkeypatch.setattr(check_repo.Gui, 'setup_visual', mock_setup_visual)
+        monkeypatch.setattr(check_repo.Gui, 'refresh_frame', mock_refresh_frame)
+        testobj = setup_app(monkeypatch)
+        testobj.cb_list = MockComboBox()
+        testobj.set_outtype()
+        assert testobj.outtype == 'current text'
+        assert capsys.readouterr().out == ('called Gui.setup_visual()\n'
+                                           'called Gui.refresh_frame()\n'
+                                           'called MockComboBox.__init__()\n'
+                                           'called combo.currentText()\n'
+                                           'called Gui.refresh_frame()\n')
+
+    def test_refresh_frame(self, monkeypatch, capsys):
+        monkeypatch.setattr(check_repo.Gui, 'get_repofiles', mock_get_repofiles)
+        monkeypatch.setattr(check_repo.Gui, 'setup_visual', mock_setup_visual)
+        testobj = setup_app(monkeypatch)
 
