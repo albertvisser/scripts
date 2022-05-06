@@ -333,13 +333,15 @@ class Gui(qtw.QWidget):
 
     def add_ignore(self):
         """add selected file to ignore list"""
-        filenames = self.filter_tracked(self.get_selected_files())
+        # FIXME is dit ok? Moet je niet juist untracked files aan de ignore list kunnen toevoegen?
+        # filenames = self.filter_tracked(self.get_selected_files())
+        filenames = [x[1] for x in self.get_selected_files()]
         if filenames:
-            fname = '.hgignore' if self.repotype == '.hg' else '.gitignore'
+            fname = '.hgignore' if self.repotype == 'hg' else '.gitignore'
             fname = self.path / fname
             with fname.open('a') as _out:
                 for name in filenames:
-                    _out.write(name)
+                    print(name, file=_out)
             self.refresh_frame()
         ## qtw.QMessageBox.information(self, self.title, 'Added selected files to ignore list.')
 
