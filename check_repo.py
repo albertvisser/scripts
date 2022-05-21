@@ -441,7 +441,7 @@ class Gui(qtw.QWidget):
                 qtw.QMessageBox.information(self, self.title, '\n'.join(_err))
                 return
             caption = 'Show annotations for: ' + ', '.join(filenames)
-            DiffViewDialog(self, self.title, caption, '\n'.join(_out)).exec_()
+            DiffViewDialog(self, self.title, caption, '\n'.join(_out), (1200, 800)).exec_()
 
     def filter_tracked(self, filelist, notify=True):
         """return only the tracked files, optionally (don't) show messages for untracked ones
@@ -621,7 +621,7 @@ class Gui(qtw.QWidget):
         return ret1, ret2
 
 
-def main(args):
+def startapp(args):
     """do the thing"""
     repotype = ''
     if not args.project:
@@ -648,9 +648,12 @@ def main(args):
     sys.exit(win.app.exec_())
 
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('project', help="name of a software project", nargs='?', default="")
-    results = main(parser.parse_args())
+    results = startapp(parser.parse_args())
     if results:
         print(results)
+
+if __name__ == '__main__':
+    main()
