@@ -1,1 +1,1 @@
-wmctrl -s 3 && clementine
+wmctrl -s 3 && strawberry 
