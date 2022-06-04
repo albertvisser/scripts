@@ -58,21 +58,21 @@ def restore_mongo(c, dirname):
 def start_pg(c):
     "start postgresql database server"
     # c.run('sudo service postgresql start')
-    c.run('sudo systemctl start postgres.service')
+    c.run('sudo systemctl start postgresql.service')
 
 
 @task
 def stop_pg(c):
     "stop postgresql database server"
     # c.run('sudo service postgresql stop')
-    c.run('sudo systemctl stop postgres.service')
+    c.run('sudo systemctl stop postgresql.service')
 
 
 @task
 def restart_pg(c):
     "restart postgresql database server"
     # c.run('sudo service postgresql restart')
-    c.run('sudo systemctl restart postgres.service')
+    c.run('sudo systemctl restart postgresql.service')
 
 
 @task(help={'names': 'comma-separated list of database names'})
