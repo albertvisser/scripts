@@ -6,8 +6,8 @@ which I added to the system path for easy access.
 
 Also in this directory are starters for my own applications that are no more than
 symlinks to the actual starter in the application dir; as well as short scripts
-that pass specific arguments to such a symlink. These are not included in the repo,
-but I mention them here to show the type of starter files I use.
+that pass specific arguments to such a symlink. These are not directly included in the repo,
+but in the form of a script that generates these symplink and invocation.
 
 **.gitignore**
 **.hgignore**
@@ -20,26 +20,29 @@ but I mention them here to show the type of starter files I use.
 
 **binfab**
 
-    execute ``fab`` (fabric) using fabfile in this directory
-    actually `fabric` is now replaced by `invoke` so this now starts ``tasks.py`` 
-    and runs under Python 3
+    execute ``invoke`` tasks for this directory (through ``tasks.py``). The "fab" part of the name
+    stems from the former use of ``fabric``.
 
-**check-repo** (formerly check_local)
+**build-bin-scripts**
+
+    a script to build additional short scripts by making symlinks and echoing commands into files.
+    see below for details.
+
+**check-repo** (symlink to **check-repo.py**, formerly check_local)
 
     while a script by this name was replaced with a function in the fabfile, 
     my creativity failed me in choosing a name for a somewhat similar but visual tool 
-    that does some things that hgview does (and more), 
-    but without needing to step into the repo first.
+    that makes it possible to start several basic repo management tasks from a gui
+    and without needing to step into the repo first.
+
+**covtest**
+    script to launch unittests and analyse testcoverage (using pytest and coverage.py)
 
 **db.py**
 
     `invoke` functions to manage database servers. Currently contains start/restart/stop functions 
-    for mongodb and postgres and a repair function for mongodb
-
-**dosomethingwith.py**
-
-    a general-purpose script - or at least meant as such - that I wrote for use from within 
-    Double Commander to apply some action on the selected files and/or directories.
+    for mongodb and postgres and a repair function for mongodb. Also added: simple backup/restore
+    actions.
 
 **dtree**
 
@@ -47,8 +50,7 @@ but I mention them here to show the type of starter files I use.
 
 **fabsrv**
 
-    execute ``fab`` (fabric) using fabfile in nginx-config directory (for server
-    configuration stuff).
+    execute ``invoke`` tasks in nginx-config directory (for server configuration stuff).
     the same applies as for **binfab**
 
 **jsonp.py**
@@ -59,12 +61,12 @@ but I mention them here to show the type of starter files I use.
 
     a couple of `invoke` functions to help with the internalization of source files
 
-**list2scite**
+**list2scite** (symlink to **list2scite.py**, the testable version)
 
     a script to take a file with filenames (created by e.g. Double Commander)
     and expand it into a command to start SciTE with all these files open
 
-**list2vi** 
+**list2vi** (symlink to **list2vi.py**, the testable version) 
 
     the same for VI in a terminal
 
@@ -81,6 +83,11 @@ but I mention them here to show the type of starter files I use.
     Without an argument, works in the current working directory.
     Without an extension specified, works on Python source files (extension .py).
 
+**pedit**
+    shortcut for starting up vi in a terminal using the 'Code Editor Shell' profile (100x54,
+    green on black) at different positions of the screen dependent on a startup parameter, 
+    making it possible to edit programs side-by-side
+
 **predit**
 
     executing *binfab session-start <project-name>* starts a terminal session for that project
@@ -95,15 +102,23 @@ but I mention them here to show the type of starter files I use.
 
     this file.
 
+**rename-files** (symlink to **rename_files.py**, the testable version)
+
+    like list2vi/list2scite, apply some action on the selected files and/or directories: 
+    take the first word and put it at the end to improve sortability.
+
 **repo.py**
 
     `invoke` functions for managing source repositories, like the replaced check- and push-scripts 
-    mentioned below
+    mentioned below (at the end of this file)
+
+**runtests**
+
+    script to start all unittests in the unittests directory by letting pytest discover them
 
 **runwithlog**
 
-    enable logging for an application that reacts to setting a DEBUG environment
-    variable
+    enable logging for an application that reacts to setting a DEBUG environment variable.
 
     to use, simply prepend this command to the usual call to the app
 
@@ -118,8 +133,7 @@ but I mention them here to show the type of starter files I use.
 
 **sort_file.py**
 
-    copy of a Python script I wrote on Windows to sort a (text) file from within
-    Total Commander.
+    copy of a Python script I wrote on Windows to sort a (text) file from within Total Commander.
     Takes one argument: the file to sort.
     Asks for one if you omit it.
     The result is stored in the same directory under a different name,
@@ -136,13 +150,16 @@ but I mention them here to show the type of starter files I use.
     a function to upgrade SciTE to the specified version (after downloading).
 
     a function to (re)build SciTE to the specified version (after downloading).
-    I needed this after upgrading my system to 64-bit, since the download binary is
-    32-bit.
+    I needed this after upgrading my system to 64-bit, since the download binary is 32-bit.
 
     a function that reads entries from a config file (called ``arcstuff.ini``,
     example present) to build an archive containing backups of selected data files.
 
     a function to set up a Python source tree in a standardized way (really?)
+
+**unittests/**
+
+    the scripts in this directory contain the unit tests for the invoke scripts and check-repo.py
 
 **www.py**
 
@@ -158,15 +175,171 @@ Requirements
 
 - a Linux/Unix based OS (although the Python scripts should be cross-platform)
 - Python
-- Fabric (where applicable) - the new version uses Invoke instead
-- Mercurial and/or Git (for the check and push scripts)
+- Invoke where applicable
+- Git and/or Mercurial (for the check and push scripts)
 
 
-Not in this repository:
------------------------
+Extra scripts to be created using `build-bin-scripts`:
+------------------------------------------------------
+
+This script creates the following symlinks and short starter scripts for my own applications:
+
+**afrift**
+    starts up my 'Find/Replace in Files' tool. Requires no arguments, but all
+    options that can be set in the gui can be set from the command line.
+**albums**
+    starts up a GUI version of the webapp of the same name
+**albumsgui**
+    starts my interface to several media file databases
+**a-propos**
+    starts up my 'apropos' application. I had to rename it because there appeared
+    to be a system tool by that name. No arguments.
+**comparer**
+    starts up my compare tool
+**comparer_from_dc**
+    the same, but from within Double Commander
+**cssedit**
+    starts up a standalone version of my css editor
+**csvhelper**
+    starter for routines to make editing a csv file somewhat easier
+    to be used in combination with or started from within a text editor
+**diary**
+    symlink to ramble
+**doctree**
+    starts up my docs/notes organiser (QT version) from a standard location.
+    No arguments.
+**dt_print**
+    starts up a program to print the contents of a doctree file
+**flarden**
+    points notetree to a collection of text snippets
+**ganestuff**
+    starts a treedocs file with information for games I play
+**hotkeys**
+    starts my viewer for keyboard shortcuts in various applications. No arguments.
+**hotrefs**
+    points the same viewer at a collection of application command references
+**hotstuff**
+    starts up both hotkeys and hotrefs, since I'm using them simultaneously a lot (especially with
+    VI)
+**htmledit**
+    starts up my tree-based html editor. Takes one optional argument: the filename.
+**lint-all**
+    apply pylint or flake8 checks to all my software projects (under construction?)
+**lintergui**
+    GUI frontend as replacement for *lint-this* and *lint-all*
+**lint-this**
+    apply pylint or flake8 checks to selected files or files in a selected directory
+**mdview**
+    Viewer for markdown formatted documents.
+    Can be used with Double Commander or from within SciTE etc.
+**modcompare**
+    start doctree with a file for comparing modreader transcripts
+**modreader**
+    make text transcriptions of music module files
+**notetree**
+    starts up Doctree's predecessor. No arguments.
+**nt2ext**
+    show and/or reorganize contents of NoteTree documents
+**probreg**
+    starts up my 'probreg' application. Optional arguments: either the name of an
+    XML file or 'sql' optionally followed by a project name. Without arguments:
+    presents a file selection dialog. With only 'sql': presents a project selector.
+**ramble**
+    points doctree to a collection of ramblings
+**rstview**
+    Viewer for ReST formatted documents.
+    Can be used with Double Commander or from within SciTE etc.
+**scratch_pad**
+    start a-propos using a file in /tmp (which is not saved over Linux sessions)
+**tickets**
+    starts probreg as my issue tracker, replacing trac.lemoncurry.nl
+**treedocs**
+    symlink to the doctree application. Used by the doctree script (among others)
+**viewhtml**
+    viewer for HTML formatted documents.
+    Can be used with Double Commander or from within SciTE etc.
+**webrefs**
+    points my hotkeys app to a collection of keyboard shortcuts for web apps
+**xmledit**
+    starts up my tree-based xml editor. Takes one (optional) argument: the filename.
+
+It also creates starters for various other programs:
+
+**2panefm**
+    start Double Commander in workspace 2
+**appstart**
+    starts a "webapp" created with vivaldi (standard chromium functionality?)
+**bigterm**
+    starts up VI in a bigger window
+**blist**
+    list the contents of blistt
+**blistt**
+    contains a few helpful commands
+**bstart**
+    start music player (originally Banshee, now Clementine) in workspace 4
+**calc**
+    short for gnome-calculator
+**iview**
+    starts up IrfanView under Wine.
+    Takes one argument, assuming this is the file to view.
+**lstart**
+    start LMMS on workspace 3
+**mdi**
+    mdi starts up **mdi.py** which is a modified version of the pyqt mdi demo
+**peditl**
+    starts pedit on the left side of the screen instead of in the middle
+**peditlr**
+    starts pedit two times side by side 
+**peditml**
+    starts pedit at a position next to where it would be using peditl           
+**peditmr**
+    starts pedit at a position next to where it would be using peditr           
+**peditr**
+    starts pedit on the right side of the screen instead of in the middle
+**pfind**
+    shortcut for a `binfab` command that starts up *filefindr* to search in all my Python software 
+    projects
+**preadme**
+    edit readme file in a given repo
+**prshell**
+    opens a terminal in a given repo with an enlarged window
+**pycheck**
+    syntax check the specified python file(s) (using py_compile)
+**qtdemo**
+    starts up the Qt5 demo program
+**reaper**
+    starts linux version of reaper
+**sdl-ball**
+    starts a game
+**start-gaming**
+    starts Steam on workspace 3
+**start-servers**
+    calls fabsrv to start all wsgi servers
+**stop-servers**
+    calls fabsrv to stop all wsgi servers
+**t-ed**
+    open a terminal in a "code editor" mode I defined
+**totalcmd**
+    starts up Total Commander under Wine. takes no arguments.
+    Uses wmctrl to ensure it starts up in workspace 2 
+**vi-get-runtime**
+    Get the current VI(M) version. Used by my Hotkeys plugin(s) for VI
+**viref**
+    starts vi showing vi documentation
+**vless**
+    starts vi in a mode that is supposed to resemble the `less` program
+**vstable**
+    start Vivaldi browser (stable version) on workspace 1
+**vstart**
+    start Vivaldi (snapshot) browser on workspace 1
+**widevi**
+    takes two filenames and starts vi practically full screen to edit the files side-by-side
+**wxdemo**
+    starter for the wxPython demo program
+
 
 scripts that were replaced by functions in the fabfile:
-.......................................................
+-------------------------------------------------------
 (not present in this working directory either)
 
 **check-local**
@@ -226,223 +399,3 @@ scripts that were replaced by functions in the fabfile:
     script to update rstblog source and push to central and bitbucket
 
 
-symlinks or short starter scripts for my own applications:
-..........................................................
-(perhaps these should be included when installing these apps)
-
-**afrift**
-
-    starts up my 'Find/Replace in Files' tool. Requires no arguments, but all
-    options that can be set in the gui can be set from the command line.
-
-**albums**
-
-    starts up a GUI version of the webapp of the same name
-
-**albumsgui**
-
-    starts my interface to several media file databases
-
-**a-propos**
-
-    starts up my 'apropos' application. I had to rename it because there appeared
-    to be a system tool by that name. No arguments.
-
-**comparer**
-
-    starts up my compare tool
-
-**comparer_from_dc**
-
-    a small helper script to start the previous from within Double Commander
-
-**cssedit**
-
-    starts up a standalone version of my css editor
-
-**csvhelper**
-
-    starter for routines to make editing a csv file somewhat easier
-    to be used in combination with or started from within a text editor
-
-**diary**
-
-    symlink to ramble
-
-**doctree**
-
-    starts up my docs/notes organiser (QT version) from a standard location.
-    No arguments.
-
-**dt_print**
-
-    starts up a program to print the contents of a doctree file
-
-**flarden**
-
-    points notetree to a collection of text snippets
-
-**ganestuff**
-
-    starts a treedocs file with information for games I play
-
-**hotkeys**
-
-    starts my viewer for keyboard shortcuts in various applications. No arguments.
-
-**hotrefs**
-
-    points the same viewer at a collection of application command references
-
-**hotstuff**
-
-    starts up both hotkeys and hotrefs, since I'm using them simultaneously a lot (especially with
-    VI)
-
-**htmledit**
-
-    starts up my tree-based html editor. Takes one optional argument: the filename.
-
-**lint-all**
-        
-    apply pylint or flake8 checks to all my software projects (under construction?)
-
-**lintergui**
-
-    GUI frontend as replacement for *lint-this* and *lint-all*
-
-**lint-this**
-
-    apply pylint or flake8 checks to selected files or files in a selected directory
-
-**mdview**
-
-    Viewer for markdown formatted documents.
-    Can be used with Double Commander or from within SciTE etc.
-
-**modcompare**
-
-    start doctree with a file for comparing modreader transcripts
-
-**modreader**
-
-    make text transcriptions of music module files
-
-**notetree**
-
-    starts up Doctree's predecessor. No arguments.
-
-**nt2ext**
-
-    show and/or reorganize contents of NoteTree documents
-
-**probreg**
-
-    starts up my 'probreg' application. Optional arguments: either the name of an
-    XML file or 'sql' optionally followed by a project name. Without arguments:
-    presents a file selection dialog. With only 'sql': presents a project selector.
-
-**ramble**
-
-    points doctree to a collection of ramblings
-
-**rstview**
-
-    Viewer for ReST formatted documents.
-    Can be used with Double Commander or from within SciTE etc.
-
-**scratch_pad**
-
-    start a-propos using a file in /tmp (which is not saved over Linux sessions)
-
-**treedocs**
-
-    symlink to the doctree application. Used by the doctree script (among others)
-
-**viewhtml**
-
-    viewer for HTML formatted documents.
-    Can be used with Double Commander or from within SciTE etc.
-
-**webrefs**
-
-    points my hotkeys app to a collection of keyboard shortcuts for web apps
-
-**xmledit**
-
-    starts up my tree-based xml editor. Takes one (optional) argument: the filename.
-
-
-other stuff not in repo:
-........................
-
-**2panefm**
-    start Double Commander in workspace 2
-**bigterm**
-    starts up VI in a bigger window
-**blist**
-   list the contents of blistt
-**blistt**
-   contains a few helpful commands
-**bstart**
-    start music player (originally Banshee, now Clementine) in workspace 4
-**covtest**
-    script to launch unittests and analyse testcoverage
-**covtest_dj**
-    a similar script to start testing for django              
-**iview**
-    starts up IrfanView under Wine.
-    Takes one argument, assuming this is the file to view.
-**latest-proprietary-media-future.sh**
-**latest-widevine.sh**
-    two scripts (not by me) to facilitate viewing proprietary video formats in Vivaldi browser
-**lstart**
-    start LMMS on workspace 3
-**mdi**
-**mdi.py**
-    mdi starts up mdi.py which is a modified version of the pyqt mdi demo
-**mee_bezig.pck**
-    a-propos datafile
-**pedit**
-    shortcut for starting up vi in a terminal using the 'Code Editor Shell' profile (100x54,
-    green on black)
-**peditl**
-    starts pedit on the left side of the screen instead of in the middle
-**peditlr**
-    starts pedit two times side by side 
-**peditr**
-    starts pedit on the right side of the screen instead of in the middle
-**pfind**
-    shortcut for a `binfab` command that starts up *filefindr* to search in all my Python software 
-    projects
-**preadme**
-    edit readme file in a given repo
-**projdocs.pck**
-    treedocs datafile (with accompanying images zipfile and backups)
-**prshell**
-    opens a terminal in a given repo with an enlarged window
-**pycheck**
-    syntax check the specified python file(s) (using py_compile)
-**qtdemo**
-    starts up the Qt5 demo program
-**reaper**
-    starts linux version of reaper
-**start-servers**
-    calls fabsrv to start all wsgi servers
-**stop-servers**
-    calls fabsrv to stop all wsgi servers
-**t-ed**
-    open a terminal in a "code editor" mode I defined
-**totalcmd**
-    starts up Total Commander under Wine. takes no arguments.
-    Uses wmctrl to ensure it starts up in workspace 2 
-**viref**
-    starts vi showing vi documentation
-**vless**
-    starts vi in a mode that is supposed to resemble the `less` program
-**vstart**
-    start Vivaldi (snapshot) browser on workspace 1
-**widevi**
-    takes two filenames and starts vi practically full screen to edit the files side-by-side
-**wxdemo**
-    starter for the wxPython demo program

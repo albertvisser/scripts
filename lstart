@@ -1,2 +1,0 @@
-wmctrl -s 2 && lmms
-#env QT_X11_NO_NATIVE_MENUBAR=1 lmms

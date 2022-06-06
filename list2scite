@@ -1,16 +1,1 @@
-#! /usr/bin/env python3
-"""open multiple files in one instance of SciTE
-"""
-import sys
-import subprocess
-
-cmd = ['SciTE']
-with open(sys.argv[1]) as f_in:
-    for line in f_in:
-        cmd.append(line.strip())
-subprocess.run(cmd)
-
-
-## #! /bin/bash
-## echo SciTE $1 $2 $3 $4 $5 $6 $7 $8 $9 > /tmp/list2scite_input
-## SciTE $1 $2 $3 $4 $5 $6 $7 $8 $9
+list2scite.py

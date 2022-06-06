@@ -1,10 +1,1 @@
-#! /usr/bin/env python3
-"""open multiple files in one instance of VI
-"""
-import sys
-import subprocess
-
-with open(sys.argv[1]) as f_in:
-    files = [x.strip() for x in f_in]
-command = ["gnome-terminal", "--profile", 'Code Editor Shell', "--", "vim"] + files
-subprocess.run(command)
+list2vi.py

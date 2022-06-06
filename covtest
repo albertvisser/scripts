@@ -1,0 +1,13 @@
+#! /bin/bash
+# test en meet coverage
+if test "$1" == "--help"; then
+    echo "usage: covtest [ -x ] <testing-module> <module-to-test>"
+    echo "       -x to stop at first error"
+elif test "$1" == "-x"; then
+    # geen warnings (Wi), stoppen bij eerste fout (x)
+    coverage run --include=$3 -m pytest $2 -vv -Wi -x
+    coverage report -m
+else
+    coverage run --include=$2 -m pytest $1 -vv 
+    coverage report -m
+fi

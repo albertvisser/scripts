@@ -1,0 +1,70 @@
+cd ~/bin
+
+ln -s ~/projects/filefindr/start.py    afrift
+ln -s ~/projects/albumsgui/start.py    albums
+ln -s ~/projects/albumsgui/start_gui.py    albumsgui
+ln -s ~/projects/apropos/start.py  a-propos
+ln -s gcalculator     calc
+ln -s ~/projects/compare-tool/actif.py     comparer
+ln -s ~/projects/cssedit/cssedit/start_editor.py   cssedit
+ln -s ~/projects/csvtool/csvhelper.py      csvhelper
+ln -s ramble  diary
+ln -s ~/projects/doctree/dt_print.py       dt_print
+ln -s ~/projects/hotkeys/start.py  hotkeys
+ln -s ~/projects/htmledit/htmleditor.py     htmledit
+ln -s ~/projects/mylinter/lint-all lint-all
+ln -s ~/projects/mylinter/start.py lintergui
+ln -s ~/projects/mylinter/lint-this lint-this
+ln -s mdi.py  mdi
+ln -s ~/projects/rst2html/mdviewer.py mdview
+ln -s ~/projects/modreader/modreadergui.py modreader
+ln -s ~/projects/notetree/start.py notetree
+ln -s ~/projects/notetree/nt2ext.py nt2ext
+ln -s ~/projects/probreg/start.py probreg
+ln -s ~/projects/rst2html/rstviewer.py rstview
+ln -s ~/projects/doctree/start.py treedocs
+ln -s ~/projects/htmledit/viewhtml.py viewhtml
+ln -s /usr/share/vim/vim82/macros/less.sh vless
+ln -s ~/projects/xmledit/xmleditor.py xmledit
+
+echo "wmctrl -s 1 && doublecmd" >    2panefm
+echo "gnome-terminal -- binfab www.startapp $1" >    appstart
+echo "gnome-terminal --geometry=132x43+4+40" >	bigterm
+echo "cat ~/bin/blistt" > blist
+echo "wmctrl -s 3 && strawberry" > bstart
+echo "comparer -i $1 $2" > comparer_from_dc 
+echo "treedocs ~/Documents/doctree.trd" > doctree
+echo "notetree -f ~/Documents/flarden.ntr" > flarden
+echo "treedocs ~/Documents/gamestuff.trd" > gamestuff
+echo "hotkeys -c editor.hotrefs_config" > hotrefs
+echo "hotkeys &\nhotkeys -c editor.hotrefs_config" > hotstuff
+echo "wine '/home/albert/.wine/drive_c/Program Files'/IrfanView/i_view64.exe $1" > iview
+echo "wmctrl -s 2 && lmms" > lstart
+echo "notetree -f magiokis/data/transcripts/vergelijking.ntr" > modcompare
+echo "pedit -l $@ &" > peditl
+echo "pedit -l $1 &\npedit -ml $2 &" > peditlr
+echo "pedit -ml $@ &" > peditml
+echo "pedit -mr $@ &" > peditmr
+echo "pedit -r $@ &" > peditr
+echo "#! /bin/sh\n if test -z "$1"; then\n   binfab repo.search\nelse\n    binfab repo.search -f $1 $2\n fi" > pfind
+echo "binfab repo.preadme -n $1 &" > preadme
+echo "binfab repo.prshell -n $1 &" > prshell
+echo "python -m py_compile $1" > pycheck
+echo "#! /bin/sh\n cd /usr/share/doc/pyqt5-examples/examples\npython3 qtdemo/qtdemo.py" > qtdemo
+echo "#! /bin/bash\n treedocs ~/Documents/ramblings.trd" > ramble
+echo "#! /bin/sh\n cd /home/albert/reaper_linux_x86_64/REAPER/"\n./reaper" > reaper
+echo "#! /bin/bash\na-propos -n 'ScratchPad' -f '/tmp/apropos.apo'" > scratch_pad
+echo "cd /home/albert/Downloads/linux-apps/SDL-Ball_1.04\n./sdl-ball_linux_x64" > sdl-ball
+echo "wmctrl -s 2 && /usr/bin/steam-runtime" > start-gaming
+echo "	fabsrv server.start > /tmp/server-startup.log" > start-servers
+echo "fabsrv stop_server > /tmp/server-stopping.log" > stop-servers
+echo "gnome-terminal --profile='Code Editor Shell' -- vim $1" > t-ed
+echo "#! /bin/bash\n~/projects/tickets.xml" > tickets 
+echo "#! /bin/bash\nwmctrl -s 1 && wine64 /home/albert/.wine/drive_c/totalcmd/totalcmd.exe" > totalcmd
+echo "vim -e -T dumb --cmd 'exe \"set t_cm=\<C-M>\"|echo $VIMRUNTIME|quit' | tr -d '\015'" > vi-get-runtime
+echo "#! /bin/sh\ncd /usr/share/vim/vim82/doc\nvim quickref.txt" > viref
+echo "wmctrl -s 0 && vivaldi-stable" > vstable
+echo "wmctrl -s 0 && vivaldi-snapshot" > vstart
+echo "hotkeys -c editor.webrefs_config" > webrefs
+echo "#! /bin/sh\n\nif [[ $# == 2 ]]; then\n    gnome-terminal --profile Big Code Editor -- vim $1 $2 -O\nelse\n    echo 'This script is indended to run vi in a terminal wide enough to make editing'\n    echo 'two files side by side possible.'\n    echo 'Therefore it is supposed to be called with two filenames'\nfi" > widevi
+echo "#! /bin/sh\ncd ~/playground/python/wxPython-demo-4.0.1/demo\npython3 demo.py" > wxdemo

@@ -9,10 +9,10 @@ import sys
 import os
 TMP = '/tmp'
 if sys.platform.startswith('win'):
-    TMP = "C:\\Windows\\Temp"
+    TMP = "C:\\Windows\\Tmp"
 
 
-def main(fn, tmp=False):
+def sort(fn, tmp=False):
     """sorting the lines of the file and write the result to a new file"""
     if tmp:
         fnew = os.path.join(TMP, os.path.basename(fn))
@@ -25,10 +25,15 @@ def main(fn, tmp=False):
             _out.write(x)
     return fnew
 
-if __name__ == '__main__':
-    print(sys.argv)
-    if len(sys.argv) > 1:
-        fn = main(sys.argv[1])
+
+def main(args):
+    "check and execute"
+    if len(args) > 1:
+        fn = sort(args[1])
     else:
-        fn = main(input("Geef naam van te sorteren file op: "))
+        fn = sort(input("Geef naam van te sorteren file op: "))
     print("klaar, output in", fn)
+
+
+if __name__ == '__main__':
+    main(sys.argv)
