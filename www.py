@@ -156,5 +156,10 @@ def startapp(c, name):
     test = name if webapps[name]['start_server'] == '=' else webapps[name]['start_server']
     if webapps[name]['start_server'] and not os.path.exists('/tmp/server-{}-ok'.format(test)):
         c.run('fabsrv server.start -n {}'.format(test))
-    c.run('vivaldi-snapshot --app=http://{0} --class=WebApp-{1} --user-data-dir=/home/albert/'
-          '.local/share/ice/profiles/{1}'.format(webapps[name]['adr'], webapps[name]['profile']))
+    if 'appid' in webapps[name]:
+        # nieuwe api
+        c.run('/home/albert/.local/share/vivaldi-snapshot/vivaldi-snapshot'
+              ' --profile-directory=Default --app-id={}'.format(webapps[name]['appid']))
+    else:
+        c.run('vivaldi-snapshot --app=http://{0} --class=WebApp-{1} --user-data-dir=/home/albert/'
+              '.local/share/ice/profiles/{1}'.format(webapps[name]['adr'], webapps[name]['profile']))
