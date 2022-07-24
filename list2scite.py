@@ -1,4 +1,4 @@
-#! /usr/bin/env python3
+#! /usr/bin/env python
 """open multiple files in one instance of SciTE
 """
 import sys
@@ -13,5 +13,5 @@ def main(fname):
     subprocess.run(cmd)
 
 
-if __name__ == 'main':
+if __name__ == '__main__':
     main(sys.argv[1])
