@@ -4,18 +4,21 @@ ln -s ~/projects/filefindr/start.py    afrift
 ln -s ~/projects/albumsgui/start.py    albums
 ln -s ~/projects/albumsgui/start_gui.py    albumsgui
 ln -s ~/projects/apropos/start.py  a-propos
-ln -s gcalculator     calc
+if [ -e gcalculator ]; then 
+  ln -s gcalculator     calc;
+fi
 ln -s ~/projects/compare-tool/actif.py     comparer
 ln -s ~/projects/cssedit/cssedit/start_editor.py   cssedit
 ln -s ~/projects/csvtool/csvhelper.py      csvhelper
-ln -s ramble  diary
 ln -s ~/projects/doctree/dt_print.py       dt_print
 ln -s ~/projects/hotkeys/start.py  hotkeys
 ln -s ~/projects/htmledit/htmleditor.py     htmledit
 ln -s ~/projects/mylinter/lint-all lint-all
 ln -s ~/projects/mylinter/start.py lintergui
 ln -s ~/projects/mylinter/lint-this lint-this
-ln -s mdi.py  mdi
+if [ -e mdi.py ]; then
+  ln -s mdi.py  mdi;
+fi
 ln -s ~/projects/rst2html/mdviewer.py mdview
 ln -s ~/projects/modreader/modreadergui.py modreader
 ln -s ~/projects/notetree/start.py notetree
@@ -30,7 +33,6 @@ ln -s ~/projects/xmledit/xmleditor.py xmledit
 echo "wmctrl -s 1 && doublecmd" >    2panefm
 echo "gnome-terminal -- binfab www.startapp $1" >    appstart
 echo "gnome-terminal --geometry=132x43+4+40" >	bigterm
-echo "cat ~/bin/blistt" > blist
 echo "wmctrl -s 3 && strawberry" > bstart
 echo "comparer -i $1 $2" > comparer_from_dc 
 echo "treedocs ~/Documents/doctree.trd" > doctree
@@ -41,6 +43,7 @@ echo "hotkeys &\nhotkeys -c editor.hotrefs_config" > hotstuff
 echo "wine '/home/albert/.wine/drive_c/Program Files'/IrfanView/i_view64.exe $1" > iview
 echo "wmctrl -s 2 && lmms" > lstart
 echo "notetree -f magiokis/data/transcripts/vergelijking.ntr" > modcompare
+echo "wmctrl -s 0 && ebook-viewer --detach i" > open-reader
 echo "pedit -l $@ &" > peditl
 echo "pedit -l $1 &\npedit -ml $2 &" > peditlr
 echo "pedit -ml $@ &" > peditml
@@ -68,3 +71,6 @@ echo "wmctrl -s 0 && vivaldi-snapshot" > vstart
 echo "hotkeys -c editor.webrefs_config" > webrefs
 echo "#! /bin/sh\n\nif [[ $# == 2 ]]; then\n    gnome-terminal --profile Big Code Editor -- vim $1 $2 -O\nelse\n    echo 'This script is indended to run vi in a terminal wide enough to make editing'\n    echo 'two files side by side possible.'\n    echo 'Therefore it is supposed to be called with two filenames'\nfi" > widevi
 echo "#! /bin/sh\ncd ~/playground/python/wxPython-demo-4.0.1/demo\npython3 demo.py" > wxdemo
+
+# deze kan nu pas
+ln -s ramble  diary

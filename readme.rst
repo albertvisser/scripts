@@ -271,21 +271,19 @@ It also creates starters for various other programs:
     starts a "webapp" created with vivaldi (standard chromium functionality?)
 **bigterm**
     starts up VI in a bigger window
-**blist**
-    list the contents of blistt
-**blistt**
-    contains a few helpful commands
 **bstart**
     start music player (originally Banshee, now Clementine) in workspace 4
 **calc**
-    short for gnome-calculator
+    symlink to gnome-calculator
 **iview**
     starts up IrfanView under Wine.
     Takes one argument, assuming this is the file to view.
 **lstart**
     start LMMS on workspace 3
 **mdi**
-    mdi starts up **mdi.py** which is a modified version of the pyqt mdi demo
+    symlink to **mdi.py** which is a modified version of the pyqt mdi demo (using scintilla controls)
+**open-reader**
+    start up Calibre's ebook viewer
 **peditl**
     starts pedit on the left side of the screen instead of in the middle
 **peditlr**
