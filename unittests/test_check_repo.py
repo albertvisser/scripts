@@ -3,6 +3,7 @@ import pathlib
 import pytest
 
 import check_repo
+from check_repo_tooltips import tooltips
 
 @pytest.fixture
 def testobj(monkeypatch, capsys):
@@ -87,7 +88,9 @@ class MockWidget:
 
 class MockIcon:
     def __init__(self, *args):
-        print('called MockIcon.__init__() for `{}`'.format(args[0]))
+        print('called Icon.__init__() for `{}`'.format(args[0]))
+    def fromTheme(self, *args):
+        print('called Icon.fromTheme() with args', args)
 
 
 class MockMenuBar:
@@ -106,6 +109,8 @@ class MockMenu:
         self.menutext = text
         self.actions = []
     def addAction(self, newaction):
+        if isinstance(newaction, str):
+            newaction = MockAction(newaction, None)
         self.actions.append(newaction)
         return newaction
     def addSeparator(self):
@@ -242,6 +247,8 @@ class MockComboBox:
     def currentText(self):
         print('called combo.currentText()')
         return 'current'
+    def setToolTip(self, value):
+        print(f'called combo.setToolTip({value})')
 
 
 class MockPushButton:
@@ -249,11 +256,13 @@ class MockPushButton:
         print('called MockPushButton.__init__()')
         self.clicked = MockSignal()
     def setMenu(self, *args):
-        print('called QPushButton.setMenu with args', args)
+        print('called QPushButton.setMenu()')
     def setShortcut(self, *args):
         print('called QPushButton.setShortcut with args', args)
     def setDefault(self, *args):
         print('called QPushButton.setDefault with args', args)
+    def setToolTip(self, value):
+        print(f'called QPushButton.setToolTip({value})')
 
 
 class MockLineEdit:
@@ -686,6 +695,7 @@ class TestGui:
         monkeypatch.setattr(check_repo.gui, 'QFont', MockFont)
         monkeypatch.setattr(check_repo.gui, 'QFontMetrics', MockFontMetrics)
         monkeypatch.setattr(check_repo.qtw, 'QPushButton', MockPushButton)
+        monkeypatch.setattr(check_repo.qtw, 'QMenu', MockMenu)
         monkeypatch.setattr(check_repo.qtw, 'QAction', MockAction)
         monkeypatch.setattr(check_repo.Gui, 'get_repofiles', mock_get_repofiles)
         monkeypatch.setattr(check_repo.Gui, 'refresh_frame', mock_refresh_frame)
@@ -695,25 +705,40 @@ class TestGui:
             'called MockApplication.__init__()\n'
             'called widget.__init()__ with args `()`\n'
             "called widget.setWindowTitle() with args `('Uncommitted changes for `base`',)`\n"
-            'called MockIcon.__init__() for `/home/albert/.icons/task.png`\n'
+            'called Icon.__init__() for `/home/albert/.icons/task.png`\n'
             'called widget.setWindowIcon()\n'
             'called MockVBoxLayout.__init__()\n'
             'called MockVBoxLayout.__init__()\n'
             'called MockLabel.__init__()\ncalled vbox.addWidget()\n'
-            'called combo.__init__()\ncalled combo.setEditable(True)\ncalled vbox.addWidget()\n'
+            'called combo.__init__()\ncalled combo.setEditable(True)\n'
+            f"called combo.setToolTip({tooltips['branch']})\ncalled vbox.addWidget()\n"
             'called MockPushButton.__init__()\ncalled signal.__init__()\ncalled signal.connect()\n'
+            f"called QPushButton.setToolTip({tooltips['create']})\n"
             'called vbox.addWidget()\n'
             'called MockPushButton.__init__()\ncalled signal.__init__()\ncalled signal.connect()\n'
+            f"called QPushButton.setToolTip({tooltips['switch']})\n"
             'called vbox.addWidget()\n'
             'called MockPushButton.__init__()\ncalled signal.__init__()\n'
-            'called widget.setup_stashmenu()\ncalled QPushButton.setMenu with args (None,)\n'
+            'called widget.setup_stashmenu()\ncalled QPushButton.setMenu()\n'
+            f"called QPushButton.setToolTip({tooltips['stash']})\n"
             'called vbox.addWidget()\n'
             'called MockPushButton.__init__()\ncalled signal.__init__()\ncalled signal.connect()\n'
+            f"called QPushButton.setToolTip({tooltips['merge']})\n"
             'called vbox.addWidget()\n'
             'called MockPushButton.__init__()\ncalled signal.__init__()\ncalled signal.connect()\n'
+            f"called QPushButton.setToolTip({tooltips['delete']})\n"
             'called vbox.addWidget()\n'
             'called vbox.addStretch()\n'
-            'called MockPushButton.__init__()\ncalled signal.__init__()\ncalled signal.connect()\n'
+            'called Icon.fromTheme() with args ()\n'
+            'called MockPushButton.__init__()\ncalled signal.__init__()\n'
+            f"called QPushButton.setToolTip({tooltips['docs']})\n"
+            'create QAction with text `Open project &Docs`\n'
+            'called signal.connect()\n'
+            'create QAction with text `Open CGit (local repos)`\n'
+            'called signal.connect()\n'
+            'create QAction with text `Open GitWeb (remote repos)`\n'
+            'called signal.connect()\n'
+            'called QPushButton.setMenu()\n'
             "called QPushButton.setShortcut with args ('Shift+F6',)\n"
             'called vbox.addWidget()\n'
             'called vbox.addLayout()\n'
@@ -724,28 +749,50 @@ class TestGui:
             'called MockVBoxLayout.__init__()\n'
             'called MockLabel.__init__()\ncalled vbox.addWidget()\n'
             "called combo.__init__()\ncalled combo.addItems(['status', 'repolist'])\n"
-            'called signal.connect()\ncalled vbox.addWidget()\n'
+            'called signal.connect()\n'
+            f"called combo.setToolTip({tooltips['show']})\n"
+            'called vbox.addWidget()\n'
             'called vbox.addLayout()\n'
             'called MockLabel.__init__()\ncalled vbox.addWidget()\n'
-            'called MockPushButton.__init__()\ncalled signal.__init__()\ncalled signal.connect()\n'
+            'called MockPushButton.__init__()\ncalled signal.__init__()\n'
+            f"called QPushButton.setToolTip({tooltips['edit']})\n"
+            'called signal.connect()\n'
             'called vbox.addWidget()\n'
-            'called MockPushButton.__init__()\ncalled signal.__init__()\ncalled signal.connect()\n'
+            'called MockPushButton.__init__()\ncalled signal.__init__()\n'
+            f"called QPushButton.setToolTip({tooltips['diff']})\n"
+            'called signal.connect()\n'
             'called vbox.addWidget()\n'
-            'called MockPushButton.__init__()\ncalled signal.__init__()\ncalled signal.connect()\n'
+            'called MockPushButton.__init__()\ncalled signal.__init__()\n'
+            f"called QPushButton.setToolTip({tooltips['lint']})\n"
+            'called signal.connect()\n'
             'called vbox.addWidget()\n'
-            'called MockPushButton.__init__()\ncalled signal.__init__()\ncalled signal.connect()\n'
+            'called MockPushButton.__init__()\ncalled signal.__init__()\n'
+            f"called QPushButton.setToolTip({tooltips['blame']})\n"
+            'called signal.connect()\n'
             'called vbox.addWidget()\n'
-            'called MockPushButton.__init__()\ncalled signal.__init__()\ncalled signal.connect()\n'
+            'called MockPushButton.__init__()\ncalled signal.__init__()\n'
+            f"called QPushButton.setToolTip({tooltips['commit']})\n"
+            'called signal.connect()\n'
             'called vbox.addWidget()\n'
-            'called MockPushButton.__init__()\ncalled signal.__init__()\ncalled signal.connect()\n'
+            'called MockPushButton.__init__()\ncalled signal.__init__()\n'
+            f"called QPushButton.setToolTip({tooltips['amend']})\n"
+            'called signal.connect()\n'
             'called vbox.addWidget()\n'
-            'called MockPushButton.__init__()\ncalled signal.__init__()\ncalled signal.connect()\n'
+            'called MockPushButton.__init__()\ncalled signal.__init__()\n'
+            f"called QPushButton.setToolTip({tooltips['revert']})\n"
+            'called signal.connect()\n'
             'called vbox.addWidget()\n'
-            'called MockPushButton.__init__()\ncalled signal.__init__()\ncalled signal.connect()\n'
+            'called MockPushButton.__init__()\ncalled signal.__init__()\n'
+            f"called QPushButton.setToolTip({tooltips['track']})\n"
+            'called signal.connect()\n'
             'called vbox.addWidget()\n'
-            'called MockPushButton.__init__()\ncalled signal.__init__()\ncalled signal.connect()\n'
+            'called MockPushButton.__init__()\ncalled signal.__init__()\n'
+            f"called QPushButton.setToolTip({tooltips['untrack']})\n"
+            'called signal.connect()\n'
             'called vbox.addWidget()\n'
-            'called MockPushButton.__init__()\ncalled signal.__init__()\ncalled signal.connect()\n'
+            'called MockPushButton.__init__()\ncalled signal.__init__()\n'
+            f"called QPushButton.setToolTip({tooltips['ignore']})\n"
+            'called signal.connect()\n'
             'called vbox.addWidget()\n'
             'called MockLabel.__init__()\ncalled vbox.addWidget()\n'
             'called vbox.addLayout()\n'
@@ -753,17 +800,29 @@ class TestGui:
             'called MockVBoxLayout.__init__()\n'
             'called vbox.addStretch()\n'
             'called MockLabel.__init__()\ncalled vbox.addWidget()\n'
-            'called MockPushButton.__init__()\ncalled signal.__init__()\ncalled signal.connect()\n'
+            'called MockPushButton.__init__()\ncalled signal.__init__()\n'
+            f"called QPushButton.setToolTip({tooltips['diff_all']})\n"
+            'called signal.connect()\n'
             'called vbox.addWidget()\n'
-            'called MockPushButton.__init__()\ncalled signal.__init__()\ncalled signal.connect()\n'
+            'called MockPushButton.__init__()\ncalled signal.__init__()\n'
+            f"called QPushButton.setToolTip({tooltips['lint_all']})\n"
+            'called signal.connect()\n'
             'called vbox.addWidget()\n'
-            'called MockPushButton.__init__()\ncalled signal.__init__()\ncalled signal.connect()\n'
+            'called MockPushButton.__init__()\ncalled signal.__init__()\n'
+            f"called QPushButton.setToolTip({tooltips['commit_all']})\n"
+            'called signal.connect()\n'
             'called vbox.addWidget()\n'
-            'called MockPushButton.__init__()\ncalled signal.__init__()\ncalled signal.connect()\n'
+            'called MockPushButton.__init__()\ncalled signal.__init__()\n'
+            f"called QPushButton.setToolTip({tooltips['recheck']})\n"
+            'called signal.connect()\n'
             'called vbox.addWidget()\n'
-            'called MockPushButton.__init__()\ncalled signal.__init__()\ncalled signal.connect()\n'
+            'called MockPushButton.__init__()\ncalled signal.__init__()\n'
+            f"called QPushButton.setToolTip({tooltips['history']})\n"
+            'called signal.connect()\n'
             'called vbox.addWidget()\n'
-            'called MockPushButton.__init__()\ncalled signal.__init__()\ncalled signal.connect()\n'
+            'called MockPushButton.__init__()\ncalled signal.__init__()\n'
+            f"called QPushButton.setToolTip({tooltips['quit']})\n"
+            'called signal.connect()\n'
             'called vbox.addWidget()\n'
             'called vbox.addStretch()\n'
             'called vbox.addLayout()\n'
@@ -1604,6 +1663,22 @@ class TestGui:
         assert capsys.readouterr().out == ('call settings.get_project_dir\n'
                                            "run_and_continue with args: ['treedocs',"
                                            " 'project/projdocs.trd']\n")
+
+    def test_open_cgit(self, monkeypatch, capsys, testobj):
+        def mock_run(self, *args):
+            print('run_and_continue with args:', *args)
+        monkeypatch.setattr(check_repo.Gui, 'run_and_continue', mock_run)
+        testobj.open_cgit()
+        assert capsys.readouterr().out == ("run_and_continue with args:"
+                                           " ['binfab', 'www.startapp', 'cgit']\n")
+
+    def test_open_gitweb(self, monkeypatch, capsys, testobj):
+        def mock_run(self, *args):
+            print('run_and_continue with args:', *args)
+        monkeypatch.setattr(check_repo.Gui, 'run_and_continue', mock_run)
+        testobj.open_gitweb()
+        assert capsys.readouterr().out == ("run_and_continue with args:"
+                                           " ['binfab', 'www.startapp', 'gitweb']\n")
 
     def test_find_current_branch(self, monkeypatch, capsys, testobj):
         def mock_run(self, *args):

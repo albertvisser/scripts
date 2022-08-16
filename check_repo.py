@@ -177,14 +177,16 @@ class Gui(qtw.QWidget):
         hbox.addWidget(btn)
 
         hbox.addStretch()
-        # btn = qtw.QPushButton(gui.QIcon.fromTheme('document-multiple') , '', self)
-        btn = qtw.QPushButton('&Open Docs', self)
+        btn = qtw.QPushButton(gui.QIcon.fromTheme('document-multiple') , 'Open Extrn', self)
+        # btn = qtw.QPushButton('&Open Docs', self)
         btn.setToolTip(tooltips['docs'])
-        # menu = qtw.QMenu()
+        menu = qtw.QMenu()
         # menu.addAction('Open project &Notes').triggered.connect(self.open_notes)
-        # menu.addAction('Open project &Docs').triggered.connect(self.open_docs)
-        btn.clicked.connect(self.open_docs)
-        # btn.setMenu(menu)
+        menu.addAction('Open project &Docs').triggered.connect(self.open_docs)
+        menu.addAction('Open CGit (local repos)').triggered.connect(self.open_cgit)
+        menu.addAction('Open GitWeb (remote repos)').triggered.connect(self.open_gitweb)
+        # btn.clicked.connect(self.open_docs)
+        btn.setMenu(menu)
         btn.setShortcut('Shift+F6')
         hbox.addWidget(btn)
 
@@ -358,8 +360,6 @@ class Gui(qtw.QWidget):
 
     def add_ignore(self):
         """add selected file to ignore list"""
-        # FIXME is dit ok? Moet je niet juist untracked files aan de ignore list kunnen toevoegen?
-        # filenames = self.filter_tracked(self.get_selected_files())
         filenames = [x[1] for x in self.get_selected_files()]
         if filenames:
             fname = '.hgignore' if self.repotype == 'hg' else '.gitignore'
@@ -608,6 +608,14 @@ class Gui(qtw.QWidget):
         else:
             where = settings.get_project_dir(sys.argv[1])
         self.run_and_continue(['treedocs', '{}/projdocs.trd'.format(where)])
+
+    def open_cgit(self):
+        "open CGit server in standalone browser app)"
+        self.run_and_continue(['binfab', 'www.startapp', 'cgit'])
+
+    def open_gitweb(self):
+        "open GitWeb server in standalone browser app"
+        self.run_and_continue(['binfab', 'www.startapp', 'gitweb'])
 
     def find_current_branch(self):
         out, err = self.run_and_capture(['git', 'branch'])
