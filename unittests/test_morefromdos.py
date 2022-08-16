@@ -58,3 +58,26 @@ def test_fromdos_ext(monkeypatch, capsys):
     monkeypatch.setattr(morefromdos.os.path, 'isfile', lambda x: True)
     morefromdos.fromdos('dirname', 'js') == (
             "called subprocess.run() with args (['fromdos', 'abspath/dirname/file4.js'],)\n")
+    counter = 0
+    morefromdos.fromdos('dirname', '.js') == (
+            "called subprocess.run() with args (['fromdos', 'abspath/dirname/file4.js'],)\n")
+
+def test_fromdos_noext(monkeypatch, capsys):
+    counter = 0
+    def mock_run(*args):
+        nonlocal counter
+        counter += 1
+        if counter == 1:
+            return SimpleNamespace(returncode=0)
+        print('called subprocess.run() with args', args)
+    def mock_listdir(*args):
+        return 'file1.py', 'file2.py', 'file3', 'file4.js'
+    monkeypatch.setattr(morefromdos.sp, 'run', mock_run)
+    monkeypatch.setattr(morefromdos.os, 'listdir', mock_listdir)
+    monkeypatch.setattr(morefromdos.os.path, 'abspath', lambda x: '/'.join(('abspath', x)))
+    monkeypatch.setattr(morefromdos.os.path, 'isfile', lambda x: True)
+    morefromdos.fromdos('dirname', '') == (
+            "called subprocess.run() with args (['fromdos', 'abspath/dirname/file3'],)\n")
+    counter = 0
+    morefromdos.fromdos('dirname', '.') == (
+            "called subprocess.run() with args (['fromdos', 'abspath/dirname/file3'],)\n")

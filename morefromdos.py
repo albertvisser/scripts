@@ -3,7 +3,6 @@
 
 optionally select files with a extension different from '.py'
 """
-#TODO: make it possible to select files without extension
 import sys
 import os
 import subprocess as sp
@@ -24,7 +23,7 @@ def fromdos(path, cmp_ext='.py'):
     for file in os.listdir(path):
         fullname = os.path.join(path, file)
         name, ext = os.path.splitext(file)
-        if os.path.isfile(fullname) and ext == cmp_ext:
+        if os.path.isfile(fullname) and (ext == cmp_ext or (cmp_ext == '.' and ext == '')):
             sp.run([command, fullname])
 
 
