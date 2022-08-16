@@ -86,6 +86,13 @@ def test_permits(monkeypatch, capsys):
     def mock_run_ok(c, *args):
         print(*args)
         return types.SimpleNamespace(failed=False)
+    counter = 0
+    def mock_listdir(*args):
+        nonlocal counter
+        counter += 1
+        if counter < 2:
+            return ['name']
+        return []
     monkeypatch.setattr(www.os.path, 'abspath', lambda x: 'abs/{}'.format(x))
     monkeypatch.setattr(www.os, 'listdir', lambda x: ['name'])
     monkeypatch.setattr(www.os.path, 'isfile', lambda x: True)
@@ -101,8 +108,9 @@ def test_permits(monkeypatch, capsys):
     c = MockContext()
     www.permits(c, 'here', do_files=True)
     assert capsys.readouterr().out == 'chmod 644 abs/here/name\n'
-    # www.permits(c, 'here')
-    # TODO nog iets doen om de recusrieve aanroep niet te laten vastlopen
+    monkeypatch.setattr(www.os, 'listdir', mock_listdir)
+    www.permits(c, 'here')
+    assert capsys.readouterr().out == 'chmod 755 abs/here/name\n'
 
 
 def _test_stage(monkeypatch, capsys):
@@ -135,3 +143,7 @@ def test_startapp(monkeypatch, capsys):
     assert capsys.readouterr().out == ('vivaldi-snapshot --app=http://domain --class=WebApp-appname '
                                        '--user-data-dir=/home/albert/.local/share/ice/profiles/'
                                        'appname\n')
+    monkeypatch.setattr(www, 'webapps', {'name': {'appid': 'appname', 'start_server': False}})
+    www.startapp(c, 'name')
+    assert capsys.readouterr().out == ('/home/albert/.local/share/vivaldi-snapshot/vivaldi-snapshot'
+                                       ' --profile-directory=Default --app-id=appname\n')
