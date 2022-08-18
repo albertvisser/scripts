@@ -54,30 +54,25 @@ def get_branchname(c, pwd):
 def _check(c, context='local', push='no', verbose=False, exclude=None, dry_run=False):
     """vergelijkt repositories met elkaar
 
-    context geeft aan welke:
-    'local':  lokale working versie met lokale centrale versie,
-    'remote': lokale centrale versie met bitbucket of github versie
-    'verbose': geef ook 'no changes' meldingen
-    'exclude' maakt het mogelijk om repos uit te sluiten van verwerking
-    push geeft aan of er ook gepushed moet worden (working naar centraal, centraal
-    naar bitbucket of github) en moet indien van toepassing
-    expliciet als 'yes' worden opgegeven
-    voor correcte werking m.b.t. pushen naar remote moet voor elke repo een file
-    <reponame>_tip aanwezig zijn met daarin de output van commando hg tip of
-    in het geval van git log -r -1
+    `context` geeft aan welke:
+    - 'local':  lokale working versie met lokale centrale versie,
+    - 'remote': lokale centrale versie met bitbucket of github versie
+    `verbose`: True geef ook 'no changes' meldingen
+    `exclude` maakt het mogelijk om repos uit te sluiten van verwerking
+    push geeft aan of er ook gepushed moet worden (working naar centraal, centraal naar bitbucket
+    of github) en moet indien van toepassing expliciet als 'yes' worden opgegeven
+    bij mercurial moet voor correcte werking m.b.t. pushen naar remote voor elke repo een file
+    <reponame>_tip aanwezig zijn met daarin de output van commando hg tip
+    voor git is dat niet nodig
     """
     if exclude is None:
-        # exclude = []
         exclude = frozen_repos
-    local_ = context == 'local'
-    remote = not local_
+    # local_ = context == 'local'
+    # remote = not local_
     if context not in ('local', 'remote'):
         print('wrong context for this routine')
         return ''
-    elif local_:
-        root, outfile = HOME, LOCALCHG
-    else:
-        root, outfile = os.path.join(HOME, 'hg_repos'), REPOCHG
+    outfile = LOCALCHG if context == 'local' else REPOCHG
 
     changes = False
     with open(outfile, 'w') as _out:
@@ -87,128 +82,148 @@ def _check(c, context='local', push='no', verbose=False, exclude=None, dry_run=F
                 continue
             is_gitrepo = name in git_repos
             is_private = name in private_repos
+            pwd, root = get_locations(context, is_gitrepo, is_private)
             stats = []
-            pwd = os.path.join(root, name)
-            if remote:
-                if is_gitrepo or is_private:
-                    pwd = os.path.join(root.replace('hg', 'git'), name)
-                    root = root.replace('hg', 'git')
-            elif local_:
-                if is_private:
-                    pwd = os.path.join(root, private_repos[name])
-                else:
-                    pwd = os.path.join(root, 'projects', name)
+            uncommitted, stats_append, writestuff = register_uncommitted_changes(c, pwd, is_gitrepo,
+                                                                                 is_private)
+            stats.append(stats_append)
+            _out.write(writestuff)
+            outgoing, stats_append, writestuff = register_outgoing(c, name, context, root, pwd,
+                                                                   is_gitrepo, is_private)
+            stats.append(stats_append)
+            _out.write(writestuff)
 
-            uncommitted = outgoing = False
-            # check if we are on branch 'master'
-            not_on_master = get_branchname(c, pwd) if is_gitrepo or is_private else ''
-
-            command = 'git status -uno --short' if (is_gitrepo or is_private) else 'hg status --quiet'
-            if dry_run:
-                print('execute `{}` in directory `{}`'.format(command, pwd))
-                test = ''
-            else:
-                with c.cd(pwd):
-                    result = c.run(command, hide=True)
-                test = result.stdout
-            if test.strip():
-                on_branch = ' (on branch {})'.format(not_on_master) if not_on_master else ''
-                stats.append('uncommitted changes' + on_branch)
-                _out.write('\nuncommitted changes in {}{}\n'.format(pwd, on_branch))
-                uncommitted = True
-                _out.write(test + '\n')
-            outgoing = use_tipfile = False
-            result = None
-            if is_gitrepo or is_private:
-                command = 'git log origin/master..master'
-            elif remote:
-                tmpfile = os.path.join('/tmp', '{}_tip'.format(name))
-                tipfile = os.path.join(root, '{}_tip'.format(name))
-                if not os.path.exists(tipfile):
-                    command = 'touch {}'.format(tipfile)
-                    if dry_run:
-                        print('execute `{}`'.format(command))
-                    else:
-                        c.run(command)
-                command = 'hg tip'
-                use_tipfile = True
-            else:
-                command = 'hg outgoing'
-            if dry_run:
-                print('execute `{}` in directory `{}`'.format(command, pwd))
-            else:
-                if use_tipfile:
-                    with c.cd(pwd):
-                        c.run('{} > {}'.format(command, tmpfile))
-                    with open(tmpfile) as _in1, open(tipfile) as _in2:
-                        buf1 = _in1.read()
-                        buf2 = _in2.read()
-                    outgoing = buf1 != buf2
-                else:
-                    with c.cd(pwd):
-                        result = c.run(command, warn=True, hide=True)
-                        # print(result, result.ok, result.stdout, result.stderr)
-                        if is_gitrepo or is_private:
-                            outgoing = result.stdout.strip()
-                        else:
-                            outgoing = result.ok
-            if outgoing:
-                stats.append('outgoing changes')
-                _out.write('outgoing changes for {}\n'.format(name))
-                if use_tipfile:
-                    _out.write("--local:\n")
-                    _out.write(buf1 + "\n")
-                    _out.write("-- remote:\n")
-                    _out.write(buf2 + "\n")
-                elif result:
-                    _out.write(result.stdout + '\n')
             if stats:
                 print(' and '.join(stats) + ' for {}'.format(name))
             elif verbose:
                 print('no changes for {}'.format(name))
             if uncommitted or outgoing:
                 changes = True
-            if push != 'yes':
-                continue
-            if not outgoing:
-                continue
-            if is_gitrepo or is_private:
-                ref = '-u' if remote else ''
-                command = 'git push {} origin master'.format(ref)
-            else:
-                command = 'hg push'  # if bb else 'hg push --remotecmd "hg update"'
-                # remotecmd werkt niet zo maar geen idee hoe dan wel
-            if dry_run:
-                print('execute `{}` in directory `{}`'.format(command, pwd))
-                # simulate result.ok somehow?
-            else:
-                with c.cd(pwd):
-                    result = c.run(command)
-            if result.ok:
-                _out.write(result.stdout + '\n')
-                if remote and use_tipfile:
-                    command = 'git log -r -1' if is_gitrepo or is_private else 'hg tip'
-                    if dry_run:
-                        print('execute `{}` in directory `{}`'.format(command, pwd))
-                    else:
-                        with c.cd(pwd):
-                            c.run('{} > {}'.format(command, tipfile))
-                else:
-                    if not is_gitrepo and not is_private:
-                        command = 'hg up'
-                        if dry_run:
-                            print('execute `{}` in directory `{}`'.format(command, pwd))
-                        else:
-                            with c.cd(pwd):
-                                result = c.run(command)
-                                _out.write(result.stdout + '\n')
-
+            if outgoing and push == 'yes':
+                stats_append, writestuff = execute_push(c, name, context, root, pwd, is_gitrepo,
+                                                        is_private)
+                stats.append(stats_append)
+                _out.write(writestuff)
     print()
     if changes:
         print('for details see {}'.format(outfile))
     else:
         print('no change details')
     return changes
+
+def get_locations(context, is_gitrepo, is_private):
+    root = HOME if context == 'local' else os.path.join(HOME, 'hg_repos')
+    pwd = os.path.join(root, name)
+    if context == 'local':
+        if is_private:
+            pwd = os.path.join(root, private_repos[name])
+        else:
+            pwd = os.path.join(root, 'projects', name)
+    else:
+        if is_gitrepo or is_private:
+            pwd = os.path.join(root.replace('hg', 'git'), name)
+            root = root.replace('hg', 'git')
+    return pwd, root
+
+def register_uncommitted_changes(c, pwd, is_gitrepo, is_private)
+    uncommitted = False
+    not_on_master = get_branchname(c, pwd) if is_gitrepo or is_private else ''
+    command = 'git status -uno --short' if (is_gitrepo or is_private) else 'hg status --quiet'
+    # if dry_run:
+    #     print('execute `{}` in directory `{}`'.format(command, pwd))
+    #     test = ''
+    # else:
+    with c.cd(pwd):
+        result = c.run(command, hide=True)
+    test = result.stdout
+    if test.strip():
+        uncommitted = True
+        on_branch = ' (on branch {})'.format(not_on_master) if not_on_master else ''
+        stats_append = 'uncommitted changes' + on_branch
+        writestuff = '\nuncommitted changes in {}{}\n'.format(pwd, on_branch)
+        write(stuff += test + '\n'
+    return uncommitted, stats_append, write_stuff
+
+def register_outgoing(c, name, context, root, pwd, is_gitrepo, is_private):
+    outgoing = use_tipfile = False
+    result = None
+    if is_gitrepo or is_private:
+        command = 'git log origin/master..master'
+    elif remote:
+        tmpfile = os.path.join('/tmp', '{}_tip'.format(name))
+        tipfile = os.path.join(root, '{}_tip'.format(name))
+        if not os.path.exists(tipfile):
+            command = 'touch {}'.format(tipfile)
+            if dry_run:
+                print('execute `{}`'.format(command))
+            else:
+                c.run(command)
+        command = 'hg tip'
+        use_tipfile = True
+    else:
+        command = 'hg outgoing'
+    if dry_run:
+        print('execute `{}` in directory `{}`'.format(command, pwd))
+    else:
+        if use_tipfile:
+            with c.cd(pwd):
+                c.run('{} > {}'.format(command, tmpfile))
+            with open(tmpfile) as _in1, open(tipfile) as _in2:
+                buf1 = _in1.read()
+                buf2 = _in2.read()
+            outgoing = buf1 != buf2
+        else:
+            with c.cd(pwd):
+                result = c.run(command, warn=True, hide=True)
+                # print(result, result.ok, result.stdout, result.stderr)
+                if is_gitrepo or is_private:
+                    outgoing = result.stdout.strip()
+                else:
+                    outgoing = result.ok
+    if outgoing:
+        stats.append('outgoing changes')
+        _out.write('outgoing changes for {}\n'.format(name))
+        if use_tipfile:
+            _out.write("--local:\n")
+            _out.write(buf1 + "\n")
+            _out.write("-- remote:\n")
+            _out.write(buf2 + "\n")
+        elif result:
+            _out.write(result.stdout + '\n')
+    return outgoing, stats_append, writestuff
+
+def execute_push(c, name, context, root, pwd, is_gitrepo, is_private):
+    if is_gitrepo or is_private:
+        ref = '-u' if remote else ''
+        command = 'git push {} origin master'.format(ref)
+    else:
+        command = 'hg push'  # if bb else 'hg push --remotecmd "hg update"'
+        # remotecmd werkt niet zo maar geen idee hoe dan wel
+    if dry_run:
+        print('execute `{}` in directory `{}`'.format(command, pwd))
+        # simulate result.ok somehow?
+    else:
+        with c.cd(pwd):
+            result = c.run(command)
+    if result.ok:
+        _out.write(result.stdout + '\n')
+        if remote and use_tipfile:
+            command = 'git log -r -1' if is_gitrepo or is_private else 'hg tip'
+            if dry_run:
+                print('execute `{}` in directory `{}`'.format(command, pwd))
+            else:
+                with c.cd(pwd):
+                    c.run('{} > {}'.format(command, tipfile))
+        else:
+            if not is_gitrepo and not is_private:
+                command = 'hg up'
+                if dry_run:
+                    print('execute `{}` in directory `{}`'.format(command, pwd))
+                else:
+                    with c.cd(pwd):
+                        result = c.run(command)
+                        _out.write(result.stdout + '\n')
+    return stats_append, writestuff
 
 
 @task
