@@ -1,8 +1,11 @@
 import os
+import shutil
+import datetime
 import pytest
 import types
 from invoke import MockContext
 import tasks
+FIXDATE = datetime.datetime(2020,1,1)
 
 
 def mock_run(self, *args):
@@ -11,11 +14,6 @@ def mock_run(self, *args):
 
 def run_in_dir(self, *args, **kwargs):
     print(*args, 'in', self.cwd)
-
-
-def _test_listbin(monkeypatch, capsys):
-    monkeypatch.setattr(MockContext, 'run', mock_run)
-    c = MockContext()
 
 
 def test_install_scite(monkeypatch, capsys):
@@ -147,38 +145,73 @@ def test_build_scite(monkeypatch, capsys):
     assert data == 'results from call 2\nresults from call 3\nresults from call 4\n'
 
 
-def _test_arcstuff(monkeypatch, capsys):
+def test_arcstuff(monkeypatch, capsys):
+    if os.path.exists('arcstuff.conf'):
+        shutil.copyfile('arcstuff.conf', '/tmp/arcstuff.conf')
+    with open('arcstuff.conf', 'w') as f:
+        print('[hello', file=f)
+        print('', file=f)
+        print('hello', file=f)
+        print('files', file=f)
+    if os.path.exists('arcstuff_test.conf'):
+        shutil.copyfile('arcstuff_test.conf', '/tmp/arcstuff_test.conf')
+    with open('arcstuff_test.conf', 'w') as f:
+        print('#hello', file=f)
+        print('[hello]', file=f)
+        print('hello', file=f)
+        print('files', file=f)
+
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
+    monkeypatch.setattr(tasks.os, 'listdir', lambda x: ['test', 'test.conf', 'arcstuff.conf',
+                                                        'arcstuff_test.conf'])
+    monkeypatch.setattr(tasks.datetime, 'datetime', MockDatetime)
+    with pytest.raises(ValueError) as exc:
+        tasks.arcstuff(c, 'test,stuff')
+    assert str(exc.value) == 'abort: no config file for stuff (arcstuff_stuff.conf does not exist)'
+    tasks.arcstuff(c, 'all')
+    assert capsys.readouterr().out == (
+         'tar -czvf /home/albert/arcstuff/all_20200101000000.tar.gz hello files\n'
+         'tar -czvf /home/albert/arcstuff/test_20200101000000.tar.gz hello/hello hello/files\n')
+    if os.path.exists('/tmp/arcstuff.conf'):
+        shutil.copyfile('/tmp/arcstuff.conf', 'arcstuff.conf')
+    else:
+        os.remove('arcstuff.conf')
+    if os.path.exists('/tmp/arcstuff_test.conf'):
+        shutil.copyfile('/tmp/arcstuff_test.conf', 'arcstuff_test.conf')
+    else:
+        os.remove('arcstuff_test.conf')
 
 
-def _test_chmodrecursive(monkeypatch, capsys):
-    def mock_recursive(*args):
-        print('entering recursive call')
+def test_chmodrecursive(monkeypatch, capsys):
+    counter = 0
+    def mock_listdir(*args):
+        nonlocal counter
+        counter += 1
+        if counter > 1:
+            print('entering recursive call')
+            return []
+        return ['file', 'name', '__pycache__', '.hg', 'link', 'dir', 'map']
     def mock_chmod(*args):
-        print('changing file permissions for', args[0])
-        if args[0] in ('file', 'dir'):
+        if os.path.basename(args[0]) in ('file', 'dir'):
+            print('ignoring PermissionError for', args[0])
             raise PermissionError
-        elif args[0] == 'map':
-            monkeypatch.setattr(tasks, 'chmodrecursive', mock_recursive)
-    monkeypatch.setattr(tasks.os, 'getcwd', lambda x: 'current_dir')
-    monkeypatch.setattr(tasks.os, 'listdir', lambda x: ['file', 'name', '__pycache__', '.hg', 'link',
-                                                        'dir', 'map'])
+        print('changing file permissions for', args[0])
+    monkeypatch.setattr(tasks.os, 'getcwd', lambda: 'current_dir')
+    monkeypatch.setattr(tasks.os, 'listdir', mock_listdir)
     monkeypatch.setattr(tasks.os.path, 'isfile',
                         lambda x: True if x.endswith('file') or x.endswith('name') else False)
     monkeypatch.setattr(tasks.os.path, 'islink', lambda x: True if x.endswith('link') else False)
     monkeypatch.setattr(tasks.os.path, 'isdir',
                         lambda x: True if x.endswith('dir') or x.endswith('map') else False)
     monkeypatch.setattr(tasks.os, 'chmod', mock_chmod)
-    # monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
-    breakpoint()
     tasks.chmodrecursive(c)
-    assert capsys.readouterr().out == ('changing file permissions for current_dir/file\n'
+    assert capsys.readouterr().out == ('ignoring PermissionError for current_dir/file\n'
                                        'changing file permissions for current_dir/name\n'
-                                       'changing file permissions for current_dir/dir\n'
+                                       'ignoring PermissionError for current_dir/dir\n'
                                        'changing file permissions for current_dir/map\n'
-                                       'entering recursive call')
+                                       'entering recursive call\n')
 
 
 def test_create_bin_shortcuts(monkeypatch, capsys):
@@ -197,3 +230,9 @@ def test_create_bin_shortcuts(monkeypatch, capsys):
     assert capsys.readouterr().out == ('change to directory: {}\n'
                                        'make symlink from path/to/source1 to target1\n'
                                        'make symlink from path/to/source2 to target2\n').format('/tmp')
+
+
+class MockDatetime:
+    @classmethod
+    def today(cls):
+        return FIXDATE
