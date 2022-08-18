@@ -66,8 +66,11 @@ def test_get_branchname(monkeypatch, capsys):
     assert capsys.readouterr().out == 'git branch in path/to/repo\n'
 
 
-def _test_check(monkeypatch, capsys):
-    pass
+def test_check(monkeypatch, capsys):
+    monkeypatch.setattr(MockContext, 'run', mock_run)
+    c = MockContext()
+    repo._check(c, 'x')
+    assert capsys.readouterr().out == 'wrong context for this routine\n'
 
 
 def test_check_local(monkeypatch, capsys):
@@ -152,6 +155,7 @@ def test_pushthru(monkeypatch, capsys):
     assert capsys.readouterr().out == ("call _check() with args () {'push': 'yes'}\n"
                                        "call _check() with args ('remote',) {'push': 'yes'}\n\n"
                                        "ready, output in /tmp/pushthru_log\n")
+
 
 def test_overview(monkeypatch, capsys):
     def mock_repo_overzicht(c, *args):
@@ -238,6 +242,39 @@ def test_make_repolist_hg(monkeypatch, capsys):
     assert capsys.readouterr().out == "hg log -v in path/to/repo\n"
 
 
+def test_make_repolist_git(monkeypatch, capsys):
+    def mock_run(c, *args, **kwargs):
+        print(*args, 'in', c.cwd)
+        return types.SimpleNamespace(stdout=(
+                "d98e1b0; Sun Jul 24 12:57:55 2022 +0200; tooltips toegevoegd\n"
+                "\n"
+                " check_repo.py          | 25 +++++++++++++++++++++++++\n"
+                " check_repo_tooltips.py | 31 +++++++++++++++++++++++++++++++\n"
+                " 2 files changed, 56 insertions(+)\n"
+                "7937ac5; Sun Jul 24 12:54:46 2022 +0200; foutje gecorrigeerd\n"
+                "\n"
+                " list2scite.py | 4 ++--\n"
+                " 1 file changed, 2 insertions(+), 2 deletions(-)\n"
+                "f89d785; Mon Jun 6 20:50:06 2022 +0200; updated readme, unittests and more\n"
+                "\n"
+                " 2panefm                        |   1 -\n"
+                " bstart                         |   1 -\n"
+                " build-bin-scripts              |  70 +++++++++++++++++++++\n"))
+    monkeypatch.setattr(MockContext, 'run', mock_run)
+    c = MockContext()
+    assert repo.make_repolist_git(c, 'path/to/repo') == {
+        "d98e1b0": {'date': "Sun Jul 24 12:57:55 2022 +0200",
+                    'description': "tooltips toegevoegd",
+                    'files': ['check_repo.py', 'check_repo_tooltips.py']},
+        "7937ac5": {'date': "Sun Jul 24 12:54:46 2022 +0200",
+                    'description': "foutje gecorrigeerd",
+                    'files': ['list2scite.py']},
+        "f89d785": {'date': "Mon Jun 6 20:50:06 2022 +0200",
+                    'description': "updated readme, unittests and more",
+                    'files': ['2panefm', 'bstart', 'build-bin-scripts']}}
+    assert capsys.readouterr().out == 'git log --pretty="%h; %ad; %s" --stat in path/to/repo\n'
+
+
 def test_make_repo_ovz(monkeypatch, capsys):
     filename = '/tmp/repo_ovz_outfile'
     repo.make_repo_ovz({'naam1': {'date': 'ddd', 'desc': ['xx', 'x'], 'files': ['file1', 'file2']},
@@ -247,12 +284,23 @@ def test_make_repo_ovz(monkeypatch, capsys):
     assert data == ('ddd: xx\nx\n    file1\n    file2\neee: yy\ny\n')
 
 
-def _test_make_repocsv(monkeypatch, capsys):
-    monkeypatch.setattr(MockContext, 'run', mock_run)
-    c = MockContext()
-    repo.make_repocsv(c)
-    assert capsys.readouterr().out == ""
-
+def test_make_repocsv(monkeypatch, capsys):
+    monkeypatch.setattr(repo.csv, 'writer', MockWriter)
+    filename = '/tmp/repo_ovz_outfile'
+    if os.path.exists(filename):
+        os.remove(filename)
+    repo.make_repocsv({'1': {'date': 'ddd', 'desc': ['x;x', 'x'], 'files': ['file1', 'file2']},
+                        '2': {'date': 'eee', 'desc': ['y,y', 'y']}}, filename)
+    assert os.path.exists(filename)
+    assert capsys.readouterr().out == (
+            "create writer to file <_io.TextIOWrapper name='/tmp/repo_ovz_outfile'"
+            " mode='w' encoding='UTF-8'>\n"
+            r"call writer.writerow for data [' \\ date', 'ddd', 'eee']""\n"
+            r"call writer.writerow for data ['filename \\ description',"
+            """ '"x;x\\nx"', '"y,y\\ny"']"""
+            "\n"
+            "call writer.writerow for data ['./file1', '', 'x']\n"
+            "call writer.writerow for data ['./file2', '', 'x']\n")
 
 def test_add2gitweb(monkeypatch, capsys):
     monkeypatch.setattr(MockContext, 'run', mock_run)
@@ -379,3 +427,10 @@ def test_search(monkeypatch, capsys):
     repo.search(c, 'name', rebuild=True)
     assert capsys.readouterr().out == ('called rebuild_filenamelist\n'
                                        'afrift -m multi /tmp/filelist -e py -PN -s name\n')
+
+
+class MockWriter:
+    def __init__(self, filename):
+        print('create writer to file', filename)
+    def writerow(self, data):
+        print('call writer.writerow for data', data)

@@ -434,6 +434,28 @@ def make_repolist_git(c, path):
     input: pathname to the repository
     output: dictionary containing the history
     """
+    with c.cd(path):
+        result = c.run('git log --pretty="%h; %ad; %s" --stat', hide=True)
+        data = result.stdout
+    outdict = collections.defaultdict(dict)
+    key = ''
+    for line in data.split('\n'):
+        line = line.strip()
+        if ';' in line:
+            if key:
+                outdict[key]['date'] = date
+                outdict[key]['description'] = desc
+                outdict[key]['files'] = files
+            key, date, desc = line.split('; ')
+            files = []
+        elif '|' in line:
+            file, rest = line.split('|')
+            files.append(file.strip())
+    if key:
+        outdict[key]['date'] = date
+        outdict[key]['description'] = desc
+        outdict[key]['files'] = files
+    return outdict
 
 
 def make_repo_ovz(outdict, outfile):
@@ -443,7 +465,7 @@ def make_repo_ovz(outdict, outfile):
     output: the specified file as written to disk
     """
     with open(outfile, "w") as _out:
-        for key in sorted(outdict.keys()):
+        for key in outdict.keys():
             _out.write('{}: {}\n'.format(outdict[key]['date'], '\n'.join(outdict[key]['desc'])))
             try:
                 for item in outdict[key]['files']:
@@ -567,3 +589,14 @@ def search(c, find='', rebuild=False):
     if find:
         command += 'N -s ' + find
     c.run(command)
+
+def ensure_default(c, name):
+    """always start a tool in the "production" branch of the repo"""
+    # result = git branch
+    # if the active branch is not default:
+    #    try to switch to default
+    #    if not successful:
+    #       git stash or git commit
+    #    switch to default
+    # open tool
+    # is it possible to immediately switch back to the previous branch and apply the stash?
