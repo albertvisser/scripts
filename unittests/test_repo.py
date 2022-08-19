@@ -67,10 +67,206 @@ def test_get_branchname(monkeypatch, capsys):
 
 
 def test_check(monkeypatch, capsys):
+    def mock_changes(*args):
+        return True, '', ''
+    def mock_outgoing(*args):
+        return True, '', ''
+    def mock_push(*args):
+        return [], ''
+
+    monkeypatch.setattr(repo, 'frozen_repos', ['do-not-process'])
+    monkeypatch.setattr(repo, 'TODAY', 'today')
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
     repo._check(c, 'x')
     assert capsys.readouterr().out == 'wrong context for this routine\n'
+    monkeypatch.setattr(repo, 'all_repos', ['do-not-process'])
+    repo._check(c)
+    with open(repo.LOCALCHG) as f:
+        data = f.read()
+    assert data == 'check local repos on today\n\n'
+    assert capsys.readouterr().out == '\nno change details\n'
+
+    monkeypatch.setattr(repo, 'all_repos', ['check-it'])
+    monkeypatch.setattr(repo, 'git_repos', ['check-it'])
+    monkeypatch.setattr(repo, 'private_repos', ['check-it'])
+    monkeypatch.setattr(repo, 'get_locations', lambda *x: ('pwd', 'root'))
+    monkeypatch.setattr(repo, 'register_uncommitted', lambda *x: (False, '', ''))
+    monkeypatch.setattr(repo, 'register_outgoing', lambda *x: (False, '', ''))
+    repo._check(c)
+    with open(repo.LOCALCHG) as f:
+        data = f.read()
+    assert data == 'check local repos on today\n\n'
+    assert capsys.readouterr().out == '\nno change details\n'
+    repo._check(c, verbose=True)
+    with open(repo.LOCALCHG) as f:
+        data = f.read()
+    assert data == 'check local repos on today\n\n'
+    assert capsys.readouterr().out == 'no changes for check-it\n\nno change details\n'
+
+    monkeypatch.setattr(repo, 'register_uncommitted', lambda *x: (True, 'xxx', 'aaa'))
+    monkeypatch.setattr(repo, 'register_outgoing', lambda *x: (False, '', ''))
+    repo._check(c)
+    with open(repo.LOCALCHG) as f:
+        data = f.read()
+    assert data == 'check local repos on today\n\naaa'
+    assert capsys.readouterr().out == 'xxx for check-it\n\nfor details see /tmp/repo_local_changes\n'
+
+    monkeypatch.setattr(repo, 'register_uncommitted', lambda *x: (False, '', ''))
+    monkeypatch.setattr(repo, 'register_outgoing', lambda *x: (True, 'yyy', 'bbb'))
+    monkeypatch.setattr(repo, 'execute_push', lambda *x: 'ccc')
+    # breakpoint()
+    repo._check(c, push='yes')
+    with open(repo.LOCALCHG) as f:
+        data = f.read()
+    assert data == 'check local repos on today\n\nbbbccc'
+    assert capsys.readouterr().out == ('yyy for check-it\n\n'
+                                       'for details see /tmp/repo_local_changes\n')
+
+    monkeypatch.setattr(repo, 'register_uncommitted', lambda *x: (True, 'xxx', 'aaa'))
+    monkeypatch.setattr(repo, 'register_outgoing', lambda *x: (True, 'yyy', 'bbb'))
+    repo._check(c, context='remote')
+    with open(repo.REPOCHG) as f:
+        data = f.read()
+    assert data == 'check remote repos on today\n\naaabbb'
+    assert capsys.readouterr().out == ('xxx and yyy for check-it\n\n'
+                                       'for details see /tmp/repo_changes\n')
+
+def test_get_locations(monkeypatch, capsys):
+    monkeypatch.setattr(repo, 'HOME', 'homedir')
+    monkeypatch.setattr(repo, 'private_repos', {'name': 'same_or_other_name'})
+    assert repo.get_locations('local', 'name', True, True) == ('homedir/same_or_other_name',
+            'homedir')
+    assert repo.get_locations('local', 'name', True, False) == ('homedir/projects/name', 'homedir')
+    assert repo.get_locations('local', 'name', False, True) == ('homedir/same_or_other_name',
+            'homedir')
+    assert repo.get_locations('local', 'name', False, False) == ('homedir/projects/name', 'homedir')
+    assert repo.get_locations('remote', 'name', True, True) == ('homedir/git_repos/name',
+            'homedir/git_repos')
+    assert repo.get_locations('remote', 'name', True, False) == ('homedir/git_repos/name',
+            'homedir/git_repos')
+    assert repo.get_locations('remote', 'name', False, True) == ('homedir/git_repos/name',
+            'homedir/git_repos')
+    assert repo.get_locations('remote', 'name', False, False) == ('homedir/hg_repos/name',
+            'homedir/hg_repos')
+
+
+def test_register_changes(monkeypatch, capsys):
+    def mock_run(c, *args, **kwargs):
+        print(*args)
+        return types.SimpleNamespace(stdout='xxx')
+    def mock_run_2(c, *args, **kwargs):
+        print(*args)
+        return types.SimpleNamespace(stdout='')
+    monkeypatch.setattr(repo, 'get_branchname', lambda *x: 'master')
+    monkeypatch.setattr(MockContext, 'run', mock_run)
+    c = MockContext()
+    assert repo.register_uncommitted(c, 'pwd', True, True) == (True,
+            'uncommitted changes (on branch master)',
+            '\nuncommitted changes in pwd (on branch master)\nxxx\n')
+    assert capsys.readouterr().out == 'git status -uno --short\n'
+    assert repo.register_uncommitted(c, 'pwd', True, False) == (True,
+            'uncommitted changes (on branch master)',
+            '\nuncommitted changes in pwd (on branch master)\nxxx\n')
+    assert capsys.readouterr().out == 'git status -uno --short\n'
+    assert repo.register_uncommitted(c, 'pwd', False, False) == (True,
+            'uncommitted changes',
+            '\nuncommitted changes in pwd\nxxx\n')
+    assert capsys.readouterr().out == 'hg status --quiet\n'
+    monkeypatch.setattr(MockContext, 'run', mock_run_2)
+    c = MockContext()
+    assert repo.register_uncommitted(c, 'pwd', False, True) == (False, '', '')
+    assert capsys.readouterr().out == 'git status -uno --short\n'
+
+def test_register_outgoing(monkeypatch, capsys):
+    def mock_run(c, *args, **kwargs):
+        print(*args)
+        return types.SimpleNamespace(stdout='xxx', ok=True)
+    counter = 0
+    def mock_run_2(c, *args, **kwargs):
+        nonlocal counter
+        counter += 1
+        print(*args)
+        action, filename = args[0].split(None, 1)
+        if action == 'touch':
+            # with open('/tmp/repochecktest/name_tip', 'w'):
+            with open(filename, 'w'):
+                pass
+        return types.SimpleNamespace(stdout='xxx', ok=True)
+    monkeypatch.setattr(MockContext, 'run', mock_run)
+    c = MockContext()
+    assert repo.register_outgoing(c, 'name', 'local', 'root', 'pwd', True, True) == ('xxx',
+            'outgoing changes', 'outgoing changes for name\nxxx\n')
+    assert capsys.readouterr().out == 'git log origin/master..master\n'
+    assert repo.register_outgoing(c, 'name', 'local', 'root', 'pwd', False, True) == ('xxx',
+            'outgoing changes', 'outgoing changes for name\nxxx\n')
+    assert capsys.readouterr().out == 'git log origin/master..master\n'
+    assert repo.register_outgoing(c, 'name', 'local', 'root', 'pwd', True, False) == ('xxx',
+            'outgoing changes', 'outgoing changes for name\nxxx\n')
+    assert capsys.readouterr().out == 'git log origin/master..master\n'
+    assert repo.register_outgoing(c, 'name', 'local', 'root', 'pwd', False, False) == (True,
+            'outgoing changes', 'outgoing changes for name\nxxx\n')
+    assert capsys.readouterr().out == 'hg outgoing\n'
+    assert repo.register_outgoing(c, 'name', 'remote', 'root', 'pwd', True, True) == ('xxx',
+            'outgoing changes', 'outgoing changes for name\nxxx\n')
+    assert capsys.readouterr().out == 'git log origin/master..master\n'
+    assert repo.register_outgoing(c, 'name', 'remote', 'root', 'pwd', True, False) == ('xxx',
+            'outgoing changes', 'outgoing changes for name\nxxx\n')
+    assert capsys.readouterr().out == 'git log origin/master..master\n'
+    assert repo.register_outgoing(c, 'name', 'remote', 'root', 'pwd', False, True) == ('xxx',
+            'outgoing changes', 'outgoing changes for name\nxxx\n')
+    assert capsys.readouterr().out == 'git log origin/master..master\n'
+    if not os.path.exists('/tmp/repochecktest'):
+        os.mkdir('/tmp/repochecktest')
+    with open('/tmp/repochecktest/name_tip', 'w') as f:
+        f.write('x')
+    with open('/tmp/name_tip', 'w') as f:
+        f.write('x')
+    assert repo.register_outgoing(c, 'name', 'remote', '/tmp/repochecktest', 'pwd', False, False) == (
+           False, '', '')
+    assert capsys.readouterr().out == 'hg tip > /tmp/name_tip\n'
+    os.remove('/tmp/repochecktest/name_tip')
+    monkeypatch.setattr(MockContext, 'run', mock_run_2)
+    c = MockContext()
+    # breakpoint()
+    assert repo.register_outgoing(c, 'name', 'remote', '/tmp/repochecktest', 'pwd', False, False) == (
+            True, 'outgoing changes', 'outgoing changes for name\n-- local:\nx\n-- remote:\n\n')
+    assert capsys.readouterr().out == 'touch /tmp/repochecktest/name_tip\nhg tip > /tmp/name_tip\n'
+
+
+def test_execute_push(monkeypatch, capsys):
+    def mock_run(c, *args, **kwargs):
+        print(*args)
+        return types.SimpleNamespace(stdout='ready.', ok=True)
+    def mock_run_2(c, *args, **kwargs):
+        print(*args)
+        return types.SimpleNamespace(stdout='ready.', ok=False)
+    monkeypatch.setattr(MockContext, 'run', mock_run)
+    c = MockContext()
+    assert repo.execute_push(c,'name', 'local', 'root', 'pwd', True, True) == 'ready.\n'
+    assert capsys.readouterr().out == 'git push  origin master\n'
+    assert repo.execute_push(c,'name', 'local', 'root', 'pwd', False, True) == 'ready.\n'
+    assert capsys.readouterr().out == 'git push  origin master\n'
+    assert repo.execute_push(c,'name', 'local', 'root', 'pwd', True, False) == 'ready.\n'
+    assert capsys.readouterr().out == 'git push  origin master\n'
+    assert repo.execute_push(c,'name', 'local', 'root', 'pwd', False, False) == 'ready.\nready.\n'
+    assert capsys.readouterr().out == 'hg push\nhg up\n'
+    assert repo.execute_push(c,'name', 'remote', 'root', 'pwd', True, True) == 'ready.\n'
+    assert capsys.readouterr().out == 'git push -u origin master\n'
+    assert repo.execute_push(c,'name', 'remote', 'root', 'pwd', False, True) == 'ready.\n'
+    assert capsys.readouterr().out == 'git push -u origin master\n'
+    assert repo.execute_push(c,'name', 'remote', 'root', 'pwd', True, False) == 'ready.\n'
+    assert capsys.readouterr().out == 'git push -u origin master\n'
+    assert repo.execute_push(c,'name', 'remote', 'root', 'pwd', False, False) == 'ready.\n'
+    assert capsys.readouterr().out == 'hg push\nhg tip > root/name_tip\n'
+    monkeypatch.setattr(MockContext, 'run', mock_run_2)
+    c = MockContext()
+    assert repo.execute_push(c,'name', 'local', 'root', 'pwd', True, True) == ''
+    assert capsys.readouterr().out == 'git push  origin master\n'
+
+
+def test_get_tipfilename():
+    assert repo.get_tipfilename('root', 'name') == 'root/name_tip'
 
 
 def test_check_local(monkeypatch, capsys):
