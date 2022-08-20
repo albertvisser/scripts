@@ -50,29 +50,30 @@ class Check:
     of github) en moet indien van toepassing expliciet als 'yes' worden opgegeven
     """
     def __init__(self, c, context='local', push=False, verbose=False, exclude=None):
-        "set up variables for common use throughout the whole class
+        """set up variables for common use throughout the whole class
         instead op passing them around as function parameters
         """
         self.c = c
         if context not in ('local', 'remote'):
             raise ValueError('wrong context for this routine')
-        self.remote = context == 'remote'
+        self.context = context
         self.push = push
         self.verbose = verbose
         self.exclude = frozen_repos if exclude is None else exclude
-        self.is_gitrepo = name in git_repos
-        self.is_private = name in private_repos
+        self.is_gitrepo = self.is_private = False
 
     def run(self):
         """main line; loop through selected repositories
         """
-        outfile = REPOCHG if self.remote else LOCALCHG
+        outfile = REPOCHG if self.context == 'remote' else LOCALCHG
         changes = False
         with open(outfile, 'w') as _out:
-            _out.write('check {} repos on {}\n\n'.format(context, TODAY))
+            _out.write('check {} repos on {}\n\n'.format(self.context, TODAY))
             for name in all_repos:
                 if name in self.exclude:
                     continue
+                self.is_gitrepo = name in git_repos
+                self.is_private = name in private_repos
                 pwd, root = self.get_locations(name)
                 stats = []
                 uncommitted, stats_append, writestuff = self.register_uncommitted(pwd)
@@ -87,11 +88,11 @@ class Check:
                     _out.write(writestuff)
                 if stats:
                     print(' and '.join(stats) + ' for {}'.format(name))
-                elif verbose:
+                elif self.verbose:
                     print('no changes for {}'.format(name))
                 if uncommitted or outgoing:
                     changes = True
-                if outgoing and push == 'yes':
+                if outgoing and self.push:
                     writestuff = self.execute_push(name, root, pwd)
                     if writestuff:
                         _out.write(writestuff)
@@ -105,9 +106,9 @@ class Check:
     def get_locations(self, name):
         """determine some key locations for the currrent repository
         """
-        root = os.path.join(HOME, 'hg_repos') if self.remote else HOME
+        root = os.path.join(HOME, 'hg_repos') if self.context == 'remote' else HOME
         pwd = os.path.join(root, name)
-        if self.remote:
+        if self.context == 'remote':
             if self.is_gitrepo or self.is_private:
                 pwd = os.path.join(root.replace('hg', 'git'), name)
                 root = root.replace('hg', 'git')
@@ -123,10 +124,10 @@ class Check:
         """
         uncommitted = False
         not_hg = self.is_gitrepo or self.is_private
-        not_on_master = self.get_branchname(c, pwd) if not_hg else ''
+        not_on_master = self.get_branchname(pwd) if not_hg else ''
         command = 'git status -uno --short' if not_hg else 'hg status --quiet'
-        with c.cd(pwd):
-            result = c.run(command, hide=True)
+        with self.c.cd(pwd):
+            result = self.c.run(command, hide=True)
         test = result.stdout
         if test.strip():
             uncommitted = True
@@ -151,21 +152,21 @@ class Check:
             tipfile = self.get_tipfilename(root, name)
             if not os.path.exists(tipfile):
                 command = 'touch {}'.format(tipfile)
-                c.run(command)
+                self.c.run(command)
             command = 'hg tip'
             use_tipfile = True
         else:
             command = 'hg outgoing'
         if use_tipfile:
-            with c.cd(pwd):
-                c.run('{} > {}'.format(command, tmpfile))
+            with self.c.cd(pwd):
+                self.c.run('{} > {}'.format(command, tmpfile))
             with open(tmpfile) as _in1, open(tipfile) as _in2:
                 buf1 = _in1.read()
                 buf2 = _in2.read()
             outgoing = buf1 != buf2
         else:
-            with c.cd(pwd):
-                result = c.run(command, warn=True, hide=True)
+            with self.c.cd(pwd):
+                result = self.c.run(command, warn=True, hide=True)
                 # print(result, result.ok, result.stdout, result.stderr)
                 if not_hg:
                     outgoing = result.stdout.strip()
@@ -190,7 +191,7 @@ class Check:
         """
         not_hg = self.is_gitrepo or self.is_private
         if not_hg:
-            ref = '-u' if self.remote else ''
+            ref = '-u' if self.context == 'remote' else ''
             command = 'git push {} origin master'.format(ref)
         else:
             command = 'hg push'
@@ -199,7 +200,7 @@ class Check:
         if result.ok:
             writestuff = result.stdout + '\n'
             if not not_hg:
-                if context == 'remote':
+                if self.context == 'remote':
                     command = 'hg tip'
                     with self.c.cd(pwd):
                         self.c.run('{} > {}'.format(command, self.get_tipfilename(root, name)))
@@ -233,7 +234,7 @@ class Check:
 
 
 @task
-def check_local(c)  # , dry_run=False):
+def check_local(c):  # , dry_run=False):
     """compare all local repositories: working vs "central"
     """
     test = Check(c).run()   # , dry_run=dry_run)
@@ -294,8 +295,8 @@ def pushthru(c, names):
     when no name is specified, the "_check" variants are used
     """
     if not names:
-        _check(c, push='yes')
-        _check(c, 'remote', push='yes')
+        Check(c, push=True).run()
+        Check(c, 'remote', push=True).run()
         with open(P2ULOG, 'w') as _out:
             for fname in (LOCALCHG, REPOCHG):
                 with open(fname) as _in:
