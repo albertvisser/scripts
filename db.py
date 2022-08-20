@@ -49,9 +49,17 @@ def dump_mongo(c, names=''):
 
 
 @task
+def list_mongodumps(c):
+    "list directories containing backups made using db.dump-mongo"
+    c.run('ls ~/mongodump')
+
+@task
 def restore_mongo(c, dirname):
-    "restore mongo database(s) from given directory"
-    c.run('mongorestore {}'.format(dirname))
+    "restore mongo database(s) from given directory (named like <EEjjmmdd-hhmmss>)"
+    filepath = pathlib.Path(dirname)
+    if str(filepath.parent) == '.':
+        filepath = pathlib.Path('~/mongodump') / dirname
+    c.run('mongorestore {}'.format(filepath))
 
 
 @task
@@ -87,3 +95,23 @@ def dump_pg(c, names=''):
         return
     for name in names.split(','):
         c.run('pg_dump {0} -f ~/pgdump/{1}/{0}_{2}.sql'.format(name, date, time))
+
+@task
+def list_pgdumps(c):
+    "list backups made using db.dump-pg"
+    c.run('ls -RU1 ~/pgdump')
+
+@task
+def restore_pg(c, filename):
+    "restore postgres database)s) from given file (named like <EEjjmmdd>/<database>-<hhmmss>.sql)"
+    # breakpoint()
+    filepath = pathlib.Path(filename)
+    if len(filepath.parents) <= 2:
+        filepath = pathlib.Path('~/pgdump') / filename
+    if filepath.suffix != '.sql':
+        print('filename should end in .sql')
+    elif filepath.name.startswith('all'):
+        c.run("psql -f {} postgres".format(filepath))
+    else:
+        dbname = filepath.stem.split('_')[0]
+        c.run("psql {} < {}".format(dbname, filepath))
