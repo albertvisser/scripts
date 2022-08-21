@@ -27,6 +27,7 @@ ln -s ~/projects/probreg/start.py probreg
 ln -s ~/projects/rst2html/rstviewer.py rstview
 ln -s ~/projects/doctree/start.py treedocs
 ln -s ~/projects/htmledit/viewhtml.py viewhtml
+ln -s ~/projects/xmledit/xmlviewer.py viewxml
 ln -s /usr/share/vim/vim82/macros/less.sh vless
 ln -s ~/projects/xmledit/xmleditor.py xmledit
 
