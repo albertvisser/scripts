@@ -16,7 +16,8 @@ def test_main(capsys):
     ""
     fname = '/tmp/test_xmlp.xml'
     target = '/tmp/test_xmlp_pretty.xml'
-    os.remove(target)
+    if os.path.exists(target):
+        os.remove(target)
     with open(fname, 'w') as f:
         print('<root><level1><level2>some_text</level2>'
               '<level2_too><level3 attr="x"/></level2_too></level1></root>', file=f)
