@@ -611,14 +611,3 @@ def search(c, find='', rebuild=False):
     if find:
         command += 'N -s ' + find
     c.run(command)
-
-def ensure_default(c, name):
-    """always start a tool in the "production" branch of the repo"""
-    # result = git branch
-    # if the active branch is not default:
-    #    try to switch to default
-    #    if not successful:
-    #       git stash or git commit
-    #    switch to default
-    # open tool
-    # is it possible to immediately switch back to the previous branch and apply the stash?
