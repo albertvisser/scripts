@@ -670,6 +670,20 @@ def test_search(monkeypatch, capsys):
                                        'afrift -m multi /tmp/filelist -e py -PN -s name\n')
 
 
+def test_runtests(monkeypatch, capsys):
+    monkeypatch.setattr(repo, 'check_and_run_for_project', mock_check_and_run)
+    c = MockContext()
+    with pytest.raises(TypeError) as exc:
+        repo.runtests(c)
+    assert str(exc.value) == "runtests() missing 1 required positional argument: 'name'"
+    repo.runtests(c, 'name')
+    assert capsys.readouterr().out == ("call check_and_run_for_project() with args"
+                                       " ('name', 'run_unittests ')\n")
+    repo.runtests(c, 'name', 'test')
+    assert capsys.readouterr().out == ("call check_and_run_for_project() with args ("
+                                       "'name', 'run_unittests test')\n")
+
+
 class MockWriter:
     def __init__(self, filename):
         print('create writer to file', filename)

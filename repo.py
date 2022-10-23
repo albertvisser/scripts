@@ -557,13 +557,13 @@ def check_and_run_for_project(c, name, command):
             print('you are not in a known project directory')
 
 
-@task
+@task(help={'name': 'repository name'})
 def dtree(c, name=''):
     "Open project docs using treedocs, forcing qt mode"
     check_and_run_for_project(c, name, '~/projects/doctree/ensure-qt projdocs.trd')
 
 
-@task
+@task(help={'name': 'repository name'})
 def qgit(c, name=''):
     "Open Git gui after changing to repository"
     check_and_run_for_project(c, name, 'qgit')
@@ -577,13 +577,13 @@ def mee_bezig(c):  # , name=''):
     c.run('treedocs ~/projects/projects.trd')
 
 
-@task
+@task(help={'name': 'repository name'})
 def preadme(c, name=''):
     "Open readme for project"
     check_and_run_for_project(c, name, 'pedit readme.rst')
 
 
-@task
+@task(help={'name': 'repository name'})
 def prshell(c, name=''):
     "Open terminal for project with geometry and profile"
     check_and_run_for_project(c, name, 'gnome-terminal --geometry=132x43+4+40')
@@ -602,7 +602,7 @@ def rebuild_filenamelist(c):
             print(line, file=out)
 
 
-@task
+@task(help={'find': 'text to find', 'rebuild': 'rebuild list of tracked files (default: False)'})
 def search(c, find='', rebuild=False):
     "search in all tracked python files in all repos"
     if not os.path.exists(FILELIST) or rebuild:
@@ -611,3 +611,9 @@ def search(c, find='', rebuild=False):
     if find:
         command += 'N -s ' + find
     c.run(command)
+
+
+@task(help={'name': 'repository name', 'test': 'run tests for specific module, ? to list values'})
+def runtests(c, name, test=''):
+    "run all registered unittests for a project"
+    check_and_run_for_project(c, name, 'run_unittests ' + test)
