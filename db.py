@@ -1,3 +1,5 @@
+"""Invoke tasks for managing databases
+"""
 import pathlib
 import datetime
 from invoke import task
@@ -37,15 +39,15 @@ def repair_mongo(c):
 def dump_mongo(c, names=''):
     "dump mongo database(s) to a specific location"
     date = datetime.datetime.today().strftime('%Y%m%d-%H%M%S')
-    path = pathlib.Path('~/mongodump/{}'.format(date))
+    path = pathlib.Path(f'~/mongodump/{date}')
     path.expanduser().mkdir(parents=True, exist_ok=True)
     if not names:
         # c.run('mongodump -o ~/mongodump/{}/'.format(date))
-        c.run('mongodump -o {}/'.format(path))
+        c.run(f'mongodump -o {path}/')
         return
     for name in names.split(','):
         # result = c.run('mongodump -d {} -o ~/mongodump/{}/'.format(name, date))
-        result = c.run('mongodump -d {} -o {}/'.format(name, path))
+        result = c.run(f'mongodump -d {name} -o {path}/')
 
 
 @task
@@ -53,13 +55,14 @@ def list_mongodumps(c):
     "list directories containing backups made using db.dump-mongo"
     c.run('ls ~/mongodump')
 
+
 @task
 def restore_mongo(c, dirname):
     "restore mongo database(s) from given directory (named like <EEjjmmdd-hhmmss>)"
     filepath = pathlib.Path(dirname)
     if str(filepath.parent) == '.':
         filepath = pathlib.Path('~/mongodump') / dirname
-    c.run('mongorestore {}'.format(filepath))
+    c.run(f'mongorestore {filepath}')
 
 
 @task
@@ -88,18 +91,20 @@ def dump_pg(c, names=''):
     "dump postgres database(s) to a specific location"
     timestamp = datetime.datetime.today().strftime('%Y%m%d:%H%M%S')
     date, time = timestamp.split(':', 1)
-    path = pathlib.Path('~/pgdump/{}'.format(date))
+    path = pathlib.Path(f'~/pgdump/{date}')
     path.expanduser().mkdir(parents=True, exist_ok=True)
     if not names:
-        c.run('pg_dumpall -f ~/pgdump/{}/all_{}.sql'.format(date, time))
+        c.run(f'pg_dumpall -f ~/pgdump/{date}/all_{time}.sql')
         return
     for name in names.split(','):
-        c.run('pg_dump {0} -f ~/pgdump/{1}/{0}_{2}.sql'.format(name, date, time))
+        c.run(f'pg_dump {name} -f ~/pgdump/{date}/{name}_{time}.sql')
+
 
 @task
 def list_pgdumps(c):
     "list backups made using db.dump-pg"
     c.run('ls -RU1 ~/pgdump')
+
 
 @task
 def restore_pg(c, filename):
@@ -111,7 +116,7 @@ def restore_pg(c, filename):
     if filepath.suffix != '.sql':
         print('filename should end in .sql')
     elif filepath.name.startswith('all'):
-        c.run("psql -f {} postgres".format(filepath))
+        c.run(f"psql -f {filepath} postgres")
     else:
         dbname = filepath.stem.split('_')[0]
-        c.run("psql {} < {}".format(dbname, filepath))
+        c.run(f"psql {dbname} < {filepath}")

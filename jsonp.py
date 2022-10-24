@@ -1,5 +1,4 @@
 #! /usr/bin/env python3
-
 """pretty-print json data in a given file
 
 saves a pretty-printed version instead of overwriting the original
@@ -12,14 +11,15 @@ INDENT = 2
 
 
 def main(args):
+    "do the thing"
     if len(args) != 2:
         print("usage: python(3) jsonp.py <filename>")
         return
     filename = args[1]
     outname = '_pretty'.join(os.path.splitext(filename))
-    with open(filename) as _in:
+    with open(filename, encoding='utf-8') as _in:
         data = json.load(_in)
-    with open(outname, "w") as _out:
+    with open(outname, "w", encoding='utf-8') as _out:
         json.dump(data, _out, indent=INDENT)
 
 

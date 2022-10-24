@@ -5,12 +5,12 @@ depending on the value of the "output" parameter, the resulting file is either s
 in the same directory as the original (with the addition "_sorted") or as the given filename
 added a line position other than the first to start sorting on
 """
-import sys
 import argparse
 import os
 
 
 def sort(fn, fnew, col):
+    "do the sorting and write back the result"
     with open(fn) as _in:
         regels = _in.readlines()
     if col:

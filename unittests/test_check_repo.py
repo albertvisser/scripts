@@ -877,22 +877,22 @@ class TestGui:
         test_obj.outtype = 'status'
         assert test_obj.get_repofiles() == ['hallo', 'daar', 'jongens']
         assert capsys.readouterr().out == ("run with args: (['hg', 'status'],)"
-                                           " {'stdout': -1, 'cwd': 'base'}\n")
+                                           " {'stdout': -1, 'cwd': 'base', 'check': False}\n")
         test_obj.repotype = 'git'
         test_obj.outtype = 'status'
         assert test_obj.get_repofiles() == ['hallo', 'daar', 'jongens']
         assert capsys.readouterr().out == ("run with args: (['git', 'status', '--short'],)"
-                                           " {'stdout': -1, 'cwd': 'base'}\n")
+                                           " {'stdout': -1, 'cwd': 'base', 'check': False}\n")
         test_obj.repotype = 'hg'
         test_obj.outtype = 'repolist'
         assert test_obj.get_repofiles() == ['hallo', 'daar', 'jongens']
         assert capsys.readouterr().out == ("run with args: (['hg', 'manifest'],)"
-                                           " {'stdout': -1, 'cwd': 'base'}\n")
+                                           " {'stdout': -1, 'cwd': 'base', 'check': False}\n")
         test_obj.repotype = 'git'
         test_obj.outtype = 'repolist'
         assert test_obj.get_repofiles() == ['hallo', 'daar', 'jongens']
         assert capsys.readouterr().out == ("run with args: (['git', 'ls-files'],)"
-                                           " {'stdout': -1, 'cwd': 'base'}\n")
+                                           " {'stdout': -1, 'cwd': 'base', 'check': False}\n")
 
     def test_populate_frame(self, monkeypatch, capsys):  #, testobj):
         def mock_setWindowTitle(self, *args):
@@ -1705,7 +1705,8 @@ class TestGui:
         monkeypatch.setattr(check_repo.subprocess, 'run', mock_sp_run)
         testobj.path = pathlib.Path('here')
         testobj.just_run(['command', 'list'])
-        assert capsys.readouterr().out == "run with args: (['command', 'list'],) {'cwd': 'here'}\n"
+        assert capsys.readouterr().out == ("run with args: (['command', 'list'],)"
+                                           " {'cwd': 'here', 'check': False}\n")
 
     def test_run_and_continue(self, monkeypatch, capsys, testobj):
         monkeypatch.setattr(check_repo.subprocess, 'Popen', mock_sp_run)
@@ -1729,12 +1730,12 @@ class TestGui:
         monkeypatch.setattr(check_repo.qtw.QMessageBox, 'warning', mock_warning)
         testobj.run_and_report(['command', 'list'])
         assert capsys.readouterr().out == ("run with args: (['command', 'list'],) {'stdout': -1,"
-                                           " 'stderr': -1, 'cwd': 'base'}\n"
+                                           " 'stderr': -1, 'cwd': 'base', 'check': False}\n"
                                            'display message `all\nwent\nwell`\n')
         monkeypatch.setattr(check_repo.subprocess, 'run', mock_run_err)
         testobj.run_and_report(['command', 'list'])
         assert capsys.readouterr().out == ("run with args: (['command', 'list'],) {'stdout': -1,"
-                                           " 'stderr': -1, 'cwd': 'base'}\n"
+                                           " 'stderr': -1, 'cwd': 'base', 'check': False}\n"
                                            'display warning `got\nan\nerror`\n')
 
     def test_run_and_capture(self, monkeypatch, capsys, testobj):
@@ -1747,8 +1748,8 @@ class TestGui:
         monkeypatch.setattr(check_repo.subprocess, 'run', mock_run)
         assert testobj.run_and_capture(['command', 'list']) == (['all', 'went', 'well'], [])
         assert capsys.readouterr().out == ("run with args: (['command', 'list'],) {'stdout': -1,"
-                                           " 'stderr': -1, 'cwd': 'base'}\n")
+                                           " 'stderr': -1, 'cwd': 'base', 'check': False}\n")
         monkeypatch.setattr(check_repo.subprocess, 'run', mock_run_err)
         assert testobj.run_and_capture(['command', 'list']) == ([], ['got', 'an', 'error'])
         assert capsys.readouterr().out == ("run with args: (['command', 'list'],) {'stdout': -1,"
-                                           " 'stderr': -1, 'cwd': 'base'}\n")
+                                           " 'stderr': -1, 'cwd': 'base', 'check': False}\n")

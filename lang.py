@@ -54,15 +54,14 @@ def init(c, project, language, check=False):
                 os.mkdir(langpath)
             os.mkdir(os.path.join(langpath, 'LC_MESSAGES'))
             mld += ' initialized'
-        mld += ' for language type `{}`'.format(lang)
+        mld += f' for language type `{lang}`'
         print(mld)
 
 
 def uses_gettext(filename):
-    # TODO: kijken of het py file gettext importeert (zo nee dan heeft de rest geen zin)
-    # quick-n-dirty test if gettext is used
+    "determine if a project has gettext support"
     use_gettext = False
-    with open(filename) as f:
+    with open(filename) as f:  # TODO: vervangen door nette test met importlib en inspect?
         for line in f:
             if 'import' in line and 'gettext' in line:
                 use_gettext = True
@@ -87,20 +86,20 @@ def gettext(c, project, source):
         if not suffix:
             source += '.py'
         elif suffix != '.py':
-            print('{} is not a python source file'.format(source))
+            print(f'{source} is not a python source file')
             return
         if not uses_gettext(source):
-            print('{} does not import gettext'.format(source))
+            print(f'{source} does not import gettext')
             return
     with c.cd(base):
-        c.run("pygettext {}".format(source))
+        c.run(f"pygettext {source}")
         if source == '.':
             source = 'all'
         else:
             source = source.replace('.', '-').replace('/', '-')
-        outfile = 'locale/messages-{}.pot'.format(source)
-        c.run('mv messages.pot {}'.format(outfile))
-        print('created {}'.format(outfile))
+        outfile = f'locale/messages-{source}.pot'
+        c.run(f'mv messages.pot {outfile}')
+        print(f'created {outfile}')
         print('remember that detection only works in modules that import gettext')
 
 
@@ -119,9 +118,9 @@ def merge(c, project, language, source):
     else:
         source = source.replace('.', '-').replace('/', '-')
     with c.cd(os.path.join(base, 'locale')):
-        langfile = "{}.po".format(language)
-        catfile = 'messages-{}.pot'.format(source)
-        c.run('msgmerge -U {} {}'.format(langfile, catfile))
+        langfile = f"{language}.po"
+        catfile = f'messages-{source}.pot'
+        c.run(f'msgmerge -U {langfile} {catfile}')
         print('merged.')
 
 
@@ -136,7 +135,7 @@ def poedit(c, project, language):
     if not base:
         print('unknown project')
         return
-    fnaam = os.path.join('locale', "{}.po".format(language))
+    fnaam = os.path.join('locale', f"{language}.po")
     command = 'poedit'
     if os.path.exists(os.path.join(base, fnaam)):
         command = ' '.join((command, fnaam))
@@ -148,7 +147,7 @@ def poedit(c, project, language):
             'language': 'designates language to create translation for',
             'appname': 'application name if different from project name, otherwise use "*"'})
 def place(c, project, language, appname):
-    """copy translation(s) into <appname> (* = equal to project, ! = project starting with cap letter)
+    """copy translation(s) into <appname> (* = equal to project, ! = project starting with capital)
 
     plaats het gecompileerde language file zodat het gebruikt kan worden
     """
@@ -170,6 +169,6 @@ def place(c, project, language, appname):
         if os.path.splitext(name)[1] == '.mo':
             toname = os.path.join(loc, name)
             break
-    command = 'msgfmt {} -o {}'.format(fromname, toname)
+    command = f'msgfmt {fromname} -o {toname}'
     with c.cd(os.path.join(base, 'locale')):
         c.run(command)

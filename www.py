@@ -1,13 +1,16 @@
+"""Invoke tasks for managing html stuff in webserver directory
+"""
 import os
 import datetime
 from invoke import task
 from settings import home_root, server_root, apache_root, webapps
 
+
 @task(help={'names': 'comma separated list of filenames'})
 def copy(c, names):
     "copy indicated file(s) from home_root to server_root"
     for name in names.split(','):
-        c.run('sudo cp {1}/{0} {2}/{0}'.format(name, home_root, server_root))
+        c.run(f'sudo cp {home_root}/{name} {server_root}/{name}')
 
 
 @task(help={'names': 'comma separated list of filenames'})
@@ -15,7 +18,7 @@ def link(c, names):
     "copy indicated symlink(s) from ~/www/nginx-root to real nginx root"
     for name in names.split(','):
         dest = os.readlink(os.path.join(home_root, name))
-        c.run('sudo ln -s {} {}'.format(dest, server_root))
+        c.run(f'sudo ln -s {dest} {server_root}')
 
 
 @task(help={'names': 'comma separated list of filenames'})
@@ -23,7 +26,7 @@ def edit(c, names):
     "edit indicated file(s) in ~/www/nginx-root"
     for name in names.split(','):
         ## local('scite {}/{}'.format(home_root, name))
-        c.run('htmledit {}/{}'.format(home_root, name))
+        c.run(f'htmledit {home_root}/{name}')
 
 
 @task
@@ -37,23 +40,23 @@ def update_sites(c):
 @task
 def list(c):
     "list files in default nginx root"
-    c.run('ls -l {}'.format(server_root))
+    c.run(f'ls -l {server_root}')
 
 
 @task
 def list_apache(c):
     "list files in default apache root"
-    c.run('ls -l {}'.format(apache_root))
+    c.run(f'ls -l {apache_root}')
 
 
 @task(help={'names': 'comma separated list of filenames'})
 def edit_apache(c, names):
     "edit indicated file in apache root as-if edited directly"
     for name in names.split(','):
-        c.run('cp {1}/{0} /tmp/{0}'.format(name, apache_root))
+        c.run(f'cp {apache_root}/{name} /tmp/{name}')
         ## get('{1}/{0} /tmp'.format(name, apache_root))
-        c.run('pedit /tmp/{0}'.format(name))
-        c.run('sudo cp /tmp/{0} {1}/{0}'.format(name, apache_root))
+        c.run(f'pedit /tmp/{name}')
+        c.run(f'sudo cp /tmp/{name} {apache_root}/{name}')
         ## put('/tmp/{0} {1}'.format(name, apache_root), use_sudo=True)
 
 
@@ -66,13 +69,13 @@ def permits(c, name, do_files=False):
     for file in os.listdir(path):
         fullname = os.path.join(path, file)
         if os.path.isfile(fullname) and do_files:
-            rc = c.run('chmod 644 {}'.format(fullname))
+            rc = c.run(f'chmod 644 {fullname}')
             if rc.failed:
-                print('chmod failed on file {}'.format(fullname))
+                print(f'chmod failed on file {fullname}')
         elif os.path.isdir(fullname):
-            rc = c.run('chmod 755 {}'.format(fullname))
+            rc = c.run(f'chmod 755 {fullname}')
             if rc.failed:
-                print('chmod failed on directory {}'.format(fullname))
+                print(f'chmod failed on directory {fullname}')
             else:
                 permits(c, fullname)
 
@@ -95,7 +98,7 @@ def stage(c, sitename, new_only=False, filename='', list_only=False):
         root = os.path.expanduser(os.path.join('~', 'projects', 'rst2html', 'rst2html-data',
                                                sitename))
     if not os.path.exists(root):
-        print('no existing mirror location found for `{}`'.format(sitename))
+        print(f'no existing mirror location found for `{sitename}`')
         return
     with c.cd(root):
         result = c.run('hg st', hide='out', warn=True)
@@ -125,7 +128,7 @@ def stage(c, sitename, new_only=False, filename='', list_only=False):
     if list_only:
         for item in files:
             print(item)
-        print('\n{} files to be staged'.format(len(files)))
+        print(f'\n{len(files)} files to be staged')
         return
 
     # kopieer naar staging locatie
@@ -134,17 +137,17 @@ def stage(c, sitename, new_only=False, filename='', list_only=False):
         if not os.path.exists(dest):
             os.makedirs(os.path.dirname(dest), exist_ok=True)
         with c.cd(root):
-            result = c.run('cp {0} .staging/{0}'.format(item))
-    print('{} files staged'.format(len(files)))
+            result = c.run(f'cp {item} .staging/{item}')
+    print(f'{len(files)} files staged')
 
     # commit de gestagede files zodat ze niet nog een keer geselecteerd worden
     with c.cd(root):
         if filename:
-            c.run('hg add {}'.format(filename))
+            c.run(f'hg add {filename}')
         elif new_only:
-            c.run('hg add {}'.format(' '.join(newfiles)))
+            c.run(f'hg add {" ".join(newfiles)}')
         now = datetime.datetime.today().strftime('%d-%m-%Y %H:%M')
-        c.run('hg ci -m "staged on {}"'.format(now))
+        c.run(f'hg ci -m "staged on {now}"')
 
 
 @task(help={'name': 'name of webapp to start'})
@@ -154,12 +157,13 @@ def startapp(c, name):
         print('unknown webapp')
         return
     test = name if webapps[name]['start_server'] == '=' else webapps[name]['start_server']
-    if webapps[name]['start_server'] and not os.path.exists('/tmp/server-{}-ok'.format(test)):
-        c.run('fabsrv server.start -n {}'.format(test))
+    if webapps[name]['start_server'] and not os.path.exists(f'/tmp/server-{test}-ok'):
+        c.run(f'fabsrv server.start -n {test}')
     if 'appid' in webapps[name]:
         # nieuwe api
         c.run('/home/albert/.local/share/vivaldi-snapshot/vivaldi-snapshot'
-              ' --profile-directory=Default --app-id={}'.format(webapps[name]['appid']))
+              f' --profile-directory=Default --app-id={webapps[name]["appid"]}')
     else:
-        c.run('vivaldi-snapshot --app=http://{0} --class=WebApp-{1} --user-data-dir=/home/albert/'
-              '.local/share/ice/profiles/{1}'.format(webapps[name]['adr'], webapps[name]['profile']))
+        c.run(f'vivaldi-snapshot --app=http://{webapps[name]["adr"]}'
+              f' --class=WebApp-{webapps[name]["profile"]} --user-data-dir=/home/albert/'
+              f'.local/share/ice/profiles/{webapps[name]["profile"]}')

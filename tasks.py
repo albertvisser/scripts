@@ -17,18 +17,19 @@ HERE = os.path.expanduser('~/bin')
 SCITELOC = os.path.expanduser('~/Downloads/SciTE/scite{}.tgz')
 GSCITELOC = os.path.expanduser('~/Downloads/SciTE/gscite{}.tgz')
 
+
 @task(help={'version': 'Version of sciTE to install'})
 def install_scite(c, version):
     """upgrade SciTE. argument: version number as used in filename
     """
     filename = GSCITELOC.format(version)
     if not os.path.exists(filename):
-        print('{} does not exist'.format(filename))
+        print(f'{filename} does not exist')
         return
     # with settings(hide('running', 'warnings'), warn_only=True):
-    result = c.run('tar -zxf {}'.format(filename))
+    result = c.run(f'tar -zxf {filename}')
     if result.failed:
-        result = c.run('tar -xf {}'.format(filename))
+        result = c.run(f'tar -xf {filename}')
     c.run('sudo cp gscite/SciTE /usr/bin')
     c.run('sudo cp gscite/*.properties /etc/scite')  # /usr/share/scite')
     c.run('sudo cp gscite/*.html /usr/share/scite')
@@ -45,15 +46,15 @@ def build_scite(c, version):
     """
     filename = SCITELOC.format(version)
     if not os.path.exists(filename):
-        print('{} does not exist'.format(filename))
+        print(f'{filename} does not exist')
         return
     logfile = '/tmp/scite_build.log'
     with open(logfile, 'w') as _out:
         with c.cd('/tmp'):
-            result = c.run('tar -zxf {}'.format(filename))
+            result = c.run(f'tar -zxf {filename}')
             # looks like he's not gzipping anymore, if so then try again
             if result.failed:
-                c.run('tar -xf {}'.format(filename))
+                c.run(f'tar -xf {filename}')
         with c.cd('/tmp/scintilla/gtk'):
             result = c.run('make')
         _out.write(result.stdout + "\n")
@@ -74,10 +75,9 @@ def build_scite(c, version):
                     if result.failed:
                         err = 'make install failed'
                         _out.write(result.stderr + "\n")
-    if err:
-        print('{}, see {}'.format(err, logfile))
-    else:
-        print('ready, see {}'.format(logfile))
+    if not err:
+        err = 'ready'
+    print(f'{err}, see {logfile}')
 
 
 @task(help={'names': 'list of files containing the files to backup'})
@@ -98,18 +98,17 @@ def arcstuff(c, names):
         files = []
         for name in names.split(','):
             hlp = '_' + name if name else ''
-            fname = 'arcstuff{}.conf'.format(hlp)
+            fname = f'arcstuff{hlp}.conf'
             if not os.path.exists(fname):
-                raise ValueError('abort: no config file for {} '
-                                 '({} does not exist)'.format(name, fname))
+                raise ValueError(f'abort: no config file for {name} ({fname} does not exist)')
             files.append(fname)
     for indx, infile in enumerate(files):
         name = 'all' if not names[indx] else names[indx]
         dts = datetime.datetime.today().strftime('%Y%m%d%H%M%S')
-        outfile = os.path.expanduser('~/arcstuff/{}_{}.tar.gz'.format(name, dts))
+        outfile = os.path.expanduser(f'~/arcstuff/{name}_{dts}.tar.gz')
         with open(infile) as f_in:
             ## first = True
-            command = 'tar -czvf {}'.format(outfile)
+            command = f'tar -czvf {outfile}'
             prepend = ''
             for line in f_in:
                 line = line.strip()
@@ -124,7 +123,7 @@ def arcstuff(c, names):
                 except ValueError:
                     pass
                 path = os.path.join(prepend, line) if prepend else line
-                command = '{} {}'.format(command, path.strip())
+                command = f'{command} {path.strip()}'
         c.run(command)
 
 
@@ -167,6 +166,7 @@ def create_bin_shortcuts(c):
     os.chdir(HERE)
     for dst, src in settings.symlinks_bin:
         os.symlink(src, dst)
+
 
 ns = Collection()
 ns.add_collection(session)

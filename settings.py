@@ -1,6 +1,7 @@
 """settings for fabfile
 """
 import os.path
+import pathlib
 # server data locations
 server_root = '/usr/share/nginx/html'
 home_root = os.path.expanduser('~/www/nginx-root')
@@ -25,7 +26,7 @@ bb_repos = django_repos + cherrypy_repos + non_web_repos + fcgi_repos
 sf_repos = ['apropos']
 git_repos = ['mylinter'] + bb_repos
 non_bb_repos = []  # non_deploy_repos
-all_repos = git_repos + [x for x in private_repos] + non_bb_repos
+all_repos = git_repos + list(private_repos) + non_bb_repos
 frozen_repos = fcgi_repos + [cherrypy_repos[-1], django_repos[-1]]
 DO_NOT_LINT = fcgi_repos + non_deploy_repos  # + private_repos
 
@@ -72,7 +73,7 @@ vhooks_items = ({'name': 'browser.html', 'is_dir': False, 'backup': True},
 webapps = {'cgit': {'appid': 'aihbdennncljibneldlcadheboalahee', 'start_server': False},
            'gitweb': {'appid': 'nhlpkodndoiadgldeanohldkpfoeahan', 'start_server': False}}
 
-symlinks_bin = (('a-propos''/home/albert/projects/apropos/apo_start.py'),
+symlinks_bin = (('a-propos', '/home/albert/projects/apropos/apo_start.py'),
                 ('afrift', '/home/albert/projects/filefindr/start.py'),
                 ('albums', '/home/albert/projects/albumsgui/start.py'),
                 ('albumsgui', '/home/albert/projects/albumsgui/start_gui.py'),
@@ -106,14 +107,17 @@ def get_project_root(name, context='local'):
     is_private = name in private_repos
     is_private_value = name in private_repos.values()
     if is_private_value:
-        value = name
-        for name in private_repos:
-            if private_repos[name] == value:
+        # value = name
+        # for name in private_repos:
+        #     if private_repos[name] == value:
+        #         is_private = True
+        #         break
+        for value in private_repos.values():
+            if value == name:
                 is_private = True
                 break
     git_repo = name in git_repos
     sf_repo = name in sf_repos
-    import pathlib
     root = pathlib.Path(PROJECTS_BASE)
     if context == 'local':
         if is_private:
@@ -134,8 +138,9 @@ def get_project_root(name, context='local'):
 def get_project_dir(name):
     "private repos don't live in PROJECTS_BASE"
     base = get_project_root(name)
-    if name in private_repos:
-        name = private_repos[name]
+    # if name in private_repos:
+    #     name = private_repos[name]
+    name = private_repos.get(name, name)
     test = os.path.join(base, name)
     if os.path.exists(test):
         return test

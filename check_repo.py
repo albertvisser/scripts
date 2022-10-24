@@ -134,7 +134,7 @@ class Gui(qtw.QWidget):
         project = path.stem
         self.app = qtw.QApplication(sys.argv)
         super().__init__()
-        self.title = 'Uncommitted changes for `{}`'.format(project)
+        self.title = f'Uncommitted changes for `{project}`'
         self.setup_visual()
 
         # start assuming Meld is present
@@ -177,7 +177,7 @@ class Gui(qtw.QWidget):
         hbox.addWidget(btn)
 
         hbox.addStretch()
-        btn = qtw.QPushButton(gui.QIcon.fromTheme('document-multiple') , 'Open Extrn', self)
+        btn = qtw.QPushButton(gui.QIcon.fromTheme('document-multiple'), 'Open Extrn', self)
         # btn = qtw.QPushButton('&Open Docs', self)
         btn.setToolTip(tooltips['docs'])
         menu = qtw.QMenu()
@@ -199,7 +199,7 @@ class Gui(qtw.QWidget):
         hbox.addWidget(self.list)
 
         vbox2 = qtw.QVBoxLayout()
-        #vbox2.addSpacing(10)
+        # vbox2.addSpacing(10)
         hbox2 = qtw.QHBoxLayout()
         hbox2.addWidget(qtw.QLabel('Show:', self))
         self.cb_list = qtw.QComboBox(self)
@@ -299,7 +299,7 @@ class Gui(qtw.QWidget):
                 command.append('--short')
         elif self.outtype == 'repolist':
             command = {'hg': ['hg', 'manifest'], 'git': ['git', 'ls-files']}[self.repotype]
-        result = subprocess.run(command, stdout=subprocess.PIPE, cwd=str(self.path))
+        result = subprocess.run(command, stdout=subprocess.PIPE, cwd=str(self.path), check=False)
         return [x for x in str(result.stdout, encoding='utf-8').split('\n') if x]
 
     def populate_frame(self):
@@ -420,7 +420,7 @@ class Gui(qtw.QWidget):
             qtw.QMessageBox.information(self, self.title, 'Only implemented for git repos')
             return
         message = self.run_and_capture(['git', 'log', '-1', '--pretty=format:%s'])[0][0]
-        self.dialog_data = None
+        self.dialog_data = None, None
         if CheckTextDialog(self, self.title, message).exec_() != qtw.QDialog.Accepted:
             return
         add_files, commit_message = self.dialog_data
@@ -536,8 +536,7 @@ class Gui(qtw.QWidget):
             qtw.QMessageBox.information(self, self.title,
                                         'Select a branch different from the current one first')
             return
-        ok = qtw.QMessageBox.question(self, self.title,
-                                      'Merge {} into {}?'.format(branch_name, current))
+        ok = qtw.QMessageBox.question(self, self.title, f'Merge {branch_name} into {current}?')
         if ok == qtw.QMessageBox.Yes:
             self.run_and_report(['git', 'merge', branch_name])
             # self.update_branches()
@@ -599,7 +598,7 @@ class Gui(qtw.QWidget):
         "open project notities (a-propos bestandje)"
         # self.run_and_continue(['binfab', 'repo.mee-bezig'])
         name = self.path.resolve().name.title()
-        self.run_and_continue(['a-propos', '-n', 'Mee Bezig ({})'.format(name), '-f', 'mee-bezig'])
+        self.run_and_continue(['a-propos', '-n', f'Mee Bezig ({name})', '-f', 'mee-bezig'])
 
     def open_docs(self):
         "open project documentatie (treedocs bestandje)"
@@ -607,7 +606,7 @@ class Gui(qtw.QWidget):
             where = os.getcwd()
         else:
             where = settings.get_project_dir(sys.argv[1])
-        self.run_and_continue(['treedocs', '{}/projdocs.trd'.format(where)])
+        self.run_and_continue(['treedocs', f'{where}/projdocs.trd'])
 
     def open_cgit(self):
         "open CGit server in standalone browser app)"
@@ -618,12 +617,13 @@ class Gui(qtw.QWidget):
         self.run_and_continue(['binfab', 'www.startapp', 'gitweb'])
 
     def find_current_branch(self):
-        out, err = self.run_and_capture(['git', 'branch'])
+        "determine the branch we're currently on"
+        out = self.run_and_capture(['git', 'branch'])[0]
         return [x[2:] for x in out if x.startswith('* ')][0].strip().split()[-1]
 
     def just_run(self, command_list):
         "shortcut for call to subprocess (no interest in result"
-        subprocess.run(command_list, cwd=str(self.path))
+        subprocess.run(command_list, cwd=str(self.path), check=False)
 
     def run_and_continue(self, command_list):
         "shortcut for call to subprocess (don't wait for completion)"
@@ -632,7 +632,7 @@ class Gui(qtw.QWidget):
     def run_and_report(self, command_list):
         "shortcut for call to subprocess (reports results from stdout and stderr)"
         result = subprocess.run(command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                cwd=str(self.path))
+                                cwd=str(self.path), check=False)
         if result.stdout is not None:
             text = str(result.stdout, encoding='utf-8').strip('\n')
             if text:
@@ -645,7 +645,7 @@ class Gui(qtw.QWidget):
     def run_and_capture(self, command_list):
         "shortcut for call to subprocess (returns stdout and stderr as lists)"
         result = subprocess.run(command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                cwd=str(self.path))
+                                cwd=str(self.path), check=False)
         ret1, ret2 = [], []
         if result.stdout is not None:
             ret1 = [x for x in str(result.stdout, encoding='utf-8').split('\n') if x]
@@ -682,11 +682,13 @@ def startapp(args):
 
 
 def main():
+    "parse arguments and go"
     parser = argparse.ArgumentParser()
     parser.add_argument('project', help="name of a software project", nargs='?', default="")
     results = startapp(parser.parse_args())
     if results:
         print(results)
+
 
 if __name__ == '__main__':
     main()

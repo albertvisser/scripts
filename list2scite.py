@@ -6,11 +6,12 @@ import subprocess
 
 
 def main(fname):
+    "do it"
     cmd = ['SciTE']
     with open(fname) as f_in:
         for line in f_in:
             cmd.append(line.strip())
-    subprocess.run(cmd)
+    subprocess.run(cmd, check=False)
 
 
 if __name__ == '__main__':

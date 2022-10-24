@@ -438,9 +438,9 @@ def test_repo_overzicht(monkeypatch, capsys):
     c = MockContext()
     monkeypatch.setattr(repo.os, 'listdir', lambda x: ['oink'])
     monkeypatch.setattr(repo.os.path, 'isdir', lambda x: False)
-    assert repo.repo_overzicht(c, 'name', 'path/to/repo', 'txt') is None
+    assert repo.repo_overzicht(c, 'name', 'path/to/repo', 'txt') == ''
     monkeypatch.setattr(repo.os.path, 'isdir', lambda x: True)
-    assert repo.repo_overzicht(c, 'name', 'path/to/repo', 'txt') is None
+    assert repo.repo_overzicht(c, 'name', 'path/to/repo', 'txt') == ''
     # assert capsys.readouterr().out == ""
     monkeypatch.setattr(repo.os, 'listdir', lambda x: ['.hg'])
     assert repo.repo_overzicht(c, 'name', 'path/to/repo', 'txt') == 'path/to/.overzicht'

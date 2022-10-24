@@ -68,7 +68,7 @@ class Check:
         outfile = REPOCHG if self.context == 'remote' else LOCALCHG
         changes = False
         with open(outfile, 'w') as _out:
-            _out.write('check {} repos on {}\n\n'.format(self.context, TODAY))
+            _out.write(f'check {self.context} repos on {TODAY}\n\n')
             for name in all_repos:
                 if name in self.exclude:
                     continue
@@ -87,9 +87,9 @@ class Check:
                 if writestuff:
                     _out.write(writestuff)
                 if stats:
-                    print(' and '.join(stats) + ' for {}'.format(name))
+                    print(' and '.join(stats) + f' for {name}')
                 elif self.verbose:
-                    print('no changes for {}'.format(name))
+                    print(f'no changes for {name}')
                 if uncommitted or outgoing:
                     changes = True
                 if outgoing and self.push:
@@ -98,7 +98,7 @@ class Check:
                         _out.write(writestuff)
         print()
         if changes:
-            print('for details see {}'.format(outfile))
+            print(f'for details see {outfile}')
         else:
             print('no change details')
         return changes
@@ -131,9 +131,9 @@ class Check:
         test = result.stdout
         if test.strip():
             uncommitted = True
-            on_branch = ' (on branch {})'.format(not_on_master) if not_on_master else ''
+            on_branch = f' (on branch {not_on_master})' if not_on_master else ''
             stats_append = 'uncommitted changes' + on_branch
-            writestuff = '\nuncommitted changes in {}{}\n'.format(pwd, on_branch)
+            writestuff = f'\nuncommitted changes in {pwd}{on_branch}\n'
             writestuff += test + '\n'
         else:
             stats_append, writestuff = '', ''
@@ -148,10 +148,10 @@ class Check:
         if not_hg:
             command = 'git log origin/master..master'
         elif self.context == 'remote':
-            tmpfile = os.path.join('/tmp', '{}_tip'.format(name))
+            tmpfile = os.path.join('/tmp', f'{name}_tip')
             tipfile = self.get_tipfilename(root, name)
             if not os.path.exists(tipfile):
-                command = 'touch {}'.format(tipfile)
+                command = f'touch {tipfile}'
                 self.c.run(command)
             command = 'hg tip'
             use_tipfile = True
@@ -159,7 +159,7 @@ class Check:
             command = 'hg outgoing'
         if use_tipfile:
             with self.c.cd(pwd):
-                self.c.run('{} > {}'.format(command, tmpfile))
+                self.c.run(f'{command} > {tmpfile}')
             with open(tmpfile) as _in1, open(tipfile) as _in2:
                 buf1 = _in1.read()
                 buf2 = _in2.read()
@@ -174,7 +174,7 @@ class Check:
                     outgoing = result.ok
         if outgoing:
             stats_append = 'outgoing changes'
-            writestuff = 'outgoing changes for {}\n'.format(name)
+            writestuff = f'outgoing changes for {name}\n'
             if use_tipfile:
                 writestuff += "-- local:\n"
                 writestuff += buf1 + "\n"
@@ -192,7 +192,7 @@ class Check:
         not_hg = self.is_gitrepo or self.is_private
         if not_hg:
             ref = '-u' if self.context == 'remote' else ''
-            command = 'git push {} origin master'.format(ref)
+            command = f'git push {ref} origin master'
         else:
             command = 'hg push'
         with self.c.cd(pwd):
@@ -203,7 +203,7 @@ class Check:
                 if self.context == 'remote':
                     command = 'hg tip'
                     with self.c.cd(pwd):
-                        self.c.run('{} > {}'.format(command, self.get_tipfilename(root, name)))
+                        self.c.run(f'{command} > {self.get_tipfilename(root, name)}')
                 else:
                     command = 'hg up'
                     with self.c.cd(pwd):
@@ -230,7 +230,7 @@ class Check:
     def get_tipfilename(self, root, name):
         """construct the name of the file we use to check if we need to push to remote
         (only for mercurial)"""
-        return os.path.join(root, '{}_tip'.format(name))
+        return os.path.join(root, f'{name}_tip')
 
 
 @task
@@ -247,7 +247,7 @@ def check_local(c):  # , dry_run=False):
 def check_local_changes(c):
     "view output of check_local command"
     with c.cd('~/projects'):
-        c.run('gnome-terminal --geometry=100x40 -- view {}'.format(LOCALCHG))
+        c.run(f'gnome-terminal --geometry=100x40 -- view {LOCALCHG}')
 
 
 @task
@@ -302,7 +302,7 @@ def pushthru(c, names):
                 with open(fname) as _in:
                     for line in _in:
                         _out.write(line)
-        print('\nready, output in', P2ULOG )
+        print('\nready, output in', P2ULOG)
         return
     print('niet uitgevoerd, moet herschreven worden o.a. naar gebruik van git')
     return
@@ -311,7 +311,7 @@ def pushthru(c, names):
         for name in names.split(','):
             if name not in all_repos:
                 # logline = '{} not pushed: is not on bitbucket'.format(name)
-                logline = '{} not pushed: is not registered as a remote repo'.format(name)
+                logline = f'{name} not pushed: is not registered as a remote repo'
                 print(logline)
                 _out.write(logline + "\n")
                 errors = True
@@ -337,7 +337,7 @@ def pushthru(c, names):
             _out.write(result.stdout + "\n")
             if result.failed:
                 # logline = '{} - hg outgoing failed'.format(name)
-                logline = '{} - git outgoing check failed'.format(name)
+                logline = f'{name} - git outgoing check failed'
                 _out.write(logline + "\n")
                 _out.write(result.stderr + "\n")
                 errors = True
@@ -347,7 +347,7 @@ def pushthru(c, names):
                     result = c.run('git push', warn=True, hide=True)
                 _out.write(result.stdout + "\n")
                 if result.failed:
-                    logline = '{} - pushing failed'.format(name)
+                    logline = f'{name} - pushing failed'
                     _out.write(logline + "\n")
                     _out.write(result.stderr + "\n")
                     errors = True
@@ -358,12 +358,12 @@ def pushthru(c, names):
             _out.write(result.stdout + "\n")
             if result.failed:
                 # logline = '{} - pushing to bitbucket failed'.format(name)
-                logline = '{} - pushing to github failed'.format(name)
+                logline = f'{name} - pushing to github failed'
                 _out.write(logline + "\n")
                 _out.write(result.stderr + "\n")
                 errors = True
     extra = ' with errors' if errors else ''
-    print('ready{}, output in {}'.format(extra, P2ULOG))
+    print(f'ready{extra}, output in {P2ULOG}')
 
 
 @task(help={'names': 'comma separated list of repostories to list',
@@ -383,13 +383,13 @@ def overview(c, names=None, outtype=''):
     # root = get_project_root('git')  # '/home/albert/git_repos'
     # root = get_project_root('local')  # '/home/albert/projects'
     if not names:
-        names = [x for x in os.listdir(root)]
+        names = list(os.listdir(root))
     else:
         names = names.split(',')
     for item in names:
         path = os.path.join(root, item)
         outdir = repo_overzicht(c, item, path, outtype)
-    print('output in {}'.format(outdir))  # os.path.join(os.path.dirname(path), ".overzicht")))
+    print(f'output in {outdir}')  # os.path.join(os.path.dirname(path), ".overzicht")))
 
 
 def repo_overzicht(c, name, path, outtype):
@@ -398,7 +398,7 @@ def repo_overzicht(c, name, path, outtype):
     """
     repotype = ''
     if not os.path.isdir(path):
-        return
+        return ''
     if '.hg' in os.listdir(path):
         outdict = make_repolist_hg(c, path)
         repotype = 'hg'
@@ -406,13 +406,13 @@ def repo_overzicht(c, name, path, outtype):
         outdict = make_repolist_git(c, path)
         repotype = 'git'
     else:
-        return
+        return ''
     outdir = os.path.join(os.path.dirname(path), ".overzicht")
     if outtype == 'txt':
-        outfile = os.path.join(outdir, "{}_repo.ovz".format(name))
+        outfile = os.path.join(outdir, f"{name}_repo.ovz")
         make_repo_ovz(outdict, outfile)
     elif outtype == 'csv':
-        outfile = os.path.join(outdir, "{}_repo.csv".format(name))
+        outfile = os.path.join(outdir, f"{name}_repo.csv")
         make_repocsv(outdict, outfile)
     return outdir
 
@@ -460,7 +460,7 @@ def make_repolist_git(c, path):
         result = c.run('git log --pretty="%h; %ad; %s" --stat', hide=True)
         data = result.stdout
     outdict = collections.defaultdict(dict)
-    key = ''
+    key, date, desc, files = '', '', '', []
     for line in data.split('\n'):
         line = line.strip()
         if ';' in line:
@@ -491,7 +491,7 @@ def make_repo_ovz(outdict, outfile):
             _out.write('{}: {}\n'.format(outdict[key]['date'], '\n'.join(outdict[key]['desc'])))
             try:
                 for item in outdict[key]['files']:
-                    _out.write('    {}\n'.format(item))
+                    _out.write(f'    {item}\n')
             except KeyError:
                 pass
 
@@ -512,7 +512,7 @@ def make_repocsv(outdict, outfile):
         date_headers.append(outdict[key]['date'])
         desc = "\n".join(outdict[key]['desc'])
         if ',' in desc or ';' in desc:
-            desc = '"{}"'.format(desc)
+            desc = f'"{desc}"'
         desc_headers.append(desc)
         try:
             filelist = outdict[key]['files']
@@ -535,7 +535,7 @@ def make_repocsv(outdict, outfile):
 def add2gitweb(c, name, frozen=False):
     "make a repository visible with gitweb"
     loc = '/.frozen' if frozen else ''
-    c.run('sudo ln -s ~/git_repos{0}/{1}/.git /var/lib/git/{1}.git'.format(loc, name))
+    c.run(f'sudo ln -s ~/git_repos{loc}/{name}/.git /var/lib/git/{name}.git')
 
 
 def check_and_run_for_project(c, name, command):
@@ -546,7 +546,7 @@ def check_and_run_for_project(c, name, command):
             with c.cd(where):
                 c.run(command)
         else:
-            print('{} is not a known project'.format(name))
+            print(f'{name} is not a known project')
     else:
         where = os.getcwd()
         name = os.path.basename(where)
@@ -607,7 +607,7 @@ def search(c, find='', rebuild=False):
     "search in all tracked python files in all repos"
     if not os.path.exists(FILELIST) or rebuild:
         rebuild_filenamelist(c)
-    command = 'afrift -m multi {} -e py -P'.format(FILELIST)
+    command = f'afrift -m multi {FILELIST} -e py -P'
     if find:
         command += 'N -s ' + find
     c.run(command)

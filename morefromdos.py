@@ -28,6 +28,7 @@ def fromdos(path, cmp_ext='.py'):
 
 
 def main(args):
+    "read args and execute"
     if len(args) == 1:
         result = fromdos(os.getcwd())
     elif len(args) == 2:

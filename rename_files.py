@@ -22,5 +22,6 @@ def main(temp_file):
         newpath = root / ', '.join((last, first))
         path.rename(newpath)
 
+
 if __name__ == '__main__':
     main(sys.argv[1])

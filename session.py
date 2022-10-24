@@ -9,7 +9,7 @@ from settings import PROJECTS_BASE, SESSIONS, DEVEL, get_project_dir  # , privat
 
 def get_project_name(ticket):
     "find_project_by_ticket(number)"
-    hgrc = os.path.join(DEVEL, '_{}'.format(ticket), '.hg', 'hgrc')
+    hgrc = os.path.join(DEVEL, f'_{ticket}', '.hg', 'hgrc')
     conf = configparser.ConfigParser()
     conf.read(hgrc)
     return os.path.basename(conf['paths']['default'])
@@ -42,7 +42,7 @@ def start(c, name):
     expects a session script of the same name in .sessions (subdirectory for now)
     """
     fname = os.path.join(SESSIONS, name)
-    c.run('/bin/sh {}'.format(fname))
+    c.run(f'/bin/sh {fname}')
 
 
 @task(help={'name': 'name of session file'})
@@ -54,13 +54,13 @@ def edit(c, name):
     """
     fname = os.path.join(SESSIONS, name)
     # c.run('scite {}'.format(fname))
-    c.run('pedit {}'.format(fname))
+    c.run(f'pedit {fname}')
 
 
 @task
 def list(c):
     """list existing session names"""
-    names = sorted('    {}'.format(x) for x in os.listdir(SESSIONS))
+    names = sorted(f'    {x}' for x in os.listdir(SESSIONS))
     print("available sessions:")
     print('\n'.join(names))
 
@@ -74,7 +74,7 @@ def newticket(c, ticket, project):
     print('building new directory')
     root = '_' + ticket
     with c.cd(DEVEL):
-        c.run('hg clone {} {}'.format(get_project_dir(project), root))
+        c.run(f'hg clone {get_project_dir(project)} {root}')
     dest = os.path.join(SESSIONS, ticket)
     settings = os.path.join(DEVEL, root, '.hg', 'hgrc')
     with open(settings) as _in:
@@ -94,7 +94,7 @@ def newticket(c, ticket, project):
             with open(os.path.join(SESSIONS, origin)) as _in:
                 for line in _in:
                     if line.startswith('cd ') and first:
-                        line = 'cd {}\n'.format(os.path.join(DEVEL, root))
+                        line = f'cd {os.path.join(DEVEL, root)}\n'
                         first = False
                     _out.write(line)
                 _out.write("a-propos -n 'Mee Bezig' -f mee_bezig.pck &")
@@ -114,11 +114,11 @@ def tickets(c, project):
         print('wrong project name')
         return
     if not os.path.exists(regfile):
-        tickets = 'none'
+        ticketlist = 'none'
     else:
         with open(regfile) as f:
-            tickets = ', '.join([x.strip() for x in f])
-    print("tickets I'm working on:", tickets)
+            ticketlist = ', '.join([x.strip() for x in f])
+    print("tickets I'm working on:", ticketlist)
 
 
 @task(help={'ticket': 'ticket number'})
@@ -129,7 +129,7 @@ def prep(c, ticket):
     pull_dest = get_project_dir(project)
     pull_src = os.path.join(DEVEL, '_' + ticket)
     with c.cd(pull_dest):
-        c.run('hg incoming -v {}'.format(pull_src))
+        c.run(f'hg incoming -v {pull_src}')
 
 
 @task(help={'ticket': 'ticket number'})
@@ -140,7 +140,7 @@ def pull(c, ticket):
     pull_dest = get_project_dir(project)
     pull_src = os.path.join(DEVEL, '_' + ticket)
     with c.cd(pull_dest):
-        c.run('hg pull {}'.format(pull_src))
+        c.run(f'hg pull {pull_src}')
         c.run('hg up')
 
 

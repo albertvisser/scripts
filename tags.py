@@ -35,7 +35,7 @@ def build(c, names):
     """build tags file for repository (by name or ".")
     """
     if not names:
-        names = [x for x in all_repos]
+        names = all_repos
     else:
         names = names.split(',')
     for name in names:
@@ -67,7 +67,7 @@ def check(c, names):
     """check if rebuilding tags file is necessary
     """
     if not names:
-        names = [x for x in all_repos]
+        names = all_repos
     else:
         names = names.split(',')
     for name in names:
@@ -82,7 +82,7 @@ def update(c, names):
     """rebuild tags file for repository (by name or ".") if necessary
     """
     if not names:
-        names = [x for x in all_repos]
+        names = all_repos
     else:
         names = names.split(',')
     for name in names:
