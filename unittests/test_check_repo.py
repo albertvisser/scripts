@@ -506,7 +506,7 @@ class TestCheckTextDialog:
         monkeypatch.setattr(check_repo.qtw.QDialog, 'setWindowTitle', mock_setWindowTitle)
         monkeypatch.setattr(check_repo.qtw.QDialog, 'setLayout', mock_setLayout)
         monkeypatch.setattr(check_repo.qtw, 'QVBoxLayout', MockVBoxLayout)
-        monkeypatch.setattr(check_repo.qtw, 'QHBoxLayout', MockVBoxLayout)
+        monkeypatch.setattr(check_repo.qtw, 'QHBoxLayout', MockHBoxLayout)
         monkeypatch.setattr(check_repo.qtw, 'QCheckBox', MockCheckBox)
         monkeypatch.setattr(check_repo.qtw, 'QLabel', MockLabel)
         monkeypatch.setattr(check_repo.qtw, 'QLineEdit', MockLineEdit)
@@ -516,36 +516,36 @@ class TestCheckTextDialog:
              'called dialog.__init()__ with args `()`\n'
              "called dialog.setWindowTitle() with args `('title',)`\n"
              'called MockVBoxLayout.__init__()\n'
-             'called MockVBoxLayout.__init__()\n'
+             'called MockHBoxLayout.__init__()\n'
              'called MockCheckBox.__init__()\n'
-             'called vbox.addWidget()\n'
+             'called hbox.addWidget()\n'
              'called vbox.addLayout()\n'
-             'called MockVBoxLayout.__init__()\n'
+             'called MockHBoxLayout.__init__()\n'
              'called MockLabel.__init__()\n'
-             'called vbox.addWidget()\n'
+             'called hbox.addWidget()\n'
              'called vbox.addLayout()\n'
-             'called MockVBoxLayout.__init__()\n'
+             'called MockHBoxLayout.__init__()\n'
              'called lineedit.__init__()\n'
              'called lineedit.settext(`message`)\n'
-             'called vbox.addWidget()\n'
+             'called hbox.addWidget()\n'
              'called vbox.addLayout()\n'
-             'called MockVBoxLayout.__init__()\n'
-             'called vbox.addStretch()\n'
+             'called MockHBoxLayout.__init__()\n'
+             'called hbox.addStretch()\n'
              'called MockPushButton.__init__()\n'
              'called signal.__init__()\n'
              'called signal.connect()\n'
-             'called vbox.addWidget()\n'
+             'called hbox.addWidget()\n'
              'called MockPushButton.__init__()\n'
              'called signal.__init__()\n'
              'called signal.connect()\n'
-             'called vbox.addWidget()\n'
-             'called vbox.addStretch()\n'
+             'called hbox.addWidget()\n'
+             'called hbox.addStretch()\n'
              'called vbox.addLayout()\n'
              'called dialog.setLayout()\n')
 
     def test_accept(self, monkeypatch, capsys):
         def mock_accept(self, *args):
-            print('called dialog.accept)()')
+            print('called dialog.accept()')
         def mock_init(self, *args):
             print('called dialog.__init__()')
             self._parent = args[0]
@@ -565,7 +565,7 @@ class TestCheckTextDialog:
             'called check.setChecked(True)\n'
             'called lineedit.settext(`text`)\n'
             'called check.isChecked()\n'
-            'called dialog.accept)()\n')
+            'called dialog.accept()\n')
 
 class TestDiffViewDialog:
     def test_init(self, monkeypatch, capsys):
@@ -586,7 +586,7 @@ class TestDiffViewDialog:
         monkeypatch.setattr(check_repo.qtw.QDialog, 'setLayout', mock_setLayout)
         monkeypatch.setattr(check_repo.qtw.QDialog, 'addAction', mock_addAction)
         monkeypatch.setattr(check_repo.qtw, 'QVBoxLayout', MockVBoxLayout)
-        monkeypatch.setattr(check_repo.qtw, 'QHBoxLayout', MockVBoxLayout)
+        monkeypatch.setattr(check_repo.qtw, 'QHBoxLayout', MockHBoxLayout)
         monkeypatch.setattr(check_repo.qtw, 'QCheckBox', MockCheckBox)
         monkeypatch.setattr(check_repo.qtw, 'QLabel', MockLabel)
         monkeypatch.setattr(check_repo.sci, 'QsciScintilla', MockScintilla)
@@ -601,11 +601,11 @@ class TestDiffViewDialog:
             "called dialog.setWindowTitle() with args `('title',)`\n"
             'called dialog.resize()\n'
             'called MockVBoxLayout.__init__()\n'
-            'called MockVBoxLayout.__init__()\n'
+            'called MockHBoxLayout.__init__()\n'
             'called MockLabel.__init__()\n'
-            'called vbox.addWidget()\n'
+            'called hbox.addWidget()\n'
             'called vbox.addLayout()\n'
-            'called MockVBoxLayout.__init__()\n'
+            'called MockHBoxLayout.__init__()\n'
             'called editor.__init__()\n'
             'called font.__init__()\n'
             'called editor.setFamily\n'
@@ -629,16 +629,16 @@ class TestDiffViewDialog:
             'called editor.setLexer\n'
             'called editor.setText with data ``\n'
             'called editor.setReadOnly with value `True`\n'
-            'called vbox.addWidget()\n'
+            'called hbox.addWidget()\n'
             'called vbox.addLayout()\n'
-            'called MockVBoxLayout.__init__()\n'
+            'called MockHBoxLayout.__init__()\n'
             'called MockPushButton.__init__()\n'
             'called signal.__init__()\n'
             'called signal.connect()\n'
             'called QPushButton.setDefault with args (True,)\n'
-            'called vbox.addStretch()\n'
-            'called vbox.addWidget()\n'
-            'called vbox.addStretch()\n'
+            'called hbox.addStretch()\n'
+            'called hbox.addWidget()\n'
+            'called hbox.addStretch()\n'
             'called vbox.addLayout()\n'
             'called dialog.setLayout()\n'
             'create QAction with text `Done`\n'
@@ -651,6 +651,99 @@ class TestDiffViewDialog:
         monkeypatchen
         kan misschien door het opzetten van de tekst in een aparte routine te doen maar waarom zou ik
         """
+
+class TestFriendlyReminder:
+    def test_init(self, monkeypatch, capsys):
+        def mock_init(self, parent, *args):
+            self.parent = parent
+            print('called dialog.__init()__ with args `{}`'.format(args))
+        def mock_setWindowTitle(self, *args):
+            print('called dialog.setWindowTitle() with args `{}`'.format(args))
+        def mock_setLayout(self, *args):
+            print('called dialog.setLayout()')
+        monkeypatch.setattr(check_repo.qtw.QDialog, '__init__', mock_init)
+        monkeypatch.setattr(check_repo.qtw.QDialog, 'setWindowTitle', mock_setWindowTitle)
+        monkeypatch.setattr(check_repo.qtw.QDialog, 'setLayout', mock_setLayout)
+        monkeypatch.setattr(check_repo.qtw, 'QVBoxLayout', MockVBoxLayout)
+        monkeypatch.setattr(check_repo.qtw, 'QHBoxLayout', MockHBoxLayout)
+        monkeypatch.setattr(check_repo.qtw, 'QCheckBox', MockCheckBox)
+        monkeypatch.setattr(check_repo.qtw, 'QPushButton', MockPushButton)
+        check_repo.FriendlyReminder('parent')
+        assert capsys.readouterr().out == (
+             'called dialog.__init()__ with args `()`\n'
+             "called dialog.setWindowTitle() with args `('Friendly Reminder',)`\n"
+             'called MockVBoxLayout.__init__()\n'
+             'called MockHBoxLayout.__init__()\n'
+             'called MockCheckBox.__init__()\n'
+             'called hbox.addWidget()\n'
+             'called vbox.addLayout()\n'
+             'called MockHBoxLayout.__init__()\n'
+             'called MockCheckBox.__init__()\n'
+             'called hbox.addWidget()\n'
+             'called vbox.addLayout()\n'
+             'called MockHBoxLayout.__init__()\n'
+             'called hbox.addStretch()\n'
+             'called MockPushButton.__init__()\n'
+             'called signal.__init__()\n'
+             'called signal.connect()\n'
+             'called hbox.addWidget()\n'
+             'called MockPushButton.__init__()\n'
+             'called signal.__init__()\n'
+             'called signal.connect()\n'
+             'called hbox.addWidget()\n'
+             'called hbox.addStretch()\n'
+             'called vbox.addLayout()\n'
+             'called dialog.setLayout()\n')
+
+    def test_accept(self, monkeypatch, capsys):
+        def mock_accept(self, *args):
+            print('called dialog.accept()')
+        def mock_init(self, *args):
+            print('called dialog.__init__()')
+            self._parent = args[0]
+        def mock_information(self, title, message):
+            print('display message `{}`'.format(message))
+        monkeypatch.setattr(check_repo.qtw.QMessageBox, 'information', mock_information)
+        monkeypatch.setattr(check_repo.qtw.QDialog, 'accept', mock_accept)
+        monkeypatch.setattr(check_repo.FriendlyReminder, '__init__', mock_init)
+        testobj = check_repo.FriendlyReminder(types.SimpleNamespace(title='title'))
+        testobj.linted = MockCheckBox()
+        testobj.tested = MockCheckBox()
+        assert capsys.readouterr().out == ('called dialog.__init__()\n'
+                                           'called MockCheckBox.__init__()\n'
+                                           'called MockCheckBox.__init__()\n')
+        testobj.linted.setChecked(False)
+        testobj.tested.setChecked(False)
+        testobj.accept()
+        assert capsys.readouterr().out == ('called check.setChecked(False)\n'
+                                           'called check.setChecked(False)\n'
+                                           'called check.isChecked()\n'
+                                           "display message `You didn't tick all the boxes`\n"
+                )
+        testobj.linted.setChecked(False)
+        testobj.tested.setChecked(True)
+        testobj.accept()
+        assert capsys.readouterr().out == ('called check.setChecked(False)\n'
+                                           'called check.setChecked(True)\n'
+                                           'called check.isChecked()\n'
+                                           "display message `You didn't tick all the boxes`\n")
+        testobj.linted.setChecked(True)
+        testobj.tested.setChecked(False)
+        testobj.accept()
+        assert capsys.readouterr().out == ('called check.setChecked(True)\n'
+                                           'called check.setChecked(False)\n'
+                                           'called check.isChecked()\n'
+                                           'called check.isChecked()\n'
+                                           "display message `You didn't tick all the boxes`\n")
+        testobj.linted.setChecked(True)
+        testobj.tested.setChecked(True)
+        testobj.accept()
+        assert capsys.readouterr().out == ('called check.setChecked(True)\n'
+                                           'called check.setChecked(True)\n'
+                                           'called check.isChecked()\n'
+                                           'called check.isChecked()\n'
+                                           'called dialog.accept()\n')
+
 
 class TestGui:
     def _test_init(self, monkeypatch, capsys):
@@ -1131,18 +1224,26 @@ class TestGui:
             print('run_and_report with args:', *args)
         monkeypatch.setattr(check_repo.qtw.QInputDialog, 'getText', mock_gettext)
         monkeypatch.setattr(check_repo.Gui, 'run_and_report', mock_run)
+        monkeypatch.setattr(MockDialog, 'exec_', lambda *x: check_repo.qtw.QDialog.Rejected)
+        monkeypatch.setattr(check_repo, 'FriendlyReminder', MockDialog)
         testobj.commit_all()
-        assert capsys.readouterr().out == ("run_and_report with args:"
+        assert capsys.readouterr().out == 'called dialog.__init()__ with args `()`\n'
+        monkeypatch.setattr(MockDialog, 'exec_', lambda *x: check_repo.qtw.QDialog.Accepted)
+        monkeypatch.setattr(check_repo, 'FriendlyReminder', MockDialog)
+        testobj.commit_all()
+        assert capsys.readouterr().out == ('called dialog.__init()__ with args `()`\n'
+                                           "run_and_report with args:"
                                            " ['git', 'commit', '-a', '-m', 'commit_message']\n"
                                            'called Gui.refresh_frame()\n')
         testobj.repotype = 'hg'
         testobj.commit_all()
-        assert capsys.readouterr().out == ("run_and_report with args:"
+        assert capsys.readouterr().out == ('called dialog.__init()__ with args `()`\n'
+                                           "run_and_report with args:"
                                            " ['hg', 'commit', '-m', 'commit_message']\n"
                                            'called Gui.refresh_frame()\n')
         monkeypatch.setattr(check_repo.qtw.QInputDialog, 'getText', mock_gettext_nok)
         testobj.commit_all()
-        assert capsys.readouterr().out == ''
+        assert capsys.readouterr().out == 'called dialog.__init()__ with args `()`\n'
 
     def test_commit_selected(self, monkeypatch, capsys, testobj):
         def mock_get_selected(self):
@@ -1164,12 +1265,20 @@ class TestGui:
         monkeypatch.setattr(check_repo.Gui, 'run_and_report', mock_run)
         monkeypatch.setattr(check_repo.Gui, 'filter_tracked', mock_filter_tracked)
         monkeypatch.setattr(check_repo.Gui, 'get_selected_files', mock_get_selected_none)
+        monkeypatch.setattr(MockDialog, 'exec_', lambda *x: check_repo.qtw.QDialog.Rejected)
+        monkeypatch.setattr(check_repo, 'FriendlyReminder', MockDialog)
         testobj.commit_selected()
-        assert capsys.readouterr().out == ('call get_selected_filenames()\n'
+        assert capsys.readouterr().out == 'called dialog.__init()__ with args `()`\n'
+        monkeypatch.setattr(MockDialog, 'exec_', lambda *x: check_repo.qtw.QDialog.Accepted)
+        monkeypatch.setattr(check_repo, 'FriendlyReminder', MockDialog)
+        testobj.commit_selected()
+        assert capsys.readouterr().out == ('called dialog.__init()__ with args `()`\n'
+                                           'call get_selected_filenames()\n'
                                            'call filter_tracked()\n')
         monkeypatch.setattr(check_repo.Gui, 'get_selected_files', mock_get_selected)
         testobj.commit_selected()
-        assert capsys.readouterr().out == ('call get_selected_filenames()\n'
+        assert capsys.readouterr().out == ('called dialog.__init()__ with args `()`\n'
+                                           'call get_selected_filenames()\n'
                                            'call filter_tracked()\n'
                                            "run_and_report with args:"
                                            " ['git', 'add', 'file1', 'file2']\n"
@@ -1178,14 +1287,16 @@ class TestGui:
                                            'called Gui.refresh_frame()\n')
         testobj.repotype = 'hg'
         testobj.commit_selected()
-        assert capsys.readouterr().out == ('call get_selected_filenames()\n'
+        assert capsys.readouterr().out == ('called dialog.__init()__ with args `()`\n'
+                                           'call get_selected_filenames()\n'
                                            'call filter_tracked()\n'
                                            "run_and_report with args: ['hg',"
                                            " 'commit', 'file1', 'file2', '-m', 'commit_message']\n"
                                            'called Gui.refresh_frame()\n')
         monkeypatch.setattr(check_repo.qtw.QInputDialog, 'getText', mock_gettext_nok)
         testobj.commit_selected()
-        assert capsys.readouterr().out == ('call get_selected_filenames()\n'
+        assert capsys.readouterr().out == ('called dialog.__init()__ with args `()`\n'
+                                           'call get_selected_filenames()\n'
                                            'call filter_tracked()\n')
 
     def test_amend_commit(self, monkeypatch, capsys, testobj):

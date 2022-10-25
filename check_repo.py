@@ -123,6 +123,42 @@ class DiffViewDialog(qtw.QDialog):
         self.text.setLexer(lexer)
 
 
+class FriendlyReminder(qtw.QDialog):
+    """check if we linted and tested
+    """
+    def __init__(self, parent):
+        self._parent = parent
+        super().__init__(parent)
+        self.setWindowTitle('Friendly Reminder')
+        vbox = qtw.QVBoxLayout()
+        hbox = qtw.QHBoxLayout()
+        self.linted = qtw.QCheckBox('Did you lint the files to be committed?', self)
+        hbox.addWidget(self.linted)
+        vbox.addLayout(hbox)
+        hbox = qtw.QHBoxLayout()
+        self.tested = qtw.QCheckBox('Did you test the files to be committed?', self)
+        hbox.addWidget(self.tested)
+        vbox.addLayout(hbox)
+        hbox = qtw.QHBoxLayout()
+        hbox.addStretch(1)
+        ok_button = qtw.QPushButton('&Ok', self)
+        ok_button.clicked.connect(self.accept)
+        hbox.addWidget(ok_button)
+        cancel_button = qtw.QPushButton('&Cancel', self)
+        cancel_button.clicked.connect(self.reject)
+        hbox.addWidget(cancel_button)
+        hbox.addStretch(1)
+        vbox.addLayout(hbox)
+        self.setLayout(vbox)
+
+    def accept(self):
+        "check for ticks"
+        if self.linted.isChecked() and self.tested.isChecked():
+            super().accept()
+        else:
+            qtw.QMessageBox.information(self, self._parent.title, "You didn't tick all the boxes")
+
+
 class Gui(qtw.QWidget):
     """User interface"""
     def __init__(self, path, repotype):
@@ -368,7 +404,7 @@ class Gui(qtw.QWidget):
                 for name in filenames:
                     print(name, file=_out)
             self.refresh_frame()
-        ## qtw.QMessageBox.information(self, self.title, 'Added selected files to ignore list.')
+        # qtw.QMessageBox.information(self, self.title, 'Added selected files to ignore list.')
 
     def add_new(self):
         """add selected file(s) to the tracked list"""
@@ -396,6 +432,8 @@ class Gui(qtw.QWidget):
 
     def commit_all(self):
         """hg commit uitvoeren - vraag om commit message"""
+        if FriendlyReminder(self).exec_() == qtw.QDialog.Rejected:
+            return
         message, ok = qtw.QInputDialog.getText(self, self.title, 'Enter a commit message:')
         if ok:
             commands = {'git': ['git', 'commit', '-a', '-m', message],
@@ -405,6 +443,8 @@ class Gui(qtw.QWidget):
 
     def commit_selected(self):
         """hg commit <selected files> uitvoeren - vraag om commit message"""
+        if FriendlyReminder(self).exec_() == qtw.QDialog.Rejected:
+            return
         filenames = self.filter_tracked(self.get_selected_files())
         if filenames:
             message, ok = qtw.QInputDialog.getText(self, self.title, 'Enter a commit message:')
