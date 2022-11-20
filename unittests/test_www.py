@@ -19,9 +19,11 @@ def test_copy(monkeypatch, capsys):
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
     www.copy(c, 'html,file')
-    assert capsys.readouterr().out == ('sudo cp home/html server/html\n'
-                                       'sudo cp home/file server/file\n')
-
+    assert capsys.readouterr().out == ('sudo cp  home/html server/html\n'
+                                       'sudo cp  home/file server/file\n')
+    monkeypatch.setattr(os.path, 'isdir', lambda x: True)
+    www.copy(c, 'dir')
+    assert capsys.readouterr().out == 'sudo cp -r home/dir server/dir\n'
 
 def test_link(monkeypatch, capsys):
     monkeypatch.setattr(www, 'home_root', 'home')

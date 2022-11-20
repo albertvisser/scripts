@@ -10,7 +10,8 @@ from settings import home_root, server_root, apache_root, webapps
 def copy(c, names):
     "copy indicated file(s) from home_root to server_root"
     for name in names.split(','):
-        c.run(f'sudo cp {home_root}/{name} {server_root}/{name}')
+        opt = '-r' if os.path.isdir(f'{home_root}/{name}') else ''
+        c.run(f'sudo cp {opt} {home_root}/{name} {server_root}/{name}')
 
 
 @task(help={'names': 'comma separated list of filenames'})
