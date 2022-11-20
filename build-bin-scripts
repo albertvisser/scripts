@@ -44,7 +44,7 @@ echo "hotkeys &\nhotkeys -c editor.hotrefs_config" > hotstuff
 echo "wine '/home/albert/.wine/drive_c/Program Files'/IrfanView/i_view64.exe $1" > iview
 echo "wmctrl -s 2 && lmms" > lstart
 echo "notetree -f magiokis/data/transcripts/vergelijking.ntr" > modcompare
-echo "wmctrl -s 0 && ebook-viewer --detach i" > open-reader
+echo "wmctrl -s 0 && ebook-viewer --detach" > open-reader
 echo "pedit -l $@ &" > peditl
 echo "pedit -l $1 &\npedit -ml $2 &" > peditlr
 echo "pedit -ml $@ &" > peditml
