@@ -1,0 +1,43 @@
+#! /usr/bin/env python3
+"""script to run unittests using my "covtest" script
+
+configurable through a .rurc file in the directory it's run from
+for now it is assumed that this is the directory the files to test are located
+"""
+# TODO maybe a pause mode for between tests?
+import sys
+import os
+import subprocess
+# import shutil
+import configparser
+
+if not os.path.exists('.rurc'):
+    sys.exit('No configuration file (.rurc) found')
+conf = configparser.ConfigParser(allow_no_value=True)
+conf.read('.rurc')
+testdir = list(dict(conf['testdir']).keys())[0]
+tests = dict(conf['testscripts'])
+modules = dict(conf['testees'])
+
+usage =f'usage: ./unittests [ARG] - where arg is a value from {list(tests)}'
+
+args = sys.argv
+do, do_s = '', []
+stopfirst = '-x' if '-x' in args else ''
+if stopfirst:
+    args.pop(args.index('-x'))
+if len(args) == 2:
+    do_s = args[1].split(',')
+elif len(args) == 1:
+    do = 'all'
+ok = False
+for parm in tests:
+    if (do_s and parm in do_s) or do == 'all':
+        ok = True
+        if stopfirst:
+            command = ['covtest', '-x', os.path.join(testdir, tests[parm]), modules[parm]]
+        else:
+            command = ['covtest', os.path.join(testdir, tests[parm]), modules[parm]]
+        subprocess.run(command)
+if not ok:
+    print(usage)
