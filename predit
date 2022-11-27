@@ -1,6 +1,6 @@
 if test "$files"; then
 	# gnome-terminal --profile='Code Editor Shell' -- vim $files &
-        pedit -mr $files
+        pedit -ml $files
 	if test "$tests"; then
 		# gnome-terminal --profile='Code Editor Shell' -- vim $tests &
                 pedit -r $tests
