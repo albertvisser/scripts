@@ -615,5 +615,5 @@ def search(c, find='', rebuild=False):
 
 @task(help={'name': 'repository name', 'test': 'run tests for specific module, ? to list values'})
 def runtests(c, name, test=''):
-    "run all registered unittests for a project"
+    "run (all or selected) registered unittests for a given project"
     check_and_run_for_project(c, name, 'run_unittests ' + test)
