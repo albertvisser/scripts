@@ -1,6 +1,6 @@
 cd ~/bin
 
-ln -s ~/projects/filefindr/start.py    afrift
+ln -s ~/projects/filefindr/start.py    	afrift
 ln -s ~/projects/albumsgui/start.py    albums
 ln -s ~/projects/albumsgui/start_gui.py    albumsgui
 ln -s ~/projects/apropos/start.py  a-propos
@@ -29,6 +29,9 @@ ln -s ~/projects/doctree/start.py treedocs
 ln -s ~/projects/htmledit/viewhtml.py viewhtml
 ln -s ~/projects/xmledit/xmlviewer.py viewxml
 ln -s /usr/share/vim/vim82/macros/less.sh vless
+if [ -e /usr/local/lib/wing-personal8/wing-personal ] then
+  ln -s /usr/local/lib/wing-personal8/wing-personal wing
+fi
 ln -s ~/projects/xmledit/xmleditor.py xmledit
 
 echo "wmctrl -s 1 && doublecmd" >    2panefm
