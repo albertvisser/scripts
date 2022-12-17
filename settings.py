@@ -17,10 +17,9 @@ cherrypy_repos = ['logviewer', 'rst2html', 'magiokis-cherry']
 django_repos = ['actiereg', 'albums', 'myprojects', 'magiokis-django']
 fcgi_repos = ['absentie', 'doctool', 'magiokis', 'albums-cgi', 'magiokis-php']
 private_repos = {'scripts': 'bin', 'server-stuff': 'nginx-config'}
-non_web_repos = ['apropos', 'bitbucket', 'compare-tool', 'cssedit', 'doctree',
-                 'filefindr', 'hotkeys', 'htmledit', 'modreader', 'notetree',
-                 'probreg', 'xmledit', 'albumsgui']
-non_web_repos.remove('bitbucket')  # let's forget about this one for now
+non_web_repos = ['apropos', 'compare-tool', 'cssedit', 'doctree', 'filefindr', 'hotkeys',
+                 'htmledit', 'modreader', 'notetree', 'probreg', 'xmledit', 'albumsgui',
+                 'lminstreloc', 'sdvmm']
 non_deploy_repos = ['cobtools', 'jvsdoe', 'leesjcl', 'pythoneer']
 bb_repos = django_repos + cherrypy_repos + non_web_repos + fcgi_repos
 sf_repos = ['apropos']
