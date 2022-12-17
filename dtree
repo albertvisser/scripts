@@ -1,1 +1,2 @@
+#! /bin/sh
 binfab repo.dtree $1 $2 &
