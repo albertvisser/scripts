@@ -53,12 +53,63 @@ def test_newproject(monkeypatch, capsys):
                                        ' to `/home/albert/projects/name/name`\n')
 
 
-def test_start(monkeypatch, capsys):
+def test_start_old(monkeypatch, capsys):
     monkeypatch.setattr(session, 'SESSIONS', 'sessions_location')
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
     session.start(c, 'session_file')
     assert capsys.readouterr().out == '/bin/sh sessions_location/session_file\n'
+
+
+def test_start(monkeypatch, capsys):
+    def mock_run(*args, **kwargs):
+        print(*args, kwargs)
+    class MockParser(dict):
+        def read(self, *args):
+            print('called ConfigParser.read() with args', *args)
+            self['env'] = []
+            self['options'] = []
+        def sections(self):
+            return []
+    class MockParser2(dict):
+        def read(self, *args):
+            print('called ConfigParser.read() with args', *args)
+            self['env'] = {'var': 'value'}
+            self['options'] = {'term': 'y', 'jansen': 'y', 'prfind': True}
+        def sections(self):
+            return True
+    class MockParser3(dict):
+        def read(self, *args):
+            print('called ConfigParser.read() with args', *args)
+            self['env'] = {}
+            self['options'] = {'predit': 'y', 'dtree': 'y', 'prfind': 'y', 'check-repo': 'y'}
+        def sections(self):
+            return True
+    # monkeypatch.setattr(MockContext, 'run', mock_run)
+    monkeypatch.setattr(session.subprocess, 'Popen', mock_run)
+    c = MockContext()
+    monkeypatch.setattr(session, 'get_project_dir', lambda x: '')
+    session.start_new(c, 'project_name')
+    assert capsys.readouterr().out == 'could not determine project location\n'
+    monkeypatch.setattr(session, 'get_project_dir', lambda x: 'project')
+    monkeypatch.setattr(session.configparser, 'ConfigParser', MockParser)
+    session.start_new(c, 'project_name')
+    assert capsys.readouterr().out == ('called ConfigParser.read() with args project/.sessionrc\n'
+                                       'could not find session configuration\n')
+    monkeypatch.setattr(session.configparser, 'ConfigParser', MockParser2)
+    session.start_new(c, 'project_name')
+    newenv = os.environ
+    newenv.update({'var': 'value'})
+    assert capsys.readouterr().out == ('called ConfigParser.read() with args project/.sessionrc\n'
+                                       "['gnome-terminal', '--geometry=132x43+4+40']"
+                                       f" {{'cwd': 'project', 'env': {newenv}}}\n")
+    monkeypatch.setattr(session.configparser, 'ConfigParser', MockParser3)
+    session.start_new(c, 'project_name')
+    assert capsys.readouterr().out == ('called ConfigParser.read() with args project/.sessionrc\n'
+                                       f"['predit'] {{'cwd': 'project', 'env': {newenv}}}\n"
+                                       f"['dtree'] {{'cwd': 'project', 'env': {newenv}}}\n"
+                                       f"['prfind'] {{'cwd': 'project', 'env': {newenv}}}\n"
+                                       f"['check-repo'] {{'cwd': 'project', 'env': {newenv}}}\n")
 
 
 def test_edit(monkeypatch, capsys):

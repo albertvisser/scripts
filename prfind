@@ -1,1 +1,10 @@
+#! /bin/sh
+files=''
+if test "$progs"; then files=$files' '$progs; fi
+if test "$tpl"; then files=$files' '$tpl; fi
+if test "$url"; then files=$files' '$url; fi
+if test "$lang"; then files=$files' '$lang; fi
 afrift -m multi -P $files &
+if test "$tests"; then
+       	afrift -m multi -P $tests &
+fi

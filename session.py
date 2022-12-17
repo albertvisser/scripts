@@ -3,9 +3,10 @@
 import os
 import shutil
 import configparser
+import subprocess  # voor die ene die niet met invoke lukt
 from invoke import task
 from settings import PROJECTS_BASE, SESSIONS, DEVEL, get_project_dir  # , private_repos
-
+# from repo import check_and_run_for_project
 
 def get_project_name(ticket):
     "find_project_by_ticket(number)"
@@ -36,13 +37,43 @@ def newproject(c, name):
 
 
 @task(help={'name': 'name of session file'})
-def start(c, name):
+def start_old(c, name):
     """start a programming session using various tools
 
     expects a session script of the same name in .sessions (subdirectory for now)
     """
     fname = os.path.join(SESSIONS, name)
     c.run(f'/bin/sh {fname}')
+
+
+@task(help={'name': 'project name'})
+def start(c, name):
+    """start a programming session using various tools
+
+    expects a .sessionrc file in the project directory
+    """
+    # via run blijven het commando's wachten tot je het afsluit
+    # met subprocess.Popen en shebangs in alle scripts werkt het wel
+    runcommands = {'term': ['gnome-terminal', '--geometry=132x43+4+40'],
+                   'check-repo': ['check-repo'],
+                   'predit': ['predit'], 'dtree': ['dtree'], 'prfind': ['prfind']}
+    path = get_project_dir(name)
+    if not path:
+        print('could not determine project location')
+        return
+    conf = configparser.ConfigParser()
+    conf.read(os.path.join(path, '.sessionrc'))
+    if not conf.sections():
+        print('could not find session configuration')
+        return
+    myenv = os.environ
+    for item in conf['env']:
+        print(item)
+        myenv[item] = conf['env'][item]
+    print(myenv['progs'])
+    for item in conf['options']:
+        if item in runcommands and str(conf['options'][item]).lower() == 'y':
+            subprocess.Popen(runcommands[item], cwd=path, env=myenv)
 
 
 @task(help={'name': 'name of session file'})

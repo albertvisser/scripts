@@ -1,9 +1,17 @@
-if test "$files"; then
-	# gnome-terminal --profile='Code Editor Shell' -- vim $files &
-        pedit -ml $files
+#! /bin/sh
+if test "$progs"; then
+        pedit -ml $progs
 	if test "$tests"; then
-		# gnome-terminal --profile='Code Editor Shell' -- vim $tests &
                 pedit -r $tests
+	fi
+	if test "$tpl"; then
+                pedit -ml $tpl
+	fi
+	if test "$url"; then
+                pedit -mr $url
+	fi
+	if test "$lang"; then
+                pedit -mr $lang
 	fi
 else 
 	echo "No definition of files to open"
