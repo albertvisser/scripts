@@ -73,31 +73,6 @@ vhooks_items = ({'name': 'browser.html', 'is_dir': False, 'backup': True},
 webapps = {'cgit': {'appid': 'aihbdennncljibneldlcadheboalahee', 'start_server': False},
            'gitweb': {'appid': 'nhlpkodndoiadgldeanohldkpfoeahan', 'start_server': False}}
 
-symlinks_bin = (('a-propos', '/home/albert/projects/apropos/apo_start.py'),
-                ('afrift', '/home/albert/projects/filefindr/start.py'),
-                ('albums', '/home/albert/projects/albumsgui/start.py'),
-                ('albumsgui', '/home/albert/projects/albumsgui/start_gui.py'),
-                ('comparer', '/home/albert/projects/compare-tool/actif.py'),
-                ('cssedit', '/home/albert/projects/cssedit/cssedit/start_editor.py'),
-                ('csvhelper', '/home/albert/projects/csvtool/csvhelper.py'),
-                ('diary', '/home/albert/bin/ramble'),
-                ('dt_print', '/home/albert/projects/doctree/dt_print.py'),
-                ('hotkeys', '/home/albert/projects/hotkeys/start.py'),
-                ('htmledit', '/home/albert/projects/htmledit/htmleditor.py'),
-                ('lint-all', '/home/albert/projects/mylinter/lint-all'),
-                ('lint-this', '/home/albert/projects/mylinter/lint-this'),
-                ('lintergui', '/home/albert/projects/mylinter/start.py'),
-                ('mdview', '/home/albert/projects/rst2html/mdviewer.py'),
-                ('modreader', '/home/albert/projects/modreader/modreadergui.py'),
-                ('notetree', '/home/albert/projects/notetree/nt_start.py'),
-                ('nt2ext', '/home/albert/projects/notetree/nt2ext.py'),
-                ('probreg', '/home/albert/projects/probreg/pr_start.py'),
-                ('rstview', '/home/albert/projects/rst2html/rstviewer.py'),
-                ('treedocs', '/home/albert/projects/doctree/dt_start.py'),
-                ('viewhtml', '/home/albert/projects/htmledit/viewhtml.py'),
-                ('vless', '/usr/share/vim/vim74/macros/less.sh'),
-                ('xmledit', '/home/albert/projects/xmledit/xmleditor.py'))
-
 
 def get_project_root(name, context='local'):
     """find out where a repository lives

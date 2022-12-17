@@ -214,24 +214,6 @@ def test_chmodrecursive(monkeypatch, capsys):
                                        'entering recursive call\n')
 
 
-def test_create_bin_shortcuts(monkeypatch, capsys):
-    def mock_chdir(*args):
-        print('change to directory:', args[0])
-    def mock_symlink(*args):
-        print('make symlink from {} to {}'.format(args[0], args[1]))
-    monkeypatch.setattr(tasks, 'HERE', '/tmp')
-    monkeypatch.setattr(os, 'chdir', mock_chdir)
-    monkeypatch.setattr(os, 'symlink', mock_symlink)
-    monkeypatch.setattr(tasks.settings, 'symlinks_bin', (('target1', 'path/to/source1'),
-                                                         ('target2', 'path/to/source2')))
-    monkeypatch.setattr(MockContext, 'run', mock_run)
-    c = MockContext()
-    tasks.create_bin_shortcuts(c)
-    assert capsys.readouterr().out == ('change to directory: {}\n'
-                                       'make symlink from path/to/source1 to target1\n'
-                                       'make symlink from path/to/source2 to target2\n').format('/tmp')
-
-
 class MockDatetime:
     @classmethod
     def today(cls):

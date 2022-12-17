@@ -159,15 +159,6 @@ def chmodrecursive(c, path=None):
                 chmodrecursive(c, fnaam)
 
 
-@task
-def create_bin_shortcuts(c):
-    """(re)build script shortcuts in bin directory
-    """
-    os.chdir(HERE)
-    for dst, src in settings.symlinks_bin:
-        os.symlink(src, dst)
-
-
 ns = Collection()
 ns.add_collection(session)
 ns.add_collection(repo)
@@ -179,4 +170,3 @@ ns.add_task(install_scite)
 ns.add_task(build_scite)
 ns.add_task(arcstuff)
 ns.add_task(chmodrecursive)
-ns.add_task(create_bin_shortcuts)
