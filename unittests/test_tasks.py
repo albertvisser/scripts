@@ -16,23 +16,19 @@ def run_in_dir(self, *args, **kwargs):
     print(*args, 'in', self.cwd)
 
 
-def test_install_scite(monkeypatch, capsys):
+def test_install_scite(monkeypatch, capsys, tmp_path):
     def mock_run_1(c, *args):
         print(*args)
         return types.SimpleNamespace(failed=True)
     def mock_run_2(c, *args):
         print(*args)
         return types.SimpleNamespace(failed=False)
-    monkeypatch.setattr(tasks, 'GSCITELOC', '/tmp/scite{}_test')
+    monkeypatch.setattr(tasks, 'GSCITELOC', str(tmp_path / 'scite{}_test'))
     fname = tasks.GSCITELOC.format('x')
 
-    try:
-        os.remove(fname)
-    except FileNotFoundError:
-        pass
     c = MockContext()
     tasks.install_scite(c, 'x')
-    assert capsys.readouterr().out == '/tmp/scitex_test does not exist\n'
+    assert capsys.readouterr().out == f'{fname} does not exist\n'
 
     with open(fname, 'w') as f:
         f.write('')
@@ -59,7 +55,7 @@ def test_install_scite(monkeypatch, capsys):
                                                fname)
 
 
-def test_build_scite(monkeypatch, capsys):
+def test_build_scite(monkeypatch, capsys, tmp_path):
     def mock_run_1(c, *args):
         nonlocal counter
         print(*args, 'in', c.cwd)
@@ -87,19 +83,20 @@ def test_build_scite(monkeypatch, capsys):
         print(*args, 'in', c.cwd)
         counter += 1
         return types.SimpleNamespace(failed=False, stdout='results from call {}'.format(counter))
-    monkeypatch.setattr(tasks, 'SCITELOC', '/tmp/scite{}_test')
+    monkeypatch.setattr(tasks, 'SCITELOC', str(tmp_path / 'scite{}_test'))
+    fname = tasks.SCITELOC.format('x')
     monkeypatch.setattr(tasks.os.path, 'exists', lambda x: False)
     c = MockContext()
     tasks.build_scite(c, 'x')
-    assert capsys.readouterr().out == '/tmp/scitex_test does not exist\n'
+    assert capsys.readouterr().out == f'{fname} does not exist\n'
     monkeypatch.setattr(tasks.os.path, 'exists', lambda x: True)
 
     counter = 0
     monkeypatch.setattr(MockContext, 'run', mock_run_1)
     c = MockContext()
     tasks.build_scite(c, 'x')
-    assert capsys.readouterr().out == ('tar -zxf /tmp/scitex_test in /tmp\n'
-                                       'tar -xf /tmp/scitex_test in /tmp\n'
+    assert capsys.readouterr().out == (f'tar -zxf {fname} in /tmp\n'
+                                       f'tar -xf {fname} in /tmp\n'
                                        'make in /tmp/scintilla/gtk\n'
                                        'make scintilla failed, see /tmp/scite_build.log\n')
     with open('/tmp/scite_build.log') as f:
@@ -110,7 +107,7 @@ def test_build_scite(monkeypatch, capsys):
     monkeypatch.setattr(MockContext, 'run', mock_run_2)
     c = MockContext()
     tasks.build_scite(c, 'x')
-    assert capsys.readouterr().out == ('tar -zxf /tmp/scitex_test in /tmp\n'
+    assert capsys.readouterr().out == (f'tar -zxf {fname} in /tmp\n'
                                        'make in /tmp/scintilla/gtk\n'
                                        'make in /tmp/scite/gtk\n'
                                        'make scite failed, see /tmp/scite_build.log\n')
@@ -122,7 +119,7 @@ def test_build_scite(monkeypatch, capsys):
     monkeypatch.setattr(MockContext, 'run', mock_run_3)
     c = MockContext()
     tasks.build_scite(c, 'x')
-    assert capsys.readouterr().out == ('tar -zxf /tmp/scitex_test in /tmp\n'
+    assert capsys.readouterr().out == (f'tar -zxf {fname} in /tmp\n'
                                        'make in /tmp/scintilla/gtk\n'
                                        'make in /tmp/scite/gtk\n'
                                        'sudo make install in /tmp/scite/gtk\n'
@@ -135,7 +132,7 @@ def test_build_scite(monkeypatch, capsys):
     monkeypatch.setattr(MockContext, 'run', mock_run_4)
     c = MockContext()
     tasks.build_scite(c, 'x')
-    assert capsys.readouterr().out == ('tar -zxf /tmp/scitex_test in /tmp\n'
+    assert capsys.readouterr().out == (f'tar -zxf {fname} in /tmp\n'
                                        'make in /tmp/scintilla/gtk\n'
                                        'make in /tmp/scite/gtk\n'
                                        'sudo make install in /tmp/scite/gtk\n'

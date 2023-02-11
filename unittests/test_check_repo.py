@@ -432,19 +432,13 @@ def test_main(monkeypatch, capsys):
                                        'results\n')
 
 
-def test_startapp(monkeypatch, capsys):
-    def return_path(*args):
-        return pathlib.Path('/tmp')
-    def return_true(*args):
-        return True
+def test_startapp(monkeypatch, capsys, tmp_path):
     def return_false_then_true(*args):
         nonlocal counter
         counter += 1
         return counter != 1
-    def return_false(*args):
-        return False
-    monkeypatch.setattr(check_repo.pathlib.Path, 'cwd', return_path)
-    monkeypatch.setattr(check_repo.pathlib.Path, 'exists', return_true)
+    monkeypatch.setattr(check_repo.pathlib.Path, 'cwd', lambda *x: tmp_path)
+    monkeypatch.setattr(check_repo.pathlib.Path, 'exists', lambda *x: True)
     monkeypatch.setattr(check_repo.qtw, 'QApplication', MockApplication)
     monkeypatch.setattr(check_repo, 'Gui', MockGui)
     monkeypatch.setattr(check_repo, 'HOME', pathlib.Path('/homedir'))
@@ -453,7 +447,7 @@ def test_startapp(monkeypatch, capsys):
     with pytest.raises(SystemExit):
         check_repo.startapp(types.SimpleNamespace(project=''))
     assert capsys.readouterr().out == ('called MockApplication.__init__()\n'
-            "called Gui.__init__() with args (PosixPath('/tmp'), 'git')\n"
+            f"called Gui.__init__() with args ({tmp_path!r}, 'git')\n"
             'called Gui.show()\n'
             'called MockApplication.exec_()\n')
     with pytest.raises(SystemExit):
@@ -472,7 +466,7 @@ def test_startapp(monkeypatch, capsys):
     with pytest.raises(SystemExit):
         check_repo.startapp(types.SimpleNamespace(project='.'))
     assert capsys.readouterr().out == ('called MockApplication.__init__()\n'
-            "called Gui.__init__() with args (PosixPath('/tmp'), 'git')\n"
+            f"called Gui.__init__() with args ({tmp_path!r}, 'git')\n"
             'called Gui.show()\n'
             'called MockApplication.exec_()\n')
     with pytest.raises(SystemExit):
@@ -486,10 +480,10 @@ def test_startapp(monkeypatch, capsys):
     with pytest.raises(SystemExit):
         check_repo.startapp(types.SimpleNamespace(project=''))
     assert capsys.readouterr().out == ('called MockApplication.__init__()\n'
-            "called Gui.__init__() with args (PosixPath('/tmp'), 'hg')\n"
+            f"called Gui.__init__() with args ({tmp_path!r}, 'hg')\n"
             'called Gui.show()\n'
             'called MockApplication.exec_()\n')
-    monkeypatch.setattr(check_repo.pathlib.Path, 'exists', return_false)
+    monkeypatch.setattr(check_repo.pathlib.Path, 'exists', lambda *x: False)
     assert check_repo.startapp(types.SimpleNamespace(project='')) == '. is not a repository'
     assert capsys.readouterr().out == ''
 
@@ -1134,7 +1128,7 @@ class TestGui:
                 "call run_and_capture() for `['git', 'diff', 'file1', 'file2']`\n"
                 'display message `er\nror`\n')
 
-    def test_add_ignore(self, monkeypatch, capsys, testobj):
+    def test_add_ignore(self, monkeypatch, capsys, tmp_path, testobj):
         def mock_filter(*args):
             print('called Gui.filter_tracked() for `{}`'.format(args))
             return 'file1', 'file2'
@@ -1145,8 +1139,8 @@ class TestGui:
         monkeypatch.setattr(testobj, 'get_selected_files', mock_get_selected)
         monkeypatch.setattr(testobj, 'filter_tracked', mock_filter)
         testobj.repotype = 'hg'
-        testobj.path = pathlib.Path('/tmp')
-        ignorefile = pathlib.Path('/tmp/.hgignore')
+        testobj.path = tmp_path
+        ignorefile = tmp_path / '.hgignore'
         assert not ignorefile.exists()
         testobj.add_ignore()
         assert ignorefile.exists()
@@ -1156,8 +1150,8 @@ class TestGui:
         ignorefile.unlink()
 
         testobj.repotype = 'not hg'
-        testobj.path = pathlib.Path('/tmp')
-        ignorefile = pathlib.Path('/tmp/.gitignore')
+        testobj.path = tmp_path
+        ignorefile = tmp_path / '.gitignore'
         assert not ignorefile.exists()
         testobj.add_ignore()
         assert ignorefile.exists()

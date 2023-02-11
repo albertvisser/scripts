@@ -619,11 +619,11 @@ def test_prshell(monkeypatch, capsys):
                                        " 'gnome-terminal --geometry=132x43+4+40')\n")
 
 
-def test_rebuild_filenamelist(monkeypatch, capsys):
+def test_rebuild_filenamelist(monkeypatch, capsys, tmp_path):
     def mock_get_repofiles(*args):
         print('called get_repofiles() for `{}`'.format(args[1]))
         return 'path_to_repo', ['file1', 'file2']
-    monkeypatch.setattr(repo, 'FILELIST', '/tmp/filelist')
+    monkeypatch.setattr(repo, 'FILELIST', str(tmp_path / 'filelist'))
     monkeypatch.setattr(repo, 'all_repos', ['repo1', 'repo2'])
     monkeypatch.setattr(repo, 'frozen_repos', ['repo2'])
     monkeypatch.setattr(repo, 'get_repofiles', mock_get_repofiles)
@@ -635,10 +635,11 @@ def test_rebuild_filenamelist(monkeypatch, capsys):
     assert capsys.readouterr().out == 'called get_repofiles() for `repo1`\n'
 
 
-def test_search(monkeypatch, capsys):
+def test_search(monkeypatch, capsys, tmp_path):
     def mock_rebuild(*args):
         print('called rebuild_filenamelist')
-    monkeypatch.setattr(repo, 'FILELIST', '/tmp/filelist')
+    tmpfilelist = tmp_path / 'filelist'
+    monkeypatch.setattr(repo, 'FILELIST', str(tmpfilelist))
     monkeypatch.setattr(repo, 'rebuild_filenamelist', mock_rebuild)
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
@@ -646,28 +647,28 @@ def test_search(monkeypatch, capsys):
         os.remove(repo.FILELIST)
     repo.search(c)
     assert capsys.readouterr().out == ('called rebuild_filenamelist\n'
-                                       'afrift -m multi /tmp/filelist -e py -P\n')
+                                       f'afrift -m multi {tmpfilelist} -e py -P\n')
     repo.search(c, rebuild=True)
     assert capsys.readouterr().out == ('called rebuild_filenamelist\n'
-                                       'afrift -m multi /tmp/filelist -e py -P\n')
+                                       f'afrift -m multi {tmpfilelist} -e py -P\n')
     repo.search(c, 'name')
     assert capsys.readouterr().out == ('called rebuild_filenamelist\n'
-                                       'afrift -m multi /tmp/filelist -e py -PN -s name\n')
+                                       f'afrift -m multi {tmpfilelist} -e py -PN -s name\n')
     repo.search(c, 'name', rebuild=True)
     assert capsys.readouterr().out == ('called rebuild_filenamelist\n'
-                                       'afrift -m multi /tmp/filelist -e py -PN -s name\n')
+                                       f'afrift -m multi {tmpfilelist} -e py -PN -s name\n')
     with open(repo.FILELIST, 'w') as f:
         f.write('')
     repo.search(c)
-    assert capsys.readouterr().out == 'afrift -m multi /tmp/filelist -e py -P\n'
+    assert capsys.readouterr().out == f'afrift -m multi {tmpfilelist} -e py -P\n'
     repo.search(c, rebuild=True)
     assert capsys.readouterr().out == ('called rebuild_filenamelist\n'
-                                       'afrift -m multi /tmp/filelist -e py -P\n')
+                                       f'afrift -m multi {tmpfilelist} -e py -P\n')
     repo.search(c, 'name')
-    assert capsys.readouterr().out == 'afrift -m multi /tmp/filelist -e py -PN -s name\n'
+    assert capsys.readouterr().out == f'afrift -m multi {tmpfilelist} -e py -PN -s name\n'
     repo.search(c, 'name', rebuild=True)
     assert capsys.readouterr().out == ('called rebuild_filenamelist\n'
-                                       'afrift -m multi /tmp/filelist -e py -PN -s name\n')
+                                       f'afrift -m multi {tmpfilelist} -e py -PN -s name\n')
 
 
 def test_runtests(monkeypatch, capsys):

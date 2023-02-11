@@ -23,16 +23,12 @@ def test_main(monkeypatch, capsys):
     assert capsys.readouterr().out == ("called sort() with args ('somefile', 'somefile_sorted', '')\n"
                                        'klaar, output in somefile_sorted\n')
 
-def test_sort(monkeypatch, capsys):
+def test_sort(monkeypatch, capsys, tmp_path):
     ""
-    workdir = '/tmp/sorttest'
-    if os.path.exists(workdir):
-        for file in os.listdir(workdir):
-            os.remove(os.path.join(workdir, file))
-    else:
-        os.mkdir(workdir)
-    source = os.path.join(workdir, 'test_sort')
-    target = os.path.join(workdir, 'test_sort_sorted')
+    workdir = tmp_path / 'sorttest'
+    workdir.mkdir()
+    source = str(workdir / 'test_sort')
+    target = str(workdir / 'test_sort_sorted')
     with open(source, 'w') as f:
         print('een regel', file=f)
         print('de eerste', file=f)
@@ -49,6 +45,3 @@ def test_sort(monkeypatch, capsys):
     with open(target) as in_:
         data = in_.readlines()
     assert data == ['ook een\n', 'een regel\n', 'dat was het dan\n', 'de eerste\n', 'volgende\n']
-    os.remove(source)
-    os.remove(target)
-    os.rmdir(workdir)

@@ -11,11 +11,9 @@ def test_main_error(monkeypatch, capsys):
     jsonp.main(['scriptname', 'filename', 'extra'])
     assert capsys.readouterr().out == usagemessage
 
-def test_main(monkeypatch, capsys):
-    filename = '/tmp/test_jsonp.json'
-    outname = '/tmp/test_jsonp_pretty.json'
-    if os.path.exists(outname):
-        os.remove(outname)
+def test_main(monkeypatch, capsys, tmp_path):
+    filename = str(tmp_path / 'test_jsonp.json')
+    outname = str(tmp_path / 'test_jsonp_pretty.json')
     with open(filename, 'w') as f:
         f.write('["foo", {"bar": ["baz", null, 1.0, 2]}]')
     jsonp.main(['scriptname', filename])
@@ -33,5 +31,3 @@ def test_main(monkeypatch, capsys):
                     '    ]\n'
                     '  }\n'
                     ']')
-    os.remove(filename)
-    os.remove(outname)

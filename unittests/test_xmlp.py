@@ -12,24 +12,20 @@ def test_main_wrng_args(capsys):
     assert capsys.readouterr().out == 'usage: python(3) xmlp.py <filename>\n'
 
 
-def test_main(capsys):
+def test_main(capsys, tmp_path):
     ""
-    fname = '/tmp/test_xmlp.xml'
-    target = '/tmp/test_xmlp_pretty.xml'
-    if os.path.exists(target):
-        os.remove(target)
-    with open(fname, 'w') as f:
+    fname = tmp_path / 'test_xmlp.xml'
+    target = tmp_path / 'test_xmlp_pretty.xml'
+    with fname.open('w') as f:
         print('<root><level1><level2>some_text</level2>'
               '<level2_too><level3 attr="x"/></level2_too></level1></root>', file=f)
-    xmlp.main(['xmlp.py', fname])
-    assert os.path.exists(target)
-    with open(target) as o:
-        data = o.read()
-    assert data == ('<root>\n'
-                    '  <level1>\n'
-                    '    <level2>some_text</level2>\n'
-                    '    <level2_too>\n'
-                    '      <level3 attr="x"/>\n'
-                    '    </level2_too>\n'
-                    '  </level1>\n'
-                    '</root>\n')
+    xmlp.main(['xmlp.py', str(fname)])
+    assert target.exists()
+    assert target.read_text() == ('<root>\n'
+                                  '  <level1>\n'
+                                  '    <level2>some_text</level2>\n'
+                                  '    <level2_too>\n'
+                                  '      <level3 attr="x"/>\n'
+                                  '    </level2_too>\n'
+                                  '  </level1>\n'
+                                  '</root>\n')

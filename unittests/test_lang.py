@@ -26,10 +26,8 @@ def _test_init(monkeypatch, capsys):
     lang.init(c, 'proj', '.', check=True)
 
 
-def test_uses_gettext(monkeypatch, capsys):
-    fname = '/tmp/use_gettext_test'
-    if os.path.exists(fname):
-        os.remove(fname)
+def test_uses_gettext(monkeypatch, capsys, tmp_path):
+    fname = str(tmp_path / 'use_gettext_test')
     with pytest.raises(FileNotFoundError):
         lang.uses_gettext(fname)
     with open(fname, 'w') as f:
