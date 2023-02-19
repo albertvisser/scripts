@@ -443,9 +443,17 @@ class Gui(qtw.QWidget):
 
     def commit_selected(self):
         """hg commit <selected files> uitvoeren - vraag om commit message"""
-        if FriendlyReminder(self).exec_() == qtw.QDialog.Rejected:
-            return
-        filenames = self.filter_tracked(self.get_selected_files())
+        # if FriendlyReminder(self).exec_() == qtw.QDialog.Rejected:
+        #     return
+        # filenames = self.filter_tracked(self.get_selected_files())
+        filelist = self.get_selected_files()
+        to_commit = [pathlib.Path(x[1]) for x in filelist]
+        if [y for y in to_commit if y.suffix == '.py'
+                and not y.name.startswith('test_')]:
+            if FriendlyReminder(self).exec_() == qtw.QDialog.Rejected:
+                return
+        filenames = self.filter_tracked(filelist)
+        print(filenames)
         if filenames:
             message, ok = qtw.QInputDialog.getText(self, self.title, 'Enter a commit message:')
             if ok:

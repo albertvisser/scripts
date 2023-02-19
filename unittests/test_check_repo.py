@@ -1242,13 +1242,19 @@ class TestGui:
     def test_commit_selected(self, monkeypatch, capsys, testobj):
         def mock_get_selected(self):
             print('call get_selected_filenames()')
-            return 'file1', 'file2'
+            return [('M', 'file1'), ('M', 'file2.py'), ('M', 'test_file3.py')]
         def mock_get_selected_none(self):
             print('call get_selected_filenames()')
             return []
+        def mock_get_selected_nopy(self):
+            print('call get_selected_filenames()')
+            return [('M', 'file1'), ('M', 'file2')]
+        def mock_get_selected_test(self):
+            print('call get_selected_filenames()')
+            return [('M', 'test_file1.py'), ('M', 'test_file2.py')]
         def mock_filter_tracked(self, *args):
             print('call filter_tracked()')
-            return list(*args)
+            return [x[1] for x in list(*args)]
         def mock_gettext(*args):
             return 'commit_message', True
         def mock_gettext_nok(*args):
@@ -1262,35 +1268,61 @@ class TestGui:
         monkeypatch.setattr(MockDialog, 'exec_', lambda *x: check_repo.qtw.QDialog.Rejected)
         monkeypatch.setattr(check_repo, 'FriendlyReminder', MockDialog)
         testobj.commit_selected()
-        assert capsys.readouterr().out == 'called dialog.__init()__ with args `()`\n'
-        monkeypatch.setattr(MockDialog, 'exec_', lambda *x: check_repo.qtw.QDialog.Accepted)
-        monkeypatch.setattr(check_repo, 'FriendlyReminder', MockDialog)
-        testobj.commit_selected()
-        assert capsys.readouterr().out == ('called dialog.__init()__ with args `()`\n'
-                                           'call get_selected_filenames()\n'
+        assert capsys.readouterr().out == ('call get_selected_filenames()\n'
                                            'call filter_tracked()\n')
-        monkeypatch.setattr(check_repo.Gui, 'get_selected_files', mock_get_selected)
+
+        monkeypatch.setattr(check_repo.Gui, 'get_selected_files', mock_get_selected_nopy)
         testobj.commit_selected()
-        assert capsys.readouterr().out == ('called dialog.__init()__ with args `()`\n'
-                                           'call get_selected_filenames()\n'
+        assert capsys.readouterr().out == ('call get_selected_filenames()\n'
                                            'call filter_tracked()\n'
                                            "run_and_report with args:"
                                            " ['git', 'add', 'file1', 'file2']\n"
                                            "run_and_report with args: ['git',"
                                            " 'commit', 'file1', 'file2', '-m', 'commit_message']\n"
                                            'called Gui.refresh_frame()\n')
+
+        monkeypatch.setattr(check_repo.Gui, 'get_selected_files', mock_get_selected_test)
+        testobj.commit_selected()
+        assert capsys.readouterr().out == ('call get_selected_filenames()\n'
+                                           'call filter_tracked()\n'
+                                           "run_and_report with args:"
+                                           " ['git', 'add', 'test_file1.py', 'test_file2.py']\n"
+                                           "run_and_report with args: ['git',"
+                                           " 'commit', 'test_file1.py', 'test_file2.py', '-m',"
+                                           " 'commit_message']\n"
+                                           'called Gui.refresh_frame()\n')
+
+        monkeypatch.setattr(check_repo.Gui, 'get_selected_files', mock_get_selected)
+        testobj.commit_selected()
+        assert capsys.readouterr().out == ('call get_selected_filenames()\n'
+                                           'called dialog.__init()__ with args `()`\n')
+
+        monkeypatch.setattr(MockDialog, 'exec_', lambda *x: check_repo.qtw.QDialog.Accepted)
+        #monkeypatch.setattr(check_repo.Gui, 'get_selected_files', mock_get_selected)
+        testobj.commit_selected()
+        assert capsys.readouterr().out == ('call get_selected_filenames()\n'
+                                           'called dialog.__init()__ with args `()`\n'
+                                           'call filter_tracked()\n'
+                                           "run_and_report with args:"
+                                           " ['git', 'add', 'file1', 'file2.py', 'test_file3.py']\n"
+                                           "run_and_report with args: ['git', 'commit',"
+                                           " 'file1', 'file2.py', 'test_file3.py', '-m',"
+                                           " 'commit_message']\n"
+                                           'called Gui.refresh_frame()\n')
+
         testobj.repotype = 'hg'
         testobj.commit_selected()
-        assert capsys.readouterr().out == ('called dialog.__init()__ with args `()`\n'
-                                           'call get_selected_filenames()\n'
+        assert capsys.readouterr().out == ('call get_selected_filenames()\n'
+                                           'called dialog.__init()__ with args `()`\n'
                                            'call filter_tracked()\n'
-                                           "run_and_report with args: ['hg',"
-                                           " 'commit', 'file1', 'file2', '-m', 'commit_message']\n"
+                                           "run_and_report with args: ['hg', 'commit', 'file1',"
+                                           " 'file2.py', 'test_file3.py', '-m', 'commit_message']\n"
                                            'called Gui.refresh_frame()\n')
+
         monkeypatch.setattr(check_repo.qtw.QInputDialog, 'getText', mock_gettext_nok)
         testobj.commit_selected()
-        assert capsys.readouterr().out == ('called dialog.__init()__ with args `()`\n'
-                                           'call get_selected_filenames()\n'
+        assert capsys.readouterr().out == ('call get_selected_filenames()\n'
+                                           'called dialog.__init()__ with args `()`\n'
                                            'call filter_tracked()\n')
 
     def test_amend_commit(self, monkeypatch, capsys, testobj):
