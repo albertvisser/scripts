@@ -1,0 +1,19 @@
+# configuration for run_unittests script to run (selected) unittests with coverage
+
+# location of testscripts
+# this is assuming all testscripts are in the same directory; otherwise leave this empty 
+# and use full paths in the entries in the next section
+[testdir]
+unittests
+
+# mapping of parameter values to testscripts
+[testscripts]
+main:  test_main.py
+sub:   test_sub.py
+
+# mapping of (the same) parameter values to scripts to test
+# this is assuming all scripts to test are in the directory this file is located in
+# otherwise use full paths in the entries in this section
+[testees]
+main:  main.py
+sub:   subdir/sub.py

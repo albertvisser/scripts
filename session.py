@@ -8,6 +8,7 @@ from invoke import task
 from settings import PROJECTS_BASE, SESSIONS, DEVEL, get_project_dir  # , private_repos
 # from repo import check_and_run_for_project
 
+
 def get_project_name(ticket):
     "find_project_by_ticket(number)"
     hgrc = os.path.join(DEVEL, f'_{ticket}', '.hg', 'hgrc')
@@ -36,7 +37,7 @@ def newproject(c, name):
     os.rename(os.path.join(loc, 'projectname'), os.path.join(loc, name))
 
 
-@task(help={'name': 'name of session file'})
+# @task(help={'name': 'name of session file'})
 def start_old(c, name):
     """start a programming session using various tools
 
@@ -48,7 +49,7 @@ def start_old(c, name):
 
 @task(help={'name': 'project name'})
 def start(c, name):
-    """start a programming session using various tools
+    """start a programming session for a given repo using various tools
 
     expects a .sessionrc file in the project directory
     """
@@ -76,8 +77,8 @@ def start(c, name):
             subprocess.Popen(runcommands[item], cwd=path, env=myenv)
 
 
-@task(help={'name': 'name of session file'})
-def edit(c, name):
+# @task(help={'name': 'name of session file'})
+def edit_old(c, name):
     """define the tools to start a programming session with
 
     expects a session script of the same name in .sessions (subdirectory for now)
@@ -88,7 +89,45 @@ def edit(c, name):
     c.run(f'pedit {fname}')
 
 
-@task
+@task(help={'name': 'project name'})
+def editconf(c, name):
+    """define the variables / tools to use in a session for a given repo
+
+    checks for a .sessionrc file; if not found, provide one from a template
+    """
+    path = get_project_dir(name)
+    if not path:
+        print('could not determine project location')
+        return
+    fname = os.path.join(path, '.sessionrc')
+    if not os.path.exists(fname):
+        test = input('no file .sessionrc found - create one now (Y/n)?')
+        if not test.lower().startswith('y'):
+            return
+        c.run(f'cp ~/bin/.sessionrc.template {fname}')
+    c.run(f'pedit {fname}')
+
+
+@task(help={'name': 'project name'})
+def edittestconf(c, name):
+    """define the locations of testscripts and scripts to test for a given repo
+
+    checks for a .rurc file; if not found, provide one from a template
+    """
+    path = get_project_dir(name)
+    if not path:
+        print('could not determine project location')
+        return
+    fname = os.path.join(path, '.rurc')
+    if not os.path.exists(fname):
+        test = input('no file .rurc found - create one now (Y/n)?')
+        if not test.lower().startswith('y'):
+            return
+        c.run(f'cp ~/bin/.rurc.template {fname}')
+    c.run(f'pedit {fname}')
+
+
+# @task
 def list(c):
     """list existing session names"""
     names = sorted(f'    {x}' for x in os.listdir(SESSIONS))
@@ -96,7 +135,7 @@ def list(c):
     print('\n'.join(names))
 
 
-@task(help={'ticket': 'ticket number', 'project': 'project name'})
+# @task(help={'ticket': 'ticket number', 'project': 'project name'})
 def newticket(c, ticket, project):
     """set up handling of a ticket for a given project
 
@@ -136,7 +175,7 @@ def newticket(c, ticket, project):
         print(ticket, file=f)
 
 
-@task(help={'project': 'project name'})
+# @task(help={'project': 'project name'})
 def tickets(c, project):
     """list tickets in progress for project
     """
@@ -152,7 +191,7 @@ def tickets(c, project):
     print("tickets I'm working on:", ticketlist)
 
 
-@task(help={'ticket': 'ticket number'})
+# @task(help={'ticket': 'ticket number'})
 def prep(c, ticket):
     """check before pulling changes made for ticket into project
     """
@@ -163,7 +202,7 @@ def prep(c, ticket):
         c.run(f'hg incoming -v {pull_src}')
 
 
-@task(help={'ticket': 'ticket number'})
+# @task(help={'ticket': 'ticket number'})
 def pull(c, ticket):
     """pull changes made for ticket into project
     """
@@ -175,7 +214,7 @@ def pull(c, ticket):
         c.run('hg up')
 
 
-@task(help={'ticket': 'ticket number'})
+# @task(help={'ticket': 'ticket number'})
 def cleanup(c, ticket):
     """finish handling of a ticket by removing the repo clone and the session file
     """

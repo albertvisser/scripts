@@ -1,0 +1,22 @@
+[env]
+# env variables used by the session.start command to open collections of files
+# comment out or delete the ones you don't need
+progs = <list of modules comprising the application code>
+tests = <list of modules containing (unit)tests>
+tpl = <list of files containing output templates, e.g. for web applications>
+url = <list of url configurations as use in a Django project>
+lang = <list of files used for translations of application texts>
+
+[options]
+# set these to y to have session.start open the corresponding tool (as defined in ~/bin)
+# when adding new tools also add them in the runcommands dict defined in session.start 
+# open a big terminal window
+term = n
+# open a search tool
+prfind = n
+# open editor instances for the file groups given above 
+predit = n
+# open a documentation tool
+dtree = n
+# open a repo management helper
+check-repo = n
