@@ -1,11 +1,17 @@
 #! /bin/sh
 if test "$progs"; then
         pedit -ml $progs
+	if test "$gui"; then
+                pedit -r $gui
+	fi
+	if test "data"; then
+                pedit -r $data
+	fi
 	if test "$tests"; then
                 pedit -r $tests
 	fi
 	if test "$tpl"; then
-                pedit -ml $tpl
+                pedit -mr $tpl
 	fi
 	if test "$url"; then
                 pedit -mr $url
