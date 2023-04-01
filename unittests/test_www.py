@@ -25,6 +25,7 @@ def test_copy(monkeypatch, capsys):
     www.copy(c, 'dir')
     assert capsys.readouterr().out == 'sudo cp -r home/dir server/dir\n'
 
+
 def test_link(monkeypatch, capsys):
     monkeypatch.setattr(www, 'home_root', 'home')
     monkeypatch.setattr(www, 'server_root', 'server')
@@ -147,5 +148,6 @@ def test_startapp(monkeypatch, capsys):
                                        'appname\n')
     monkeypatch.setattr(www, 'webapps', {'name': {'appid': 'appname', 'start_server': False}})
     www.startapp(c, 'name')
-    assert capsys.readouterr().out == ('/home/albert/.local/share/vivaldi-snapshot/vivaldi-snapshot'
+    # assert capsys.readouterr().out == ('/home/albert/.local/share/vivaldi-snapshot/vivaldi-snapshot'
+    assert capsys.readouterr().out == ('/opt/vivaldi/vivaldi'
                                        ' --profile-directory=Default --app-id=appname\n')

@@ -162,7 +162,8 @@ def startapp(c, name):
         c.run(f'fabsrv server.start -n {test}')
     if 'appid' in webapps[name]:
         # nieuwe api
-        c.run('/home/albert/.local/share/vivaldi-snapshot/vivaldi-snapshot'
+        # c.run('/home/albert/.local/share/vivaldi-snapshot/vivaldi-snapshot'
+        c.run('/opt/vivaldi/vivaldi'
               f' --profile-directory=Default --app-id={webapps[name]["appid"]}')
     else:
         c.run(f'vivaldi-snapshot --app=http://{webapps[name]["adr"]}'
