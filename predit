@@ -4,7 +4,7 @@ if test "$progs"; then
 	if test "$gui"; then
                 pedit -r $gui
 	fi
-	if test "data"; then
+	if test "$data"; then
                 pedit -r $data
 	fi
 	if test "$tests"; then
