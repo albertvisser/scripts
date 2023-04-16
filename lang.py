@@ -61,7 +61,7 @@ def init(c, project, language, check=False):
 def uses_gettext(filename):
     "determine if a project has gettext support"
     use_gettext = False
-    with open(filename) as f:  # TODO: vervangen door nette test met importlib en inspect?
+    with open(filename) as f:
         for line in f:
             if 'import' in line and 'gettext' in line:
                 use_gettext = True
