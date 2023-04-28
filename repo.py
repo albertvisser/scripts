@@ -2,13 +2,14 @@
 """
 import os
 import os.path
+import pathlib  # makkelijk unittesten van add2gitweb, ook bruikbaar voor andere
 import collections
 import functools
 import datetime
 import csv
 from invoke import task
-from settings import (get_project_dir, get_project_root, all_repos, git_repos, private_repos,
-                      django_repos, cherrypy_repos, frozen_repos)
+from settings import (PROJECTS_BASE, GITLOC, get_project_dir, get_project_root, all_repos,
+                      git_repos, private_repos, frozen_repos)
 
 HOME = os.path.expanduser('~')
 TODAY = datetime.datetime.today()
@@ -49,7 +50,7 @@ class Check:
     push geeft aan of er ook gepushed moet worden (working naar centraal, centraal naar bitbucket
     of github) en moet indien van toepassing expliciet als 'yes' worden opgegeven
     """
-    def __init__(self, c, context='local', push=False, verbose=False, exclude=None):
+    def __init__(self, c, context='local', push=False, verbose=False, include=None, exclude=None):
         """set up variables for common use throughout the whole class
         instead op passing them around as function parameters
         """
@@ -59,7 +60,8 @@ class Check:
         self.context = context
         self.push = push
         self.verbose = verbose
-        self.exclude = frozen_repos if exclude is None else exclude
+        self.include = include or all_repos
+        self.exclude = exclude or frozen_repos
         self.is_gitrepo = self.is_private = False
 
     def run(self):
@@ -69,7 +71,7 @@ class Check:
         changes = False
         with open(outfile, 'w') as _out:
             _out.write(f'check {self.context} repos on {TODAY}\n\n')
-            for name in all_repos:
+            for name in self.include:
                 if name in self.exclude:
                     continue
                 self.is_gitrepo = name in git_repos
@@ -110,8 +112,8 @@ class Check:
         pwd = os.path.join(root, name)
         if self.context == 'remote':
             if self.is_gitrepo or self.is_private:
-                pwd = os.path.join(root.replace('hg', 'git'), name)
-                root = root.replace('hg', 'git')
+                pwd = os.path.join(root.replace('hg_', 'git-'), name)
+                root = root.replace('hg_', 'git-')
         else:
             if self.is_private:
                 pwd = os.path.join(root, private_repos[name])
@@ -240,6 +242,7 @@ def check_local(c):  # , dry_run=False):
     test = Check(c).run()   # , dry_run=dry_run)
     if test:
         print("use 'check-repo <reponame>' to inspect changes")
+        print("    'binfab repo.check-local-changes` for log")
         print("    'binfab repo.check-local-notes` for remarks")
 
 
@@ -294,76 +297,79 @@ def pushthru(c, names):
     either name specific repos or check all
     when no name is specified, the "_check" variants are used
     """
-    if not names:
+    if names:
+        Check(c, push=True, include=names.split(',')).run()
+        Check(c, 'remote', push=True, include=names.split(',')).run()
+    else:
         Check(c, push=True).run()
         Check(c, 'remote', push=True).run()
-        with open(P2ULOG, 'w') as _out:
-            for fname in (LOCALCHG, REPOCHG):
-                with open(fname) as _in:
-                    for line in _in:
-                        _out.write(line)
-        print('\nready, output in', P2ULOG)
-        return
-    print('niet uitgevoerd, moet herschreven worden o.a. naar gebruik van git')
-    return
-    errors = False
     with open(P2ULOG, 'w') as _out:
-        for name in names.split(','):
-            if name not in all_repos:
-                # logline = '{} not pushed: is not on bitbucket'.format(name)
-                logline = f'{name} not pushed: is not registered as a remote repo'
-                print(logline)
-                _out.write(logline + "\n")
-                errors = True
-                continue
-            localpath = os.path.join('~', 'projects', name)
-            # centralpath = os.path.join('~', 'hg_repos', name)
-            centralpath = os.path.join('~', 'git_repos', name)
-            # TODO nog rekening houden met repos in .frozen?
-            if name in private_repos:
-                localpath = os.path.join('~', name)
-                centralpath = centralpath.replace('repos', 'private')
-            # elif name in django_repos:  # ??
-            #     localpath = localpath.replace('projects', os.path.join('www', 'django'))
-            # elif name in cherrypy_repos:  # ??
-            #     localpath = localpath.replace('projects', os.path.join('www', 'cherrypy'))
-            # elif name == 'bitbucket':
-            #     localpath = localpath.replace('projects', 'www')
-            #     centralpath = centralpath.replace(name, 'avisser.bitbucket.org')
-            with c.cd(localpath):
-                # TODO dit moet nog met git log zoals in _check
-                # result = c.run('hg outgoing', warn=True, hide=True)
-                result = c.run('git log origin/master..master', warn=True, hide=True)
-            _out.write(result.stdout + "\n")
-            if result.failed:
-                # logline = '{} - hg outgoing failed'.format(name)
-                logline = f'{name} - git outgoing check failed'
-                _out.write(logline + "\n")
-                _out.write(result.stderr + "\n")
-                errors = True
-            else:
-                with c.cd(localpath):
-                    # result = c.run('hg push --remotecmd update', warn=True, hide=True)
-                    result = c.run('git push', warn=True, hide=True)
-                _out.write(result.stdout + "\n")
-                if result.failed:
-                    logline = f'{name} - pushing failed'
-                    _out.write(logline + "\n")
-                    _out.write(result.stderr + "\n")
-                    errors = True
-                    continue
-            with c.cd(centralpath):
-                # result = c.run('hg push', warn=True, hide=True)
-                result = c.run('git push', warn=True, hide=True)
-            _out.write(result.stdout + "\n")
-            if result.failed:
-                # logline = '{} - pushing to bitbucket failed'.format(name)
-                logline = f'{name} - pushing to github failed'
-                _out.write(logline + "\n")
-                _out.write(result.stderr + "\n")
-                errors = True
-    extra = ' with errors' if errors else ''
-    print(f'ready{extra}, output in {P2ULOG}')
+        for fname in (LOCALCHG, REPOCHG):
+            with open(fname) as _in:
+                for line in _in:
+                    _out.write(line)
+    print(f'\nready, output in {P2ULOG}')
+    # return
+    # print('niet uitgevoerd, moet herschreven worden o.a. naar gebruik van git')
+    # return
+    # errors = False
+    # with open(P2ULOG, 'w') as _out:
+    #     for name in names.split(','):
+    #         if name not in all_repos:
+    #             # logline = '{} not pushed: is not on bitbucket'.format(name)
+    #             logline = f'{name} not pushed: is not registered as a remote repo'
+    #             print(logline)
+    #             _out.write(logline + "\n")
+    #             errors = True
+    #             continue
+    #         localpath = os.path.join('~', 'projects', name)
+    #         # centralpath = os.path.join('~', 'hg_repos', name)
+    #         centralpath = os.path.join('~', 'git-repos', name)
+    #         if name in private_repos:
+    #             localpath = os.path.join('~', name)
+    #             centralpath = centralpath.replace('repos', 'private')
+    #         elif name in frozen_repos:
+    #             localpath = os.path.join('~', 'projects', '.frozen', name)
+    #         # elif name in django_repos:  # ??
+    #         #     localpath = localpath.replace('projects', os.path.join('www', 'django'))
+    #         # elif name in cherrypy_repos:  # ??
+    #         #     localpath = localpath.replace('projects', os.path.join('www', 'cherrypy'))
+    #         # elif name == 'bitbucket':
+    #         #     localpath = localpath.replace('projects', 'www')
+    #         #     centralpath = centralpath.replace(name, 'avisser.bitbucket.org')
+    #         with c.cd(localpath):
+    #             # result = c.run('hg outgoing', warn=True, hide=True)
+    #             result = c.run('git log origin/master..master', warn=True, hide=True)
+    #         _out.write(result.stdout + "\n")
+    #         if result.failed:
+    #             # logline = '{} - hg outgoing failed'.format(name)
+    #             logline = f'{name} - git outgoing check failed'
+    #             _out.write(logline + "\n")
+    #             _out.write(result.stderr + "\n")
+    #             errors = True
+    #         else:
+    #             with c.cd(localpath):
+    #                 # result = c.run('hg push --remotecmd update', warn=True, hide=True)
+    #                 result = c.run('git push', warn=True, hide=True)
+    #             _out.write(result.stdout + "\n")
+    #             if result.failed:
+    #                 logline = f'{name} - pushing failed'
+    #                 _out.write(logline + "\n")
+    #                 _out.write(result.stderr + "\n")
+    #                 errors = True
+    #                 continue
+    #         with c.cd(centralpath):
+    #             # result = c.run('hg push', warn=True, hide=True)
+    #             result = c.run('git push', warn=True, hide=True)
+    #         _out.write(result.stdout + "\n")
+    #         if result.failed:
+    #             # logline = '{} - pushing to bitbucket failed'.format(name)
+    #             logline = f'{name} - pushing to github failed'
+    #             _out.write(logline + "\n")
+    #             _out.write(result.stderr + "\n")
+    #             errors = True
+    # extra = ' with errors' if errors else ''
+    # print(f'ready{extra}, output in {P2ULOG}')
 
 
 @task(help={'names': 'comma separated list of repostories to list',
@@ -396,15 +402,15 @@ def repo_overzicht(c, name, path, outtype):
     """Try to build a history file from a repository log
     currently it shows which commits contain which files
     """
-    repotype = ''
+    # repotype = ''
     if not os.path.isdir(path):
         return ''
     if '.hg' in os.listdir(path):
         outdict = make_repolist_hg(c, path)
-        repotype = 'hg'
+        # repotype = 'hg'
     elif '.git' in os.listdir(path):
         outdict = make_repolist_git(c, path)
-        repotype = 'git'
+        # repotype = 'git'
     else:
         return ''
     outdir = os.path.join(os.path.dirname(path), ".overzicht")
@@ -534,8 +540,38 @@ def make_repocsv(outdict, outfile):
 @task(help={'name': 'repository name'})
 def add2gitweb(c, name, frozen=False):
     "make a repository visible with gitweb"
-    loc = '/.frozen' if frozen else ''
-    c.run(f'sudo ln -s ~/git_repos{loc}/{name}/.git /var/lib/git/{name}.git')
+    loc = '.frozen/' if frozen else ''
+    exposefile = pathlib.Path(GITLOC) / f'{loc}{name}' / '.git' / 'git-daemon-export-ok'
+    descfile = pathlib.Path(GITLOC) / f'{loc}{name}' / '.git' / 'description'
+    origdescfile = pathlib.Path(PROJECTS_BASE) / f'{loc}{name}' / '.git' / 'description'
+    # gitweb.conf used to point to a directory containing symlinks
+    # base = '/var/lib/git'
+    # if not os.path.exists(base):
+    #    c.run(f'sudo mkdir {base}')
+    # c.run(f'sudo ln -s ~/git-repos{loc}/{name}/.git {base}/{name}.git')
+    # now that gitweb.conf directly points to git-repos this is sufficient:
+    if not exposefile.exists():
+        c.run(f'touch {exposefile}')
+    # kijken of description toevallig al bestaat of uit projects te halen valt
+    if descfile.exists():
+        olddesc = descfile.read_text()
+        if olddesc.startswith('Unnamed'):
+            olddesc = ''
+    else:
+        olddesc = ''
+    if origdescfile.exists():
+        gitr_desc = origdescfile.read_text()
+    else:
+        gitr_desc = ''
+    if olddesc == '':
+        desc = gitr_desc or get_repodesc()
+    if olddesc == '':
+        c.run(f'echo "{desc}" > {descfile}')
+
+
+def get_repodesc():
+    "simple wrapper around input() to make unit testing easier"
+    return input('enter short repo description: ')
 
 
 def check_and_run_for_project(c, name, command):

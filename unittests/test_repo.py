@@ -159,11 +159,11 @@ def test_get_locations(monkeypatch, capsys):
     c = MockContext()
     testobj = repo.Check(c, 'remote')
     testobj.is_gitrepo, testobj.is_private = True, True
-    assert testobj.get_locations('name') == ('homedir/git_repos/name', 'homedir/git_repos')
+    assert testobj.get_locations('name') == ('homedir/git-repos/name', 'homedir/git-repos')
     testobj.is_gitrepo, testobj.is_private = True, False
-    assert testobj.get_locations('name') == ('homedir/git_repos/name', 'homedir/git_repos')
+    assert testobj.get_locations('name') == ('homedir/git-repos/name', 'homedir/git-repos')
     testobj.is_gitrepo, testobj.is_private = False, True
-    assert testobj.get_locations('name') == ('homedir/git_repos/name', 'homedir/git_repos')
+    assert testobj.get_locations('name') == ('homedir/git-repos/name', 'homedir/git-repos')
     testobj.is_gitrepo, testobj.is_private = False, False
     assert testobj.get_locations('name') == ('homedir/hg_repos/name', 'homedir/hg_repos')
 
@@ -202,7 +202,7 @@ def test_register_changes(monkeypatch, capsys):
     assert capsys.readouterr().out == 'git status -uno --short\n'
 
 
-def test_register_outgoing(monkeypatch, capsys):
+def test_register_outgoing(monkeypatch, capsys, tmp_path):
     def mock_run(c, *args, **kwargs):
         print(*args)
         return types.SimpleNamespace(stdout='xxx', ok=True)
@@ -331,6 +331,7 @@ def test_check_local(monkeypatch, capsys):
     repo.check_local(c)
     assert capsys.readouterr().out == ("call Check() with args () {}\ncall Check.run()\n"
                                        "use 'check-repo <reponame>' to inspect changes\n"
+                                       "    'binfab repo.check-local-changes` for log\n"
                                        "    'binfab repo.check-local-notes` for remarks\n")
 
 
@@ -378,10 +379,6 @@ def test_push_remote(monkeypatch, capsys):
 
 
 def test_pushthru(monkeypatch, capsys):
-    c = MockContext()
-    repo.pushthru(c, 'proj')
-    assert capsys.readouterr().out == ('niet uitgevoerd, moet herschreven worden'
-                                       ' o.a. naar gebruik van git\n')
     monkeypatch.setattr(repo, 'LOCALCHG', '/tmp/local_changes_test')
     monkeypatch.setattr(repo, 'REPOCHG', '/tmp/repo_changes_test')
     with open(repo.LOCALCHG, 'w') as f:
@@ -394,6 +391,14 @@ def test_pushthru(monkeypatch, capsys):
     assert capsys.readouterr().out == ("call Check() with args () {'push': True}\n"
                                        "call Check.run()\n"
                                        "call Check() with args ('remote',) {'push': True}\n"
+                                       "call Check.run()\n\n"
+                                       "ready, output in /tmp/pushthru_log\n")
+    repo.pushthru(c, 'name')
+    assert capsys.readouterr().out == ("call Check() with args () {'push': True,"
+                                       " 'include': ['name']}\n"
+                                       "call Check.run()\n"
+                                       "call Check() with args ('remote',) {'push': True,"
+                                       " 'include': ['name']}\n"
                                        "call Check.run()\n\n"
                                        "ready, output in /tmp/pushthru_log\n")
 
@@ -516,8 +521,8 @@ def test_make_repolist_git(monkeypatch, capsys):
     assert capsys.readouterr().out == 'git log --pretty="%h; %ad; %s" --stat in path/to/repo\n'
 
 
-def test_make_repo_ovz(monkeypatch, capsys):
-    filename = '/tmp/repo_ovz_outfile'
+def test_make_repo_ovz(monkeypatch, capsys, tmp_path):
+    filename = tmp_path / 'repo_ovz_outfile'
     repo.make_repo_ovz({'naam1': {'date': 'ddd', 'desc': ['xx', 'x'], 'files': ['file1', 'file2']},
                         'naam2': {'date': 'eee', 'desc': ['yy', 'y']}}, filename)
     with open(filename) as f:
@@ -525,16 +530,16 @@ def test_make_repo_ovz(monkeypatch, capsys):
     assert data == ('ddd: xx\nx\n    file1\n    file2\neee: yy\ny\n')
 
 
-def test_make_repocsv(monkeypatch, capsys):
+def test_make_repocsv(monkeypatch, capsys, tmp_path):
     monkeypatch.setattr(repo.csv, 'writer', MockWriter)
-    filename = '/tmp/repo_ovz_outfile'
-    if os.path.exists(filename):
-        os.remove(filename)
+    filename = tmp_path / 'repo_ovz_outfile'
+    if filename.exists():
+        filename.unlink()
     repo.make_repocsv({'1': {'date': 'ddd', 'desc': ['x;x', 'x'], 'files': ['file1', 'file2']},
                         '2': {'date': 'eee', 'desc': ['y,y', 'y']}}, filename)
-    assert os.path.exists(filename)
+    assert filename.exists()
     assert capsys.readouterr().out == (
-            "create writer to file <_io.TextIOWrapper name='/tmp/repo_ovz_outfile'"
+            f"create writer to file <_io.TextIOWrapper name='{filename}'"
             " mode='w' encoding='UTF-8'>\n"
             r"call writer.writerow for data [' \\ date', 'ddd', 'eee']""\n"
             r"call writer.writerow for data ['filename \\ description',"
@@ -543,15 +548,72 @@ def test_make_repocsv(monkeypatch, capsys):
             "call writer.writerow for data ['./file1', '', 'x']\n"
             "call writer.writerow for data ['./file2', '', 'x']\n")
 
-def test_add2gitweb(monkeypatch, capsys):
+
+def test_add2gitweb(monkeypatch, capsys, tmp_path):
+    counter = 0
+    def mock_exists(*args):
+        nonlocal counter
+        counter += 1
+        if counter < 3:
+            return True
+        return False
+    def mock_exists_2(*args):
+        nonlocal counter
+        counter += 1
+        if counter in (1, 3):
+            return True
+        return False
+    counter2 = 0
+    def mock_read(*args):
+        nonlocal counter2
+        counter2 += 1
+        if counter2 == 1:
+            return "Unnamed project"
+        return "description"
+    def mock_read_2(*args):
+        nonlocal counter2
+        counter2 += 1
+        if counter2 == 1:
+            return "orig description"
+        return "description"
+    def mock_get_desc():
+        print('called repo.get_repodesc')
+        return 'repodesc'
+    monkeypatch.setattr(repo, 'get_repodesc', mock_get_desc)
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
+    monkeypatch.setattr(repo.pathlib.Path, 'exists', lambda *x: False)
     repo.add2gitweb(c, 'name')
-    assert capsys.readouterr().out == ('sudo ln -s ~/git_repos/name/.git'
-                                       ' /var/lib/git/name.git\n')
+    assert capsys.readouterr().out == (
+            f'touch {repo.GITLOC}/name/.git/git-daemon-export-ok\n'
+            'called repo.get_repodesc\n'
+            f'echo "repodesc" > {repo.GITLOC}/name/.git/description\n')
     repo.add2gitweb(c, 'name', frozen=True)
-    assert capsys.readouterr().out == ('sudo ln -s ~/git_repos/.frozen/name/.git'
-                                       ' /var/lib/git/name.git\n')
+    assert capsys.readouterr().out == (
+            f'touch {repo.GITLOC}/.frozen/name/.git/git-daemon-export-ok\n'
+            'called repo.get_repodesc\n'
+            f'echo "repodesc" > {repo.GITLOC}/.frozen/name/.git/description\n')
+    monkeypatch.setattr(repo.pathlib.Path, 'exists', lambda *x: True)
+    monkeypatch.setattr(repo.pathlib.Path, 'read_text', mock_read)
+    repo.add2gitweb(c, 'name')
+    assert capsys.readouterr().out == (
+            f'echo "description" > {repo.GITLOC}/name/.git/description\n')
+    counter2 = 0
+    monkeypatch.setattr(repo.pathlib.Path, 'exists', mock_exists)
+    monkeypatch.setattr(repo.pathlib.Path, 'read_text', mock_read)
+    repo.add2gitweb(c, 'name')
+    assert capsys.readouterr().out == (
+            'called repo.get_repodesc\n'
+            f'echo "repodesc" > {repo.GITLOC}/name/.git/description\n')
+    counter = counter2 = 0
+    monkeypatch.setattr(repo.pathlib.Path, 'exists', mock_exists_2)
+    monkeypatch.setattr(repo.pathlib.Path, 'read_text', mock_read_2)
+    repo.add2gitweb(c, 'name')
+    assert capsys.readouterr().out == (
+            f'echo "orig description" > {repo.GITLOC}/name/.git/description\n')
+
+def _test_get_repodesc(monkeypatch, capsys):  # mohgelijk te onbenullig en lastig om te testen
+    ...
 
 
 def test_check_and_run(monkeypatch, capsys):
