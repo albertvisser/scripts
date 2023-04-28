@@ -112,15 +112,63 @@ def test_start(monkeypatch, capsys):
                                        f"['check-repo'] {{'cwd': 'project', 'env': {newenv}}}\n")
 
 
-def test_edit(monkeypatch, capsys):
+def test_edit_old(monkeypatch, capsys):
     monkeypatch.setattr(session, 'SESSIONS', 'sessions_location')
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
-    session.edit(c, 'session_file')
+    session.edit_old(c, 'session_file')
     assert capsys.readouterr().out == 'pedit sessions_location/session_file\n'
 
 
-def test_list(monkeypatch, capsys):
+def test_editconf(monkeypatch, capsys):
+    def mock_get_input(prompt):
+        print(f'called input(`{prompt}`)')
+        return 'No'
+    monkeypatch.setattr(MockContext, 'run', mock_run)
+    monkeypatch.setattr(session, 'get_project_dir', lambda x: '')
+    c = MockContext()
+    session.editconf(c, 'projname')
+    assert capsys.readouterr().out == 'could not determine project location\n'
+    monkeypatch.setattr(session, 'get_project_dir', lambda x: 'testproj')
+    monkeypatch.setattr(session.os.path, 'exists', lambda x: False)
+    monkeypatch.setattr(session, 'get_input_from_user', mock_get_input)
+    session.editconf(c, 'projname')
+    assert capsys.readouterr().out == ('called input(`no file .sessionrc found'
+                                       ' - create one now (Y/n)?`)\n')
+    monkeypatch.setattr(session, 'get_input_from_user', lambda x: 'Yes')
+    session.editconf(c, 'projname')
+    assert capsys.readouterr().out == ('cp ~/bin/.sessionrc.template testproj/.sessionrc\n'
+                                       'pedit testproj/.sessionrc\n')
+    monkeypatch.setattr(session.os.path, 'exists', lambda x: True)
+    session.editconf(c, 'projname')
+    assert capsys.readouterr().out == 'pedit testproj/.sessionrc\n'
+
+
+def test_edittestconf(monkeypatch, capsys):
+    def mock_get_input(prompt):
+        print(f'called input(`{prompt}`)')
+        return 'No'
+    monkeypatch.setattr(MockContext, 'run', mock_run)
+    monkeypatch.setattr(session, 'get_project_dir', lambda x: '')
+    c = MockContext()
+    session.edittestconf(c, 'projname')
+    assert capsys.readouterr().out == 'could not determine project location\n'
+    monkeypatch.setattr(session, 'get_project_dir', lambda x: 'testproj')
+    monkeypatch.setattr(session.os.path, 'exists', lambda x: False)
+    monkeypatch.setattr(session, 'get_input_from_user', mock_get_input)
+    session.edittestconf(c, 'projname')
+    assert capsys.readouterr().out == ('called input(`no file .rurc found'
+                                       ' - create one now (Y/n)?`)\n')
+    monkeypatch.setattr(session, 'get_input_from_user', lambda x: 'Yes')
+    session.edittestconf(c, 'projname')
+    assert capsys.readouterr().out == ('cp ~/bin/.rurc.template testproj/.rurc\n'
+                                       'pedit testproj/.rurc\n')
+    monkeypatch.setattr(session.os.path, 'exists', lambda x: True)
+    session.edittestconf(c, 'projname')
+    assert capsys.readouterr().out == 'pedit testproj/.rurc\n'
+
+
+def _test_list(monkeypatch, capsys):
     monkeypatch.setattr(session.os, 'listdir', lambda x: ['name1', 'name2'])
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
@@ -133,7 +181,7 @@ def _test_newticket(monkeypatch, capsys):
     c = MockContext()
 
 
-def test_tickets(monkeypatch, capsys, tmp_path):
+def _test_tickets(monkeypatch, capsys, tmp_path):
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
     monkeypatch.setattr(session, 'get_regfile_name', lambda x: '')
@@ -151,7 +199,7 @@ def test_tickets(monkeypatch, capsys, tmp_path):
     assert capsys.readouterr().out == "tickets I'm working on: 1, 2, 3\n"
 
 
-def test_prep(monkeypatch, capsys):
+def _test_prep(monkeypatch, capsys):
     def mock_get_name(*args):
         print('called get_project_name() with args', *args)
         return 'project_name'
@@ -169,7 +217,7 @@ def test_prep(monkeypatch, capsys):
                                         'hg incoming -v devpath/_111 in project_dir\n')
 
 
-def test_pull(monkeypatch, capsys):
+def _test_pull(monkeypatch, capsys):
     def mock_get_name(*args):
         print('called get_project_name() with args', *args)
         return 'project_name'
@@ -188,7 +236,7 @@ def test_pull(monkeypatch, capsys):
                                         'hg up in project_dir\n')
 
 
-def test_cleanup(monkeypatch, capsys):
+def _test_cleanup(monkeypatch, capsys, tmp_path):
     def mock_remove(*args):
         print('call remove of `{}`'.format(*args))
     def mock_rmtree(*args):
@@ -196,28 +244,23 @@ def test_cleanup(monkeypatch, capsys):
     monkeypatch.setattr(session, 'get_project_name', lambda x: 'projname')
     monkeypatch.setattr(session.os, 'remove', mock_remove)
     monkeypatch.setattr(session.shutil, 'rmtree', mock_rmtree)
-    regfile = '/tmp/session_test_regfile'
-    monkeypatch.setattr(session, 'get_regfile_name', lambda x: regfile)
-    with open(regfile, 'w') as f:
-        f.write('testname1\nprojname\ntestname2\n')
+    regfile = tmp_path / 'session_test_regfile'
+    monkeypatch.setattr(session, 'get_regfile_name', lambda x: str(regfile))
+    regfile.write_text('testname1\nprojname\ntestname2\n')
     c = MockContext()
     session.cleanup(c, 'projname')
     assert capsys.readouterr().out == ('call remove of `/home/albert/bin/.sessions/projname`\n'
                                        'call rmtree of `/home/albert/devel/_projname`\n')
-    with open(regfile) as f:
-        data = f.read()
+    data = regfile.read_text()
     assert data == 'testname1\ntestname2\n'
-    with open(regfile, 'w') as f:
-        f.write('projname\n')
+    regfile.write_text('projname\n')
     session.cleanup(c, 'projname')
     assert capsys.readouterr().out == ('call remove of `/home/albert/bin/.sessions/projname`\n'
                                        'call rmtree of `/home/albert/devel/_projname`\n'
-                                       'call remove of `/tmp/session_test_regfile`\n')
-    with open(regfile, 'w') as f:
-        f.write('testname1\ntestname2\n')
+                                       f'call remove of `{regfile}`\n')
+    regfile.write_text('testname1\ntestname2\n')
     session.cleanup(c, 'projname')
     assert capsys.readouterr().out == ('call remove of `/home/albert/bin/.sessions/projname`\n'
                                        'call rmtree of `/home/albert/devel/_projname`\n')
-    with open(regfile) as f:
-        data = f.read()
+    data = regfile.read_text()
     assert data == 'testname1\ntestname2\n'

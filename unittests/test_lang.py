@@ -20,10 +20,44 @@ def test_get_base_dir(monkeypatch, capsys):
     assert lang.get_base_dir('project') == 'project_dir for project'
 
 
-def _test_init(monkeypatch, capsys):
+def test_init(monkeypatch, capsys):
+    def mock_mkdir(path):
+        print(f'called os.path.mkdir with arg `{path}`')
+    counter = 0
+    def mock_exists(path):
+        nonlocal counter
+        counter += 1
+        if counter > 1:
+            return False
+        return True
+    monkeypatch.setattr(lang, 'get_base_dir', lambda x: '')
+    # monkeypatch.setattr(MockContext, 'run', run_in_dir)
     c = MockContext()
     lang.init(c, 'proj', 'lang')
+    assert capsys.readouterr().out == 'unknown project\n'
+    monkeypatch.setattr(lang, 'get_base_dir', lambda x: 'base')
+    monkeypatch.setattr(lang.os.path, 'exists', lambda x: False)
+    monkeypatch.setattr(lang.os, 'mkdir', mock_mkdir)
+    lang.init(c, 'proj', 'lang')
+    assert capsys.readouterr().out == (
+            'called os.path.mkdir with arg `base/locale`\n'
+            'called os.path.mkdir with arg `base/locale/lang`\n'
+            'called os.path.mkdir with arg `base/locale/lang/LC_MESSAGES`\n'
+            'language support initialized for language type `lang`\n')
     lang.init(c, 'proj', '.', check=True)
+    assert capsys.readouterr().out == ('language support not present (no `locale` subdirectory)\n')
+    monkeypatch.setattr(lang.os.path, 'exists', lambda x: True)
+    lang.init(c, 'proj', 'lang')
+    assert capsys.readouterr().out == (
+            'called os.path.mkdir with arg `base/locale/lang/LC_MESSAGES`\n'
+            'language support initialized for language type `lang`\n')
+    lang.init(c, 'proj', '.', check=True)
+    assert capsys.readouterr().out == ('language support already present for language type `en`\n'
+                                       'language support already present for language type `nl`\n')
+    monkeypatch.setattr(lang.os.path, 'exists', mock_exists)
+    lang.init(c, 'proj', '.', check=True)
+    assert capsys.readouterr().out == ('no language support present for language type `en`\n'
+                                       'no language support present for language type `nl`\n')
 
 
 def test_uses_gettext(monkeypatch, capsys, tmp_path):

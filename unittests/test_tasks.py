@@ -126,7 +126,8 @@ def test_build_scite(monkeypatch, capsys, tmp_path):
                                        'make install failed, see /tmp/scite_build.log\n')
     with open('/tmp/scite_build.log') as f:
         data = f.read()
-    assert data == "results from call 2\nresults from call 3\nresults from call 4\nerrors on call 4\n"
+    assert data == ("results from call 2\nresults from call 3\n"
+                    "results from call 4\nerrors on call 4\n")
 
     counter = 0
     monkeypatch.setattr(MockContext, 'run', mock_run_4)
