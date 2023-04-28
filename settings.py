@@ -9,6 +9,7 @@ apache_root = '/var/www/html'
 
 # project/session management
 PROJECTS_BASE = os.path.expanduser('~/projects')
+GITLOC = os.path.expanduser('~/git-repos')
 SESSIONS = os.path.expanduser('~/bin/.sessions')
 DEVEL = os.path.expanduser('~/devel')
 
@@ -30,12 +31,12 @@ frozen_repos = fcgi_repos + [cherrypy_repos[-1], django_repos[-1]]
 DO_NOT_LINT = frozen_repos + non_deploy_repos  # + private_repos
 
 # VivaldiHooks settings
-vhooks_path = os.path.join('/home', 'albert', 'git_repos', 'VivaldiHooks')
-appdir = 'vivaldi'
-vivaldi_path = os.path.join('/opt', 'vivaldi-snapshot', 'resources')
-vhooks_items = ({'name': 'browser.html', 'is_dir': False, 'backup': True},
-                {'name': 'jdhooks.js', 'is_dir': False, 'backup': False},
-                {'name': 'hooks', 'is_dir': True, 'backup': False})
+# vhooks_path = os.path.join('/home', 'albert', 'git_repos', 'VivaldiHooks')
+# appdir = 'vivaldi'
+# vivaldi_path = os.path.join('/opt', 'vivaldi-snapshot', 'resources')
+# vhooks_items = ({'name': 'browser.html', 'is_dir': False, 'backup': True},
+#                 {'name': 'jdhooks.js', 'is_dir': False, 'backup': False},
+#                 {'name': 'hooks', 'is_dir': True, 'backup': False})
 
 # deze zijn destijds op Mint gemaakt, de api lijkt nu anders te werken
 # webapps = {'absenties': {'profile': 'absenties1349', 'adr': 'absenties.lemoncurry.nl',
@@ -98,10 +99,10 @@ def get_project_root(name, context='local'):
             root = root.parent
     else:  # if context in ('remote', 'bb'):
         if is_private:
-            where = 'hg_private' if context == 'bb' else 'git_repos'
+            where = 'hg_private' if context == 'bb' else 'git-repos'
             root = root.parent / where if context != 'sf' else 'n/a'
         elif git_repo:
-            root = root.parent / 'git_repos' if context not in ('sf', 'bb') else 'n/a'
+            root = root.parent / 'git-repos' if context not in ('sf', 'bb') else 'n/a'
         elif sf_repo:
             root = root.parent / 'sf_repos' if context not in ('bb', 'git') else 'n/a'
         else:
