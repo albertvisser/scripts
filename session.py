@@ -69,9 +69,7 @@ def start(c, name):
         return
     myenv = os.environ
     for item in conf['env']:
-        print(item)
         myenv[item] = conf['env'][item]
-    print(myenv['progs'])
     for item in conf['options']:
         if item in runcommands and str(conf['options'][item]).lower() == 'y':
             subprocess.Popen(runcommands[item], cwd=path, env=myenv)
@@ -101,7 +99,7 @@ def editconf(c, name):
         return
     fname = os.path.join(path, '.sessionrc')
     if not os.path.exists(fname):
-        test = input('no file .sessionrc found - create one now (Y/n)?')
+        test = get_input_from_user('no file .sessionrc found - create one now (Y/n)?')
         if not test.lower().startswith('y'):
             return
         c.run(f'cp ~/bin/.sessionrc.template {fname}')
@@ -120,119 +118,123 @@ def edittestconf(c, name):
         return
     fname = os.path.join(path, '.rurc')
     if not os.path.exists(fname):
-        test = input('no file .rurc found - create one now (Y/n)?')
+        test = get_input_from_user('no file .rurc found - create one now (Y/n)?')
         if not test.lower().startswith('y'):
             return
         c.run(f'cp ~/bin/.rurc.template {fname}')
     c.run(f'pedit {fname}')
 
 
+def get_input_from_user(prompt):
+    "wrapper around input function to facilitate unit testing"
+    return input(prompt)
+
 # @task
-def list(c):
-    """list existing session names"""
-    names = sorted(f'    {x}' for x in os.listdir(SESSIONS))
-    print("available sessions:")
-    print('\n'.join(names))
+# def list(c):
+#     """list existing session names"""
+#     names = sorted(f'    {x}' for x in os.listdir(SESSIONS))
+#     print("available sessions:")
+#     print('\n'.join(names))
 
 
 # @task(help={'ticket': 'ticket number', 'project': 'project name'})
-def newticket(c, ticket, project):
-    """set up handling of a ticket for a given project
-
-    clones the project repository and builds a session file
-    """
-    print('building new directory')
-    root = '_' + ticket
-    with c.cd(DEVEL):
-        c.run(f'hg clone {get_project_dir(project)} {root}')
-    dest = os.path.join(SESSIONS, ticket)
-    settings = os.path.join(DEVEL, root, '.hg', 'hgrc')
-    with open(settings) as _in:
-        in_section = False
-        for line in _in:
-            if line.startswith('[paths]'):
-                in_section = True
-            elif in_section and line.startswith('default'):
-                origin = line.split('=')[1].strip()
-                break
-        else:
-            origin = ''
-    if origin:
-        origin = os.path.basename(origin)
-        with open(dest, 'w') as _out:
-            first = True
-            with open(os.path.join(SESSIONS, origin)) as _in:
-                for line in _in:
-                    if line.startswith('cd ') and first:
-                        line = f'cd {os.path.join(DEVEL, root)}\n'
-                        first = False
-                    _out.write(line)
-                _out.write("a-propos -n 'Mee Bezig' -f mee_bezig.pck &")
-    # finally: create a reminder that we have a ticket version of this repo
-    regfile = get_regfile_name(project)
-    mode = 'a' if os.path.exists(regfile) else 'w'
-    with open(regfile, mode) as f:
-        print(ticket, file=f)
+# def newticket(c, ticket, project):
+#     """set up handling of a ticket for a given project
+#
+#     clones the project repository and builds a session file
+#     """
+#     print('building new directory')
+#     root = '_' + ticket
+#     with c.cd(DEVEL):
+#         c.run(f'hg clone {get_project_dir(project)} {root}')
+#     dest = os.path.join(SESSIONS, ticket)
+#     settings = os.path.join(DEVEL, root, '.hg', 'hgrc')
+#     with open(settings) as _in:
+#         in_section = False
+#         for line in _in:
+#             if line.startswith('[paths]'):
+#                 in_section = True
+#             elif in_section and line.startswith('default'):
+#                 origin = line.split('=')[1].strip()
+#                 break
+#         else:
+#             origin = ''
+#     if origin:
+#         origin = os.path.basename(origin)
+#         with open(dest, 'w') as _out:
+#             first = True
+#             with open(os.path.join(SESSIONS, origin)) as _in:
+#                 for line in _in:
+#                     if line.startswith('cd ') and first:
+#                         line = f'cd {os.path.join(DEVEL, root)}\n'
+#                         first = False
+#                     _out.write(line)
+#                 _out.write("a-propos -n 'Mee Bezig' -f mee_bezig.pck &")
+#     # finally: create a reminder that we have a ticket version of this repo
+#     regfile = get_regfile_name(project)
+#     mode = 'a' if os.path.exists(regfile) else 'w'
+#     with open(regfile, mode) as f:
+#         print(ticket, file=f)
 
 
 # @task(help={'project': 'project name'})
-def tickets(c, project):
-    """list tickets in progress for project
-    """
-    regfile = get_regfile_name(project)
-    if not regfile:
-        print('wrong project name')
-        return
-    if not os.path.exists(regfile):
-        ticketlist = 'none'
-    else:
-        with open(regfile) as f:
-            ticketlist = ', '.join([x.strip() for x in f])
-    print("tickets I'm working on:", ticketlist)
+# def tickets(c, project):
+#     """list tickets in progress for project
+#     """
+#     regfile = get_regfile_name(project)
+#     if not regfile:
+#         print('wrong project name')
+#         return
+#     if not os.path.exists(regfile):
+#         ticketlist = 'none'
+#     else:
+#         with open(regfile) as f:
+#             ticketlist = ', '.join([x.strip() for x in f])
+#     print("tickets I'm working on:", ticketlist)
 
 
 # @task(help={'ticket': 'ticket number'})
-def prep(c, ticket):
-    """check before pulling changes made for ticket into project
-    """
-    project = get_project_name(ticket)
-    pull_dest = get_project_dir(project)
-    pull_src = os.path.join(DEVEL, '_' + ticket)
-    with c.cd(pull_dest):
-        c.run(f'hg incoming -v {pull_src}')
+# def prep(c, ticket):
+#     """check before pulling changes made for ticket into project
+#     """
+#     project = get_project_name(ticket)
+#     pull_dest = get_project_dir(project)
+#     pull_src = os.path.join(DEVEL, '_' + ticket)
+#     with c.cd(pull_dest):
+#         c.run(f'hg incoming -v {pull_src}')
 
 
 # @task(help={'ticket': 'ticket number'})
-def pull(c, ticket):
-    """pull changes made for ticket into project
-    """
-    project = get_project_name(ticket)
-    pull_dest = get_project_dir(project)
-    pull_src = os.path.join(DEVEL, '_' + ticket)
-    with c.cd(pull_dest):
-        c.run(f'hg pull {pull_src}')
-        c.run('hg up')
+# def pull(c, ticket):
+#     """pull changes made for ticket into project
+#     """
+#     project = get_project_name(ticket)
+#     pull_dest = get_project_dir(project)
+#     pull_src = os.path.join(DEVEL, '_' + ticket)
+#     with c.cd(pull_dest):
+#         c.run(f'hg pull {pull_src}')
+#         c.run('hg up')
 
 
 # @task(help={'ticket': 'ticket number'})
-def cleanup(c, ticket):
-    """finish handling of a ticket by removing the repo clone and the session file
-    """
-    project = get_project_name(ticket)
-    # remove session file
-    os.remove(os.path.join(SESSIONS, ticket))
-    # remove repository
-    shutil.rmtree(os.path.join(DEVEL, '_' + ticket))
-    # remove reference in .tickets file
-    regfile = get_regfile_name(project)
-    with open(regfile) as f:
-        projects = f.read().strip().split('\n')
-    try:
-        projects.remove(ticket)
-    except ValueError:
-        return
-    if projects:
-        with open(regfile, 'w') as f:
-            f.write('\n'.join(projects) + '\n')
-    else:
-        os.remove(regfile)
+# def cleanup(c, ticket):
+#     """finish handling of a ticket by removing the repo clone and the session file
+#     """
+#     project = get_project_name(ticket)
+#     # remove session file
+#     os.remove(os.path.join(SESSIONS, ticket))
+#     # remove repository
+#     shutil.rmtree(os.path.join(DEVEL, '_' + ticket))
+#     # remove reference in .tickets file
+#     regfile = get_regfile_name(project)
+#     with open(regfile) as f:
+#         projects = f.read().strip().split('\n')
+#     try:
+#         projects.remove(ticket)
+#     except ValueError:
+#         return
+#     if projects:
+#         with open(regfile, 'w') as f:
+#             f.write('\n'.join(projects) + '\n')
+#     else:
+#         os.remove(regfile)
