@@ -1,6 +1,8 @@
 #! /bin/sh
 files=''
 if test "$progs"; then files=$files' '$progs; fi
+if test "$dml"; then files=$files' '$dml; fi
+if test "$gui"; then files=$files' '$gui; fi
 if test "$tpl"; then files=$files' '$tpl; fi
 if test "$url"; then files=$files' '$url; fi
 if test "$lang"; then files=$files' '$lang; fi

@@ -3,8 +3,10 @@
 # comment out or delete the ones you don't need
 progs = <list of modules comprising the application code>
 tests = <list of modules containing (unit)tests>
+dml = <list of files containing data manipulation code>
+gui = <list of files containing gui manipulation code>
 tpl = <list of files containing output templates, e.g. for web applications>
-url = <list of url configurations as use in a Django project>
+url = <list of url configurations as used in a Django project>
 lang = <list of files used for translations of application texts>
 
 [options]
