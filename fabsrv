@@ -1,2 +1,3 @@
 #! /bin/bash
-inv -c ~/nginx-config/tasks $@
+# inv -c ~/nginx-config/tasks $@
+inv --search-root ~/nginx-config $@
