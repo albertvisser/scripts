@@ -60,8 +60,12 @@ class Check:
         self.context = context
         self.push = push
         self.verbose = verbose
-        self.include = include or all_repos
-        self.exclude = exclude or frozen_repos
+        self.include = include.split(',') if include else all_repos
+        # self.exclude = exclude or frozen_repos
+        self.exclude = frozen_repos  # (voorlopig?) altijd frozen repos uitsluiten
+                                     # misschien ook een switch voor maken (frozen niet uitsluiten)
+        if exclude:
+            self.exclude += exclude.split(',')
         self.is_gitrepo = self.is_private = False
 
     def run(self):
