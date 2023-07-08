@@ -55,6 +55,8 @@ def start(c, name):
     """
     # via run blijven het commando's wachten tot je het afsluit
     # met subprocess.Popen en shebangs in alle scripts werkt het wel
+    # is het mogelijk om de PID's terug te krijgen o.i.d. zodat ik alle gestarte programma's
+    # in één keer kan afsluiten?
     runcommands = {'term': ['gnome-terminal', '--geometry=132x43+4+40'],
                    'check-repo': ['check-repo'],
                    'predit': ['predit'], 'dtree': ['dtree'], 'prfind': ['prfind']}
