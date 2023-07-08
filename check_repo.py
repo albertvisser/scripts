@@ -131,14 +131,12 @@ class FriendlyReminder(qtw.QDialog):
         super().__init__(parent)
         self.setWindowTitle('Friendly Reminder')
         vbox = qtw.QVBoxLayout()
-        hbox = qtw.QHBoxLayout()
-        self.linted = qtw.QCheckBox('Did you lint the files to be committed?', self)
-        hbox.addWidget(self.linted)
-        vbox.addLayout(hbox)
-        hbox = qtw.QHBoxLayout()
-        self.tested = qtw.QCheckBox('Did you test the files to be committed?', self)
-        hbox.addWidget(self.tested)
-        vbox.addLayout(hbox)
+        vbox.addWidget(qtw.QLabel('* Did you lint the files to be committed?'))
+        vbox.addSpacing(5)
+        vbox.addWidget(qtw.QLabel('* Did you test the files to be committed?'))
+        vbox.addSpacing(5)
+        self.complete = qtw.QCheckBox("Yes, I know what I'm doing", self)
+        vbox.addWidget(self.complete)
         hbox = qtw.QHBoxLayout()
         hbox.addStretch(1)
         ok_button = qtw.QPushButton('&Ok', self)
@@ -153,7 +151,7 @@ class FriendlyReminder(qtw.QDialog):
 
     def accept(self):
         "check for ticks"
-        if self.linted.isChecked() and self.tested.isChecked():
+        if self.complete.isChecked():
             super().accept()
         else:
             qtw.QMessageBox.information(self, self._parent.title, "You didn't tick all the boxes")
