@@ -2,6 +2,8 @@
 """
 import os
 import shutil
+import glob
+import psutil
 import configparser
 import subprocess  # voor die ene die niet met invoke lukt
 from invoke import task
@@ -55,8 +57,10 @@ def start(c, name):
     """
     # via run blijven het commando's wachten tot je het afsluit
     # met subprocess.Popen en shebangs in alle scripts werkt het wel
-    # is het mogelijk om de PID's terug te krijgen o.i.d. zodat ik alle gestarte programma's
-    # in één keer kan afsluiten?
+    paths = glob.glob(f'{name}-session-pids-start-at-*', root_dir='/tmp')
+    if paths:
+        print('you already started a session for this project')
+        return
     runcommands = {'term': ['gnome-terminal', '--geometry=132x43+4+40'],
                    'check-repo': ['check-repo'],
                    'predit': ['predit'], 'dtree': ['dtree'], 'prfind': ['prfind']}
@@ -72,10 +76,67 @@ def start(c, name):
     myenv = os.environ
     for item in conf['env']:
         myenv[item] = conf['env'][item]
+    proc_pids = []
     for item in conf['options']:
         if item in runcommands and str(conf['options'][item]).lower() == 'y':
-            subprocess.Popen(runcommands[item], cwd=path, env=myenv)
+            pr = subprocess.Popen(runcommands[item], cwd=path, env=myenv)
+            proc_pids.append(pr.pid)
+    if proc_pids:
+        with open(f'/tmp/{name}-session-pids-start-at-{proc_pids[0]}', 'w') as f:
+            f.write('\n'.join([str(x) for x in proc_pids]))
 
+
+@task(help={'name': 'project name'})
+def get_info(c, name):
+    """get info about started processes (originally intended for use in a "close session" script
+    """
+    paths = glob.glob(f'{name}-session-pids-start-at-*', root_dir='/tmp')
+    min_pid = paths[0].rsplit('-', 1)[1]  # there should be only one
+    # determine name of file to write
+    fname = initial_name = f'/tmp/{name}-session-info'
+    counter = 0
+    while os.path.exists(fname):
+        counter += 1
+        fname = '.'.join((initial_name, str(counter)))
+    # write the information
+    with open(fname, 'w') as f:
+        for proc in psutil.process_iter(['name', 'ppid',  'exe', 'cmdline']):
+            if proc.pid < int(min_pid):
+                continue
+            f.write(f'{proc.pid}, {proc.info["ppid"]}, {proc.info["name"]}, {proc.info["exe"]}, '
+                    f'{proc.info["cmdline"]}\n')
+
+
+@task(help={'name': 'project name'})
+def end(c, name):
+    """end the processes belonging to this session
+    """
+    # check if a session is active
+    paths = glob.glob(f'*-session-pids-start-at-*', root_dir='/tmp')
+    nope = True
+    for line in paths:
+        if line.startswith(name):
+            nope = False
+            break
+    if nope:
+        print('No session for this project found')
+        return
+    # determine the boundaries of process ids to search through
+    splitpaths = [x.split('-session-pids-start-at-') for x in paths]
+    to_pid = 0
+    for project, pid in sorted(splitpaths, key=lambda x: x[1]):
+        if to_pid == -1:
+            to_pid = pid
+            break
+        if project == name:
+            from_pid = pid
+            to-pid = -1
+    for proc in psutil.process_iter(['name', 'ppid',  'exe', 'cmdline']):
+        if proc.pid < from_pid:  # ignore older processes
+            continue
+        if to_pid and proc.pid >= to_pid:  # ignore newer processes
+            continue
+    # now find the specific processes to end and if needed their parent processes will end as well
 
 # @task(help={'name': 'name of session file'})
 def edit_old(c, name):
