@@ -4,12 +4,16 @@ import os
 import shutil
 import glob
 import psutil
+import signal
 import configparser
 import subprocess  # voor die ene die niet met invoke lukt
 from invoke import task
 from settings import PROJECTS_BASE, SESSIONS, DEVEL, get_project_dir  # , private_repos
 # from repo import check_and_run_for_project
-
+sessionfile_root = '/tmp'
+# session_pids_name = 'session_pids_start_at'
+# session_info_name = 'session_info'
+# session_end_name = 'session_closing'
 
 def get_project_name(ticket):
     "find_project_by_ticket(number)"
@@ -57,7 +61,7 @@ def start(c, name):
     """
     # via run blijven het commando's wachten tot je het afsluit
     # met subprocess.Popen en shebangs in alle scripts werkt het wel
-    paths = glob.glob(f'{name}-session-pids-start-at-*', root_dir='/tmp')
+    paths = glob.glob(f'{name}-session-pids-start-at-*', root_dir=sessionfile_root)
     if paths:
         print('you already started a session for this project')
         return
@@ -82,7 +86,7 @@ def start(c, name):
             pr = subprocess.Popen(runcommands[item], cwd=path, env=myenv)
             proc_pids.append(pr.pid)
     if proc_pids:
-        with open(f'/tmp/{name}-session-pids-start-at-{proc_pids[0]}', 'w') as f:
+        with open(f'{sessionfile_root}/{name}-session-pids-start-at-{proc_pids[0]}', 'w') as f:
             f.write('\n'.join([str(x) for x in proc_pids]))
 
 
@@ -90,10 +94,10 @@ def start(c, name):
 def get_info(c, name):
     """get info about started processes (originally intended for use in a "close session" script
     """
-    paths = glob.glob(f'{name}-session-pids-start-at-*', root_dir='/tmp')
+    paths = glob.glob(f'{name}-session-pids-start-at-*', root_dir=sessionfile_root)
     min_pid = paths[0].rsplit('-', 1)[1]  # there should be only one
     # determine name of file to write
-    fname = initial_name = f'/tmp/{name}-session-info'
+    fname = initial_name = f'{sessionfile_root}/{name}-session-info'
     counter = 0
     while os.path.exists(fname):
         counter += 1
@@ -112,31 +116,91 @@ def end(c, name):
     """end the processes belonging to this session
     """
     # check if a session is active
-    paths = glob.glob(f'*-session-pids-start-at-*', root_dir='/tmp')
+    paths = glob.glob(f'*-session-pids-start-at-*', root_dir=sessionfile_root)
     nope = True
     for line in paths:
         if line.startswith(name):
             nope = False
             break
     if nope:
-        print('No session for this project found')
+        print('No session found for this project')
         return
-    # determine the boundaries of process ids to search through
-    splitpaths = [x.split('-session-pids-start-at-') for x in paths]
-    to_pid = 0
-    for project, pid in sorted(splitpaths, key=lambda x: x[1]):
-        if to_pid == -1:
-            to_pid = pid
-            break
-        if project == name:
-            from_pid = pid
-            to-pid = -1
+    # determine processes to terminate
+    ignore_processes = ('binfab', 'inv', 'gnome-terminal-server', 'xdg-desktop-portal')
+    from_pid, to_pid = get_start_end_pids(paths, name)
+    procs_to_kill = []
+    found_bash = False
     for proc in psutil.process_iter(['name', 'ppid',  'exe', 'cmdline']):
         if proc.pid < from_pid:  # ignore older processes
             continue
         if to_pid and proc.pid >= to_pid:  # ignore newer processes
+            break
+        if proc.info['name'] in ignore_processes:
             continue
-    # now find the specific processes to end and if needed their parent processes will end as well
+        invalid, kill, found_bash = check_process(proc, found_bash)
+        if invalid:
+            break
+        if kill:
+            procs_to_kill.append(proc)
+    if not procs_to_kill:
+        print('No processes to terminate')
+        return
+    # do the terminating
+    for proc in procs_to_kill:
+        proc.terminate()
+    gone, alive = psutil.wait_procs(procs_to_kill, timeout=3)
+    for p in alive:
+        p.kill()
+    # remove the session file
+    for file in glob.glob(f'{sessionfile_root}/{name}-session-*'):
+        os.unlink(file)
+
+
+def get_start_end_pids(paths, name):
+    "determine the boundaries of process ids to search through"
+    splitpaths = [x.split('-session-pids-start-at-') for x in paths]
+    from_pid = -1
+    to_pid = 0
+    for project, pid in sorted(splitpaths, key=lambda x: x[1]):
+        if to_pid == -1:
+            to_pid = int(pid)
+            break
+        if project == name:
+            from_pid = int(pid)
+            to_pid = -1
+    if to_pid == -1:
+        to_pid = 0
+    return from_pid, to_pid
+
+
+def check_process(proc, found_bash):
+    """determine if the process needs to be killed or it it's an "alien" process
+
+    found_bash is a helper switch for finding the first bash process
+    """
+    kill = invalid = False
+    if proc.info['name'] == 'python3':
+        found = False
+        for prog in ('check-repo', 'afrift', 'doctree'):
+            if prog in proc.info['cmdline'][1]:
+                found = True
+        if found:
+            kill = True
+        else:
+            invalid = True
+    if proc.info['name'] == 'vim':
+        if proc.info['cmdline'][1].startswith('/'):
+            invalid = True
+        else:
+            kill = True
+    if proc.info['name'] == 'bash':
+        if found_bash:
+            invalid = True
+        else:
+            found_bash = True
+            kill = True
+    return invalid, kill, found_bash
+
 
 # @task(help={'name': 'name of session file'})
 def edit_old(c, name):
