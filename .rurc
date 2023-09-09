@@ -14,10 +14,10 @@ jsonp: test_jsonp.py
 lang:  test_lang.py
 lists: test_list2scite.py
 listv: test_list2vi.py
-moref: test_morefromdos.py
+morefd: test_morefromdos.py
 renf:  test_rename_files.py
 repo:  test_repo.py
-sess:  test_session.py
+session:  test_session.py
 sett:  test_settings.py
 sort:  test_sort_file.py
 tags:  test_tags.py
@@ -35,10 +35,10 @@ jsonp: jsonp.py
 lang:  lang.py
 lists: list2scite.py
 listv: list2vi.py
-moref: morefromdos.py
+morefd: morefromdos.py
 renf:  rename_files.py
 repo:  repo.py
-sess:  session.py
+session:  session.py
 sett:  settings.py
 sort:  sort_file.py
 tags:  tags.py
