@@ -4,7 +4,6 @@ import os
 import shutil
 import glob
 import psutil
-import signal
 import configparser
 import subprocess  # voor die ene die niet met invoke lukt
 from invoke import task
@@ -14,6 +13,7 @@ sessionfile_root = '/tmp'
 # session_pids_name = 'session_pids_start_at'
 # session_info_name = 'session_info'
 # session_end_name = 'session_closing'
+
 
 def get_project_name(ticket):
     "find_project_by_ticket(number)"
@@ -104,7 +104,7 @@ def get_info(c, name):
         fname = '.'.join((initial_name, str(counter)))
     # write the information
     with open(fname, 'w') as f:
-        for proc in psutil.process_iter(['name', 'ppid',  'exe', 'cmdline']):
+        for proc in psutil.process_iter(['name', 'ppid', 'exe', 'cmdline']):
             if proc.pid < int(min_pid):
                 continue
             f.write(f'{proc.pid}, {proc.info["ppid"]}, {proc.info["name"]}, {proc.info["exe"]}, '
@@ -116,7 +116,7 @@ def end(c, name):
     """end the processes belonging to this session
     """
     # check if a session is active
-    paths = glob.glob(f'*-session-pids-start-at-*', root_dir=sessionfile_root)
+    paths = glob.glob('*-session-pids-start-at-*', root_dir=sessionfile_root)
     nope = True
     for line in paths:
         if line.startswith(name):
@@ -130,7 +130,7 @@ def end(c, name):
     from_pid, to_pid = get_start_end_pids(paths, name)
     procs_to_kill = []
     found_bash = False
-    for proc in psutil.process_iter(['name', 'ppid',  'exe', 'cmdline']):
+    for proc in psutil.process_iter(['name', 'ppid', 'exe', 'cmdline']):
         if proc.pid < from_pid:  # ignore older processes
             continue
         if to_pid and proc.pid >= to_pid:  # ignore newer processes
