@@ -629,25 +629,46 @@ def prshell(c, name=''):
     check_and_run_for_project(c, name, 'gnome-terminal --geometry=132x43+4+40')
 
 
-def rebuild_filenamelist(c):
+def rebuild_filenamelist(c, mode):
     "build a list of all tracked Python files in all projects"
     all_files = []
     for repo in all_repos:
         if repo in frozen_repos:
             continue
         path, files = get_repofiles(c, repo)
+        if mode == 'test':
+            files = [x for x in files if os.path.basename(x).startswith('test_')]
+        elif mode == 'prog':
+            files = [x for x in files if not os.path.basename(x).startswith('test_')]
         all_files.extend([os.path.join(path, x) for x in files])
-    with open(FILELIST, 'w') as out:
+    with open(f'{FILELIST }-{mode}', 'w') as out:
         for line in sorted(all_files):
             print(line, file=out)
 
 
 @task(help={'find': 'text to find', 'rebuild': 'rebuild list of tracked files (default: False)'})
-def search(c, find='', rebuild=False):
+def search_p(c, find='', rebuild=False):
+    "search in tracked python application code files in all repos"
+    search(c, find, rebuild, 'prog')
+
+
+@task(help={'find': 'text to find', 'rebuild': 'rebuild list of tracked files (default: False)'})
+def search_t(c, find='', rebuild=False):
+    "search in tracked python testscripts in all repos"
+    search(c, find, rebuild, 'test')
+
+
+@task(help={'find': 'text to find', 'rebuild': 'rebuild list of tracked files (default: False)'})
+def search_all(c, find='', rebuild=False):
     "search in all tracked python files in all repos"
-    if not os.path.exists(FILELIST) or rebuild:
-        rebuild_filenamelist(c)
-    command = f'afrift -m multi {FILELIST} -e py -P'
+    search(c, find, rebuild, 'both')
+
+
+def search(c, find='', rebuild=False, mode='both'):
+    "search in (all) tracked python files in all repos"
+    if not os.path.exists(f'{FILELIST}-{mode}') or rebuild:
+        rebuild_filenamelist(c, mode)
+    command = f'afrift -m multi {FILELIST}-{mode} -e py -P'
     if find:
         command += 'N -s ' + find
     c.run(command)
