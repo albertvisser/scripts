@@ -84,8 +84,9 @@ def update(c, name):
 def ignore(c, name):
     "werk .gitignore bij met de scripts die in scriptlib staan"
     lib = ScriptLib()
+    ignore_file = lib.basepath / '.gitignore'
     # verwacht elke te negeren script naam op een aparte regel
-    ignores = (lib.basepath / '.gitignore').read_text().split('\n')
+    ignores = ignore_file.read_text().split('\n')
     not_present = []
     if name == 'all':
         for name in lib.get_all_names():
@@ -97,10 +98,13 @@ def ignore(c, name):
             return
         if name not in ignores:
             not_present.append(name)
+        else:
+            print('already present in .gitignore')
     for name in not_present:
         ignores.append(name)
     if not_present:
-        (lib.basepath / '.gitignore').write_text('\n'.join(ignores))
+        shutil.copyfile(str(ignore_file), str(ignore_file) + '~')
+        ignore_file.write_text('\n'.join(ignores))
 
 # als een script niet in scripts (zonder achtervoegsel) zit dan hoeft de shebang in de actuele versie
 # niet meegeteld te worden in de vergelijking en niet overgenomen te worden in de library

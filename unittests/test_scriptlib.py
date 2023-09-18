@@ -160,8 +160,11 @@ def test_ignore(monkeypatch, capsys):
     def mock_read(*args):
         print('called path.read_text with args', args)
         return 'harry\nsally'
+    def mock_copy(*args):
+        print('called shutil.copyfile with args', args)
     def mock_write(*args):
         print('called path.write_text with args', args)
+    monkeypatch.setattr(testee.shutil, 'copyfile', mock_copy)
     monkeypatch.setattr(testee.pathlib.Path, 'read_text', mock_read)
     monkeypatch.setattr(testee.pathlib.Path, 'write_text', mock_write)
     monkeypatch.setattr(testee, 'ScriptLib', MockLib)
@@ -177,20 +180,26 @@ def test_ignore(monkeypatch, capsys):
                                        "called path.read_text with args"
                                        " (PosixPath('x/.gitignore'),)\n"
                                        'called ScriptLib.get_all_names\n'
+                                       'called shutil.copyfile with args'
+                                       " ('x/.gitignore', 'x/.gitignore~')\n"
                                        "called path.write_text with args"
                                        " (PosixPath('x/.gitignore'), 'harry\\nsally\\ndick')\n")
     testee.ignore(c, 'harry')
     assert capsys.readouterr().out == ('called ScriptLib.__init__\n'
                                        "called path.read_text with args"
                                        " (PosixPath('x/.gitignore'),)\n"
-                                       'called ScriptLib.get_all_names\n')
+                                       'called ScriptLib.get_all_names\n'
+                                       'already present in .gitignore\n')
 
 def test_ignore_all(monkeypatch, capsys):
     def mock_read(*args):
         print('called path.read_text with args', args)
         return 'harry\nsally'
+    def mock_copy(*args):
+        print('called shutil.copyfile with args', args)
     def mock_write(*args):
         print('called path.write_text with args', args)
+    monkeypatch.setattr(testee.shutil, 'copyfile', mock_copy)
     monkeypatch.setattr(testee.pathlib.Path, 'read_text', mock_read)
     monkeypatch.setattr(testee.pathlib.Path, 'write_text', mock_write)
     monkeypatch.setattr(testee, 'ScriptLib', MockLib)
@@ -200,6 +209,8 @@ def test_ignore_all(monkeypatch, capsys):
                                        "called path.read_text with args"
                                        " (PosixPath('x/.gitignore'),)\n"
                                        'called ScriptLib.get_all_names\n'
+                                       'called shutil.copyfile with args'
+                                       " ('x/.gitignore', 'x/.gitignore~')\n"
                                        "called path.write_text with args"
                                        " (PosixPath('x/.gitignore'),"
                                        " 'harry\\nsally\\ntom\\ndick')\n")
