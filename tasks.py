@@ -13,6 +13,7 @@ import tags
 import www
 import lang
 import db
+import scriptlib
 HERE = os.path.expanduser('~/bin')
 SCITELOC = os.path.expanduser('~/Downloads/SciTE/scite{}.tgz')
 GSCITELOC = os.path.expanduser('~/Downloads/SciTE/gscite{}.tgz')
@@ -166,6 +167,7 @@ ns.add_collection(tags)
 ns.add_collection(www)
 ns.add_collection(lang)
 ns.add_collection(db)
+ns.add_collection(scriptlib)
 ns.add_task(install_scite)
 ns.add_task(build_scite)
 ns.add_task(arcstuff)
