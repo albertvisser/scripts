@@ -24,17 +24,22 @@ def add(c, name, section):
 @task(help={'name': 'name of the script or symlink to compare - use "all" for the entire library'})
 def check(c, name):
     "vergelijk de inhoud van een scriptlet met wat er in de library staat"
+    # als een niet-symlink in een symlinks-sectie staat dan krijg hje daarop een OSError, bv:
+    # [albert@PyIntheSky-II ~]$ binfab scriptlib.check calc
+    # OSError: [Errno 22] Invalid argument: '/home/albert/bin/calc'
     lib = ScriptLib()
     if name == 'all':
         diffs = []
         for name in lib.get_all_names():
             in_lib, actual = check_file(lib, name)
-            if lib != actual:
+            if in_lib != actual:
                 diffs.append(name)
         if diffs:
             print('verschillen gevonden voor:')
             for name in diffs:
                 print(name)
+        else:
+            print('geen verschillen gevonden')
     else:
         in_lib, actual = check_file(lib, name)
         if not in_lib:
@@ -53,6 +58,7 @@ def update(c, name):
     "neem een gewijzigd script over in de library"
     lib = ScriptLib()
     if name == 'all':
+        diffs = []
         for name in lib.get_all_names():
             diff = check_and_update(lib, name)
             if diff:
@@ -62,11 +68,15 @@ def update(c, name):
             print('verschillen gevonden en bijgewerkt voor:')
             for name in diffs:
                 print(name)
+        else:
+            print('geen verschillen gevonden')
     else:
         diff = check_and_update(lib, name)
         if diff:
             lib.update()
             print('verschil gevonden en bijgewerkt')
+        else:
+            print('geen verschillen gevonden')
 
 
 @task(help={'name': ('name of the script or symlink to add to the ignore file'
@@ -89,14 +99,20 @@ def ignore(c, name):
             not_present.append(name)
     for name in not_present:
         ignores.append(name)
-    (lib.basepath / '.gitignore').write_text('\n'.join(ignores))
+    if not_present:
+        (lib.basepath / '.gitignore').write_text('\n'.join(ignores))
 
+# als een script niet in scripts (zonder achtervoegsel) zit dan hoeft de shebang in de actuele versie
+# niet meegeteld te worden in de vergelijking en niet overgenomen te worden in de library
+# (ook in voorzien bij add)
+# inspringingen zoals in preadme worden bij het kopieren naar de lib waarschijnlijk wel meegenomen
+# maar blijven bij het met configparser lezen helaas niet intact
 
 def check_and_update(lib, name):
     "if the library version and the actual version of a script or symlink differ, replace in library"
     library_version, actual_version = check_file(lib, name)
     if library_version != actual_version:
-        section = lib.find(lib, name)
+        section = lib.find(name)
         lib.data[section][name] = actual_version
         return name
     return ''
@@ -104,15 +120,26 @@ def check_and_update(lib, name):
 
 def check_file(lib, name):
     "get the library version and the actual version of a script or symlink"
-    section = lib.find(lib, name)
+    section = lib.find(name)
     if not section:
         return None, None
-    library_version = lib.data[section][name]
+    library_version = str(pathlib.Path(lib.data[section][name]).expanduser())
     path = lib.basepath / name
     if section.startswith('symlinks'):
-        actual_version = path.readlink()
+        try:
+            actual_version = str(path.readlink())
+        except OSError:
+            actual_version = 'not a symlink:\n' + path.read_text()
+        else:
+            # actual_version = str(actual_version.resolve())
+            if actual_version.startswith('../../..'):
+                actual_version = actual_version[8:]
     else:
-        actual_version = path.read_text()
+        actual_version = path.read_text().strip()
+        if section != 'scripts':  # negeer shebang als dat nodig is
+            if actual_version.startswith('#!'):
+                actual_version = actual_version.split('\n', 1)[1].lstrip()
+
     return library_version, actual_version
 
 
@@ -180,7 +207,11 @@ class ScriptLib:
         if section not in ('scripts', 'scripts-sh', 'scripts-bash'):
             return 'wrong section'
         script = path.read_text()  # .replace('\n', '\n\t'  - )not sure if I need this
+        if not script:
+            return 'file is empty'
         if section not in self.data:
             self.data.add_section(section)
+        if section.startswith('scripts') and section != 'scripts':
+            script = script.split('\n', 1)[1].lstrip()  # shebang bij deze niet meekopiëren
         self.data.set(section, name, script)
         return ''

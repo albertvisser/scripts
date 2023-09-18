@@ -18,14 +18,16 @@ class MockLib:
                              'section2': {'key3': 'value3'}})
     def read_file(self, *args):
         pass
-    def write(self, *args):
-        pass
+    def update(self, *args):
+        print('called ScriptLib.update')
     def get_all_names(self):
-        pass
+        print('called ScriptLib.get_all_names')
+        return 'tom', 'dick', 'harry', 'sally'
     def add_link(self, *args):
         print('called ScriptLib.add_link with args', args)
     def add_script(self, *args):
         print('called ScriptLib.add_script with args', args)
+
 
 def test_add(monkeypatch, capsys):
     monkeypatch.setattr(testee, 'ScriptLib', MockLib)
@@ -63,28 +65,145 @@ def test_check(monkeypatch, capsys):
                                        "in_lib\n"
                                        "+++ version in scripts:\n"
                                        "actual\n")
+    monkeypatch.setattr(testee, 'check_file', lambda *x: ('equal', 'equal'))
+    testee.check(c, 'name')
+    assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
+                                       'no difference\n')
+    monkeypatch.setattr(testee, 'check_file', lambda *x: (None, None))
+    testee.check(c, 'name')
+    assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
+                                       'not found in library\n')
 
+def test_check_all(monkeypatch, capsys):
+    counter = 0
+    def mock_check(lib, name):
+        nonlocal counter
+        print(f'called check_file with args {type(lib)} {name}')
+        counter += 1
+        if counter == 2:
+            return 'equal', 'equal'
+        return 'in_lib', 'actual'
+    monkeypatch.setattr(testee, 'ScriptLib', MockLib)
+    monkeypatch.setattr(testee, 'check_file', mock_check)
+    c = MockContext()
+    testee.check(c, 'all')
+    assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
+                                       "called ScriptLib.get_all_names\n"
+                                       "called check_file with args"
+                                       " <class 'test_scriptlib.MockLib'> tom\n"
+                                       "called check_file with args"
+                                       " <class 'test_scriptlib.MockLib'> dick\n"
+                                       "called check_file with args"
+                                       " <class 'test_scriptlib.MockLib'> harry\n"
+                                       "called check_file with args"
+                                       " <class 'test_scriptlib.MockLib'> sally\n"
+                                       'verschillen gevonden voor:\n'
+                                       'tom\n'
+                                       'harry\n'
+                                       'sally\n')
+    monkeypatch.setattr(testee, 'check_file', lambda *x: ('equal', 'equal'))
+    testee.check(c, 'all')
+    assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
+                                       "called ScriptLib.get_all_names\n"
+                                       'geen verschillen gevonden\n')
 
+def test_update(monkeypatch, capsys):
+    def mock_check(lib, name):
+        print(f'called check_and_update with args {type(lib)} {name}')
+        return True
+    monkeypatch.setattr(testee, 'ScriptLib', MockLib)
+    monkeypatch.setattr(testee, 'check_and_update', mock_check)
+    c = MockContext()
+    testee.update(c, 'test')
+    assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
+                                       "called check_and_update with args"
+                                       " <class 'test_scriptlib.MockLib'> test\n"
+                                       "called ScriptLib.update\n"
+                                       'verschil gevonden en bijgewerkt\n')
+    monkeypatch.setattr(testee, 'check_and_update', lambda *x: False)
+    testee.update(c, 'test')
+    assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
+                                       'geen verschillen gevonden\n')
 
-def _test_check_all(monkeypatch, capsys):
+def test_update_all(monkeypatch, capsys):
+    counter = 0
+    def mock_check(lib, name):
+        nonlocal counter
+        print(f'called check_and_update with args {type(lib)} {name}')
+        counter += 1
+        return counter % 2
+    monkeypatch.setattr(testee, 'ScriptLib', MockLib)
+    monkeypatch.setattr(testee, 'check_and_update', mock_check)
+    c = MockContext()
+    testee.update(c, 'all')
+    assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
+                                       "called ScriptLib.get_all_names\n"
+                                       "called check_and_update with args"
+                                       " <class 'test_scriptlib.MockLib'> tom\n"
+                                       "called check_and_update with args"
+                                       " <class 'test_scriptlib.MockLib'> dick\n"
+                                       "called check_and_update with args"
+                                       " <class 'test_scriptlib.MockLib'> harry\n"
+                                       "called check_and_update with args"
+                                       " <class 'test_scriptlib.MockLib'> sally\n"
+                                       "called ScriptLib.update\n"
+                                       'verschillen gevonden en bijgewerkt voor:\n'
+                                       'tom\n'
+                                       'harry\n')
+    monkeypatch.setattr(testee, 'check_and_update', lambda *x: False)
+    testee.update(c, 'all')
+    assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
+                                       "called ScriptLib.get_all_names\n"
+                                       'geen verschillen gevonden\n')
+
+def test_ignore(monkeypatch, capsys):
+    def mock_read(*args):
+        print('called path.read_text with args', args)
+        return 'harry\nsally'
+    def mock_write(*args):
+        print('called path.write_text with args', args)
+    monkeypatch.setattr(testee.pathlib.Path, 'read_text', mock_read)
+    monkeypatch.setattr(testee.pathlib.Path, 'write_text', mock_write)
     monkeypatch.setattr(testee, 'ScriptLib', MockLib)
     c = MockContext()
+    testee.ignore(c, 'test')
+    assert capsys.readouterr().out == ('called ScriptLib.__init__\n'
+                                       "called path.read_text with args"
+                                       " (PosixPath('x/.gitignore'),)\n"
+                                       'called ScriptLib.get_all_names\n'
+                                       'not in library\n')
+    testee.ignore(c, 'dick')
+    assert capsys.readouterr().out == ('called ScriptLib.__init__\n'
+                                       "called path.read_text with args"
+                                       " (PosixPath('x/.gitignore'),)\n"
+                                       'called ScriptLib.get_all_names\n'
+                                       "called path.write_text with args"
+                                       " (PosixPath('x/.gitignore'), 'harry\\nsally\\ndick')\n")
+    testee.ignore(c, 'harry')
+    assert capsys.readouterr().out == ('called ScriptLib.__init__\n'
+                                       "called path.read_text with args"
+                                       " (PosixPath('x/.gitignore'),)\n"
+                                       'called ScriptLib.get_all_names\n')
 
-def _test_update(monkeypatch, capsys):
+def test_ignore_all(monkeypatch, capsys):
+    def mock_read(*args):
+        print('called path.read_text with args', args)
+        return 'harry\nsally'
+    def mock_write(*args):
+        print('called path.write_text with args', args)
+    monkeypatch.setattr(testee.pathlib.Path, 'read_text', mock_read)
+    monkeypatch.setattr(testee.pathlib.Path, 'write_text', mock_write)
     monkeypatch.setattr(testee, 'ScriptLib', MockLib)
     c = MockContext()
+    testee.ignore(c, 'all')
+    assert capsys.readouterr().out == ('called ScriptLib.__init__\n'
+                                       "called path.read_text with args"
+                                       " (PosixPath('x/.gitignore'),)\n"
+                                       'called ScriptLib.get_all_names\n'
+                                       "called path.write_text with args"
+                                       " (PosixPath('x/.gitignore'),"
+                                       " 'harry\\nsally\\ntom\\ndick')\n")
 
-def _test_update_all(monkeypatch, capsys):
-    monkeypatch.setattr(testee, 'ScriptLib', MockLib)
-    c = MockContext()
-
-def _test_ignore(monkeypatch, capsys):
-    monkeypatch.setattr(testee, 'ScriptLib', MockLib)
-    c = MockContext()
-
-def _test_ignore_all(monkeypatch, capsys):
-    monkeypatch.setattr(testee, 'ScriptLib', MockLib)
-    c = MockContext()
 
 def test_check_and_update(monkeypatch, capsys):
     def mock_check(*args):
@@ -102,7 +221,7 @@ def test_check_and_update(monkeypatch, capsys):
     testee.check_and_update(lib, 'this')
     assert lib.data == {'here': {'this': 'new'}}
     assert capsys.readouterr().out == (f"called check_file with args ({origlib}, 'this')\n"
-                                       f"called ScriptLib.find with args ({origlib}, 'this')\n")
+                                       f"called ScriptLib.find with args ('this',)\n")
 
     lib = types.SimpleNamespace(find=mock_find, data={'here': {'this': 'old'}})
     monkeypatch.setattr(testee, 'check_file', mock_check_2)
@@ -115,6 +234,11 @@ def test_check_file(monkeypatch, capsys):
         return f'called Path.readlink for {str(args[0])}'
     def mock_readfile(*args):
         return f'called Path.read_text for {str(args[0])}'
+    def mock_read_2(self):
+        print(f'called Path.read_text on {str(self)}')
+        return '#! shebang line\n\ncontents'
+    def mock_read_error(self):
+        raise OSError("[Errno 22] Invalid argument: 'here'")
     def mock_find(*args):
         print('called ScriptLib.find with args', args)
         return ''
@@ -122,17 +246,32 @@ def test_check_file(monkeypatch, capsys):
     monkeypatch.setattr(testee.pathlib.Path, 'read_text', mock_readfile)
     lib = types.SimpleNamespace(find=mock_find, data={'here': {'this': 'old'}})
     assert testee.check_file(lib, 'here') == (None, None)
-    assert capsys.readouterr().out == f"called ScriptLib.find with args ({lib}, 'here')\n"
+    assert capsys.readouterr().out == f"called ScriptLib.find with args ('here',)\n"
 
     lib = types.SimpleNamespace(find=lambda *x: 'symlinks', basepath=testee.pathlib.Path('bin'),
                                 data={'symlinks': {'here': 'old'}})
     assert testee.check_file(lib, 'here') == ('old', 'called Path.readlink for bin/here')
     assert capsys.readouterr().out == ''
 
+    monkeypatch.setattr(testee.pathlib.Path, 'readlink', mock_read_error)
+    assert testee.check_file(lib, 'here') == ('old',
+                                              'not a symlink:\ncalled Path.read_text for bin/here')
+    assert capsys.readouterr().out == ''
+
+    monkeypatch.setattr(testee.pathlib.Path, 'readlink', lambda *x: '../../../absolute_path')
+    assert testee.check_file(lib, 'here') == ('old', '/absolute_path')
+    assert capsys.readouterr().out == ''
+
     lib = types.SimpleNamespace(find=lambda *x: 'qqq', basepath=testee.pathlib.Path('bin'),
                                 data={'qqq': {'here': 'old'}})
     assert testee.check_file(lib, 'here') == ('old', 'called Path.read_text for bin/here')
     assert capsys.readouterr().out == ""
+
+    lib = types.SimpleNamespace(find=lambda *x: 'qqq', basepath=testee.pathlib.Path('bin'),
+                                data={'qqq': {'here': 'old'}})
+    monkeypatch.setattr(testee.pathlib.Path, 'read_text', mock_read_2)
+    assert testee.check_file(lib, 'here') == ('old', 'contents')
+    assert capsys.readouterr().out == "called Path.read_text on bin/here\n"
 
 
 def test_scriptlib_init(monkeypatch, capsys):
@@ -234,6 +373,9 @@ def test_scriptlib_add_script(monkeypatch, capsys, tmp_path):
     def mock_read_text(self):
         print(f'called path.read_text on {str(self)}')
         return 'contents'
+    def mock_read_2(self):
+        print(f'called path.read_text on {str(self)}')
+        return '#! shebang line\n\ncontents'
     monkeypatch.setattr(testee.pathlib.Path, 'is_symlink', mock_islink)
     monkeypatch.setattr(testee.pathlib.Path, 'is_file', mock_isfile)
     monkeypatch.setattr(testee.pathlib.Path, 'read_text', mock_read_text)
@@ -247,10 +389,22 @@ def test_scriptlib_add_script(monkeypatch, capsys, tmp_path):
     assert capsys.readouterr().out == ('called path.is_file on x/test\n'
                                        'called path.is_link on x/test\n'
                                        'called path.read_text on x/test\n')
+    monkeypatch.setattr(testee.pathlib.Path, 'read_text', mock_read_2)
+    testobj = testee.ScriptLib()
+    assert capsys.readouterr().out == 'called ScriptLib.__init__\n'
+    testobj.add_script('test', 'scripts-sh')
+    assert testobj.data.sections() == ['section1', 'section2', 'scripts-sh']
+    assert list(testobj.data['scripts-sh']) == ['test']
+    assert testobj.data['scripts-sh']['test'] == 'contents'
+    assert capsys.readouterr().out == ('called path.is_file on x/test\n'
+                                       'called path.is_link on x/test\n'
+                                       'called path.read_text on x/test\n')
     assert testobj.add_script('test', 'scripts2') == 'wrong section'
     monkeypatch.setattr(testee.pathlib.Path, 'is_file', lambda *x: False)
     assert testobj.add_script('test', 'scripts') == 'not a valid file'
     monkeypatch.setattr(testee.pathlib.Path, 'is_file', lambda *x: True)
     monkeypatch.setattr(testee.pathlib.Path, 'is_symlink', lambda *x: True)
     assert testobj.add_script('test', 'scripts') == 'not a valid file'
-
+    monkeypatch.setattr(testee.pathlib.Path, 'read_text', lambda *x: '')
+    monkeypatch.setattr(testee.pathlib.Path, 'is_symlink', lambda *x: False)
+    assert testobj.add_script('test', 'scripts') == 'file is empty'
