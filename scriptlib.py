@@ -18,6 +18,7 @@ def add(c, name, section):
     if retval:
         print(retval)
     else:
+        lib.update()
         print(f'{name} successfully added')
 
 
