@@ -35,10 +35,12 @@ def test_add(monkeypatch, capsys):
     testee.add(c, 'test', 'symlinks')
     assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
                                        "called ScriptLib.add_link with args ('test', 'symlinks')\n"
+                                       "called ScriptLib.update\n"
                                        "test successfully added\n")
     testee.add(c, 'test', 'scripts')
     assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
                                        "called ScriptLib.add_script with args ('test', 'scripts')\n"
+                                       "called ScriptLib.update\n"
                                        "test successfully added\n")
     monkeypatch.setattr(MockLib, 'add_link', lambda *x: 'error adding link')
     monkeypatch.setattr(MockLib, 'add_script', lambda *x: 'error adding script')
@@ -283,6 +285,11 @@ def test_check_file(monkeypatch, capsys):
     monkeypatch.setattr(testee.pathlib.Path, 'read_text', mock_read_2)
     assert testee.check_file(lib, 'here') == ('old', 'contents')
     assert capsys.readouterr().out == "called Path.read_text on bin/here\n"
+
+    lib = types.SimpleNamespace(find=lambda *x: 'disabled', basepath=testee.pathlib.Path('bin'),
+                                data={'qqq': {'here': 'old'}})
+    assert testee.check_file(lib, 'here') == ('ignore', 'ignore')
+    assert capsys.readouterr().out == ''
 
 
 def test_scriptlib_init(monkeypatch, capsys):

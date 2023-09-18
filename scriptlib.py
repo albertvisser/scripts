@@ -128,6 +128,8 @@ def check_file(lib, name):
     section = lib.find(name)
     if not section:
         return None, None
+    if section.endswith('disabled'):
+        return 'ignore', 'ignore'
     library_version = str(pathlib.Path(lib.data[section][name]).expanduser())
     path = lib.basepath / name
     if section.startswith('symlinks'):
@@ -140,7 +142,7 @@ def check_file(lib, name):
             if actual_version.startswith('../../..'):
                 actual_version = actual_version[8:]
     else:
-        actual_version = path.read_text().strip()
+        actual_version = '\n'.join([x.lstrip() for x in path.read_text().split('\n')]).strip()
         if section != 'scripts':  # negeer shebang als dat nodig is
             if actual_version.startswith('#!'):
                 actual_version = actual_version.split('\n', 1)[1].lstrip()
