@@ -71,8 +71,8 @@ DO_NOT_LINT = frozen_repos + non_deploy_repos  # + private_repos
 #                                  'rst2html_postgres', 'adr': 'rst2html-pg.lemoncurry.nl'}}
 # deze zijn op de nieuwe manier gemaakt (chromium api?)
 webapps = {'cgit': {'appid': 'aihbdennncljibneldlcadheboalahee', 'start_server': False},
-           'gitweb': {'appid': 'nhlpkodndoiadgldeanohldkpfoeahan', 'start_server': False}}
-
+           'gitweb': {'appid': 'nhlpkodndoiadgldeanohldkpfoeahan', 'start_server': False},
+           'tickets': {'appid': 'ddmclccmlegfljocpmghoodmgmmbcneh', 'start_server': 'trac'}}
 
 def get_project_root(name, context='local'):
     """find out where a repository lives
