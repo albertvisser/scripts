@@ -1,0 +1,25 @@
+[symlinks]
+# in the form of: destination-name = target-path
+vless = /usr/share/vim/vim90/macros/less.sh 
+
+[symlinks-check]
+# the same, but check for existence when creating symlink
+wing = /usr/local/lib/wing-personal8/wing-personal
+
+[scripts]
+# in the form of scriptname = contents
+bigterm = gnome-terminal --geometry=132x43+4+40
+
+[scripts-sh]
+# in the form of scriptname = contents  - add shebang to /bin/sh when creating script
+viref = cd $(vi-get-runtime)
+        cd doc
+        vim quickref.txt
+
+[scripts-bash]
+# in the form of scriptname = contents - add shebang to /bin/bash when creating script
+vi-get-runtime = vim -e -T dumb --cmd 'exe "set t_cm=\<C-M>"|echo $VIMRUNTIME|quit' | tr -d '\015'
+
+[symlinks-last]
+# deze kan nu pas
+largecli = bigterm

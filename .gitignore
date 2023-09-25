@@ -4,13 +4,16 @@ __pycache__/
 *$py.class
 
 # development stuff
-.sessions/
 *.swp
 *.swo
 .coverage
 .coveragerc
 projdocs*
 .sessionrc
+
+# miscellaneous
+mdi.py
+*vivaldi*
 
 # scripts present in bin-scripts.conf
 cssedit
@@ -85,3 +88,6 @@ scratch_pad
 totalcmd
 vi-get-runtime
 diary
+pfind-all
+pfind-prog
+pfind-test
