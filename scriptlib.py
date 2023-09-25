@@ -90,7 +90,7 @@ def ignore(c, name):
     ignores = ignore_file.read_text().split('\n')
     not_present = []
     if name == 'all':
-        for name in lib.get_all_names():
+        for name in lib.get_all_names(skip_inactive=True):
             if name not in ignores:
                 not_present.append(name)
     else:
@@ -186,10 +186,12 @@ class ScriptLib:
                 return section
         return None
 
-    def get_all_names(self):
+    def get_all_names(self, skip_inactive=False):
         "maak een lijst van alle script- en symlink namen"
         names = []
         for section in self.data:
+            if skip_inactive and section.endswith('disabled'):
+                continue
             names += list(self.data[section])
         return names
 
