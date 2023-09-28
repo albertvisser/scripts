@@ -20,13 +20,31 @@ class MockLib:
         pass
     def update(self, *args):
         print('called ScriptLib.update')
-    def get_all_names(self):
-        print('called ScriptLib.get_all_names')
+    def clear(self):
+        for name in self.data.sections():
+            self.data.remove_section(name)
+    def find(self, name):
+        print(f'called ScriptLib.find with arg `{name}`')
+        if name in ('key1', 'key2'):
+            return 'section1'
+        elif name == 'key3':
+            return 'section2'
+        else:
+            return 'section0'
+    def get_all_names(self, **kwargs):
+        print('called ScriptLib.get_all_names with args', kwargs)
         return 'tom', 'dick', 'harry', 'sally'
     def add_link(self, *args):
         print('called ScriptLib.add_link with args', args)
     def add_script(self, *args):
         print('called ScriptLib.add_script with args', args)
+    def list_contents(self):
+        # voor de commando tests heeft dit niet veel zin omdat het object niet van buiten de functie
+        # gelezen kan worden
+        contents = []
+        for name1 in self.data.sections():
+            for name2 in self.data.options(nname1):
+                contents.append(i(str(name), str(name2), self.data.get()))
 
 
 def test_add(monkeypatch, capsys):
@@ -90,7 +108,7 @@ def test_check_all(monkeypatch, capsys):
     c = MockContext()
     testee.check(c, 'all')
     assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
-                                       "called ScriptLib.get_all_names\n"
+                                       "called ScriptLib.get_all_names with args {}\n"
                                        "called check_file with args"
                                        " <class 'test_scriptlib.MockLib'> tom\n"
                                        "called check_file with args"
@@ -106,7 +124,7 @@ def test_check_all(monkeypatch, capsys):
     monkeypatch.setattr(testee, 'check_file', lambda *x: ('equal', 'equal'))
     testee.check(c, 'all')
     assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
-                                       "called ScriptLib.get_all_names\n"
+                                       "called ScriptLib.get_all_names with args {}\n"
                                        'geen verschillen gevonden\n')
 
 def test_update(monkeypatch, capsys):
@@ -139,7 +157,7 @@ def test_update_all(monkeypatch, capsys):
     c = MockContext()
     testee.update(c, 'all')
     assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
-                                       "called ScriptLib.get_all_names\n"
+                                       "called ScriptLib.get_all_names with args {}\n"
                                        "called check_and_update with args"
                                        " <class 'test_scriptlib.MockLib'> tom\n"
                                        "called check_and_update with args"
@@ -155,7 +173,7 @@ def test_update_all(monkeypatch, capsys):
     monkeypatch.setattr(testee, 'check_and_update', lambda *x: False)
     testee.update(c, 'all')
     assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
-                                       "called ScriptLib.get_all_names\n"
+                                       "called ScriptLib.get_all_names with args {}\n"
                                        'geen verschillen gevonden\n')
 
 def test_ignore(monkeypatch, capsys):
@@ -175,13 +193,13 @@ def test_ignore(monkeypatch, capsys):
     assert capsys.readouterr().out == ('called ScriptLib.__init__\n'
                                        "called path.read_text with args"
                                        " (PosixPath('x/.gitignore'),)\n"
-                                       'called ScriptLib.get_all_names\n'
+                                       'called ScriptLib.get_all_names with args {}\n'
                                        'not in library\n')
     testee.ignore(c, 'dick')
     assert capsys.readouterr().out == ('called ScriptLib.__init__\n'
                                        "called path.read_text with args"
                                        " (PosixPath('x/.gitignore'),)\n"
-                                       'called ScriptLib.get_all_names\n'
+                                       'called ScriptLib.get_all_names with args {}\n'
                                        'called shutil.copyfile with args'
                                        " ('x/.gitignore', 'x/.gitignore~')\n"
                                        "called path.write_text with args"
@@ -190,7 +208,7 @@ def test_ignore(monkeypatch, capsys):
     assert capsys.readouterr().out == ('called ScriptLib.__init__\n'
                                        "called path.read_text with args"
                                        " (PosixPath('x/.gitignore'),)\n"
-                                       'called ScriptLib.get_all_names\n'
+                                       'called ScriptLib.get_all_names with args {}\n'
                                        'already present in .gitignore\n')
 
 def test_ignore_all(monkeypatch, capsys):
@@ -210,12 +228,73 @@ def test_ignore_all(monkeypatch, capsys):
     assert capsys.readouterr().out == ('called ScriptLib.__init__\n'
                                        "called path.read_text with args"
                                        " (PosixPath('x/.gitignore'),)\n"
-                                       'called ScriptLib.get_all_names\n'
+                                       "called ScriptLib.get_all_names with args"
+                                       " {'skip_inactive': True}\n"
                                        'called shutil.copyfile with args'
                                        " ('x/.gitignore', 'x/.gitignore~')\n"
                                        "called path.write_text with args"
                                        " (PosixPath('x/.gitignore'),"
                                        " 'harry\\nsally\\ntom\\ndick')\n")
+
+def test_disable(monkeypatch, capsys):
+    def mock_init(self):
+        print('called ScriptLib.__init__')
+        self.basepath = testee.pathlib.Path('x')
+        self.data = testee.ConfigParser()
+        self.data.read_dict({'section1': {'key1': 'value1', 'key2': 'value2'},
+                             'section1.disabled': {'key3': 'value3'}})
+    def mock_find(self, arg):
+        print(f'called ScriptLib.find with arg `{arg}`')
+        return 'section1.disabled'
+    monkeypatch.setattr(testee, 'ScriptLib', MockLib)
+    c = MockContext()
+    testee.disable(c, 'key1')
+    assert capsys.readouterr().out == ('called ScriptLib.__init__\n'
+                                       'called ScriptLib.find with arg `key1`\n'
+                                       'called ScriptLib.update\n'
+                                       'key1 disabled\n')
+    monkeypatch.setattr(MockLib, '__init__', mock_init)
+    monkeypatch.setattr(testee, 'ScriptLib', MockLib)
+    c = MockContext()
+    testee.disable(c, 'key1')
+    assert capsys.readouterr().out == ('called ScriptLib.__init__\n'
+                                       'called ScriptLib.find with arg `key1`\n'
+                                       'called ScriptLib.update\n'
+                                       'key1 disabled\n')
+    monkeypatch.setattr(MockLib, '__init__', mock_init)
+    monkeypatch.setattr(MockLib, 'find', mock_find)
+    monkeypatch.setattr(testee, 'ScriptLib', MockLib)
+    c = MockContext()
+    testee.disable(c, 'key3')
+    assert capsys.readouterr().out == ('called ScriptLib.__init__\n'
+                                       'called ScriptLib.find with arg `key3`\n'
+                                       'key3 is already disabled\n')
+
+def test_enable(monkeypatch, capsys):
+    def mock_init(self):
+        print('called ScriptLib.__init__')
+        self.basepath = testee.pathlib.Path('x')
+        self.data = testee.ConfigParser()
+        self.data.read_dict({'section1': {'key1': 'value1', 'key2': 'value2'},
+                             'section1.disabled': {'key3': 'value3'}})
+    def mock_find(self, arg):
+        print(f'called ScriptLib.find with arg `{arg}`')
+        return 'section1.disabled'
+    monkeypatch.setattr(testee, 'ScriptLib', MockLib)
+    c = MockContext()
+    testee.enable(c, 'key1')
+    assert capsys.readouterr().out == ('called ScriptLib.__init__\n'
+                                       'called ScriptLib.find with arg `key1`\n'
+                                       'key1 is not disabled\n')
+    monkeypatch.setattr(MockLib, '__init__', mock_init)
+    monkeypatch.setattr(MockLib, 'find', mock_find)
+    monkeypatch.setattr(testee, 'ScriptLib', MockLib)
+    c = MockContext()
+    testee.enable(c, 'key3')
+    assert capsys.readouterr().out == ('called ScriptLib.__init__\n'
+                                       'called ScriptLib.find with arg `key3`\n'
+                                       'called ScriptLib.update\n'
+                                       'key3 enabled\n')
 
 
 def test_check_and_update(monkeypatch, capsys):
@@ -357,7 +436,11 @@ def test_scriptlib_get_all_names(monkeypatch, capsys):
     monkeypatch.setattr(testee.ScriptLib, '__init__', MockLib.__init__)
     testobj = testee.ScriptLib()
     assert capsys.readouterr().out == 'called ScriptLib.__init__\n'
+    testobj.data.clear()
+    testobj.data.read_dict({'section1': {'key1': 'value1', 'key2': 'value2'},
+                            'section1.disabled': {'key3': 'value3'}})
     assert testobj.get_all_names() == ['key1', 'key2', 'key3']
+    assert testobj.get_all_names(skip_inactive=True) == ['key1', 'key2']
 
 def test_scriptlib_add_link(monkeypatch, capsys, tmp_path):
     def mock_islink(self):

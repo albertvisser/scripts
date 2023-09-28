@@ -3,7 +3,7 @@
 import pathlib
 import shutil
 from invoke import task
-from configparser import ConfigParser
+from configparser import ConfigParser, DuplicateSectionError
 
 
 @task(help={'name': 'name of the script or symlink to add',
@@ -107,11 +107,42 @@ def ignore(c, name):
         shutil.copyfile(str(ignore_file), str(ignore_file) + '~')
         ignore_file.write_text('\n'.join(ignores))
 
-# als een script niet in scripts (zonder achtervoegsel) zit dan hoeft de shebang in de actuele versie
-# niet meegeteld te worden in de vergelijking en niet overgenomen te worden in de library
-# (ook in voorzien bij add)
-# inspringingen zoals in preadme worden bij het kopieren naar de lib waarschijnlijk wel meegenomen
-# maar blijven bij het met configparser lezen helaas niet intact
+
+@task(help={'name': 'name of the script or symlink to disable'})
+def disable(c, name):
+    "verwijder een scriptlet uit het actieve deel van de library"
+    lib = ScriptLib()
+    section = lib.find(name)
+    if section.endswith('disabled'):
+        print(f'{name} is already disabled')
+        return
+    other_section = section + '.disabled'
+    try:
+        lib.data.add_section(other_section)
+    except DuplicateSectionError:
+        pass
+    scriptlet = lib.data[section][name]
+    lib.data.remove_option(section, name)
+    lib.data.set(section, name, scriptlet)
+    lib.update()
+    print(f'{name} disabled')
+
+
+@task(help={'name': 'name of the script or symlink to enable'})
+def enable(c, name):
+    "zet een scriptlet terug in het actieve deel van de library"
+    lib = ScriptLib()
+    section = lib.find(name)
+    if not section.endswith('disabled'):
+        print(f'{name} is not disabled')
+        return
+    other_section = section.rsplit('.', 1)[0]
+    scriptlet = lib.data[section][name]
+    lib.data.remove_option(section, name)
+    lib.data.set(section, name, scriptlet)
+    lib.update()
+    print(f'{name} enabled')
+
 
 def check_and_update(lib, name):
     "if the library version and the actual version of a script or symlink differ, replace in library"
