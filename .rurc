@@ -12,12 +12,12 @@ check: test_check_repo.py
 db:    test_db.py
 jsonp: test_jsonp.py
 lang:  test_lang.py
-lib:   test_scriptlib.py
 lists: test_list2scite.py
 listv: test_list2vi.py
 morefd: test_morefromdos.py
 renf:  test_rename_files.py
 repo:  test_repo.py
+scriptlib:   test_scriptlib.py
 session:  test_session.py
 sett:  test_settings.py
 sort:  test_sort_file.py
@@ -34,12 +34,12 @@ check: check_repo.py
 db:    db.py
 jsonp: jsonp.py
 lang:  lang.py
-lib:   scriptlib.py
 lists: list2scite.py
 listv: list2vi.py
 morefd: morefromdos.py
 renf:  rename_files.py
 repo:  repo.py
+scriptlib:   scriptlib.py
 session:  session.py
 sett:  settings.py
 sort:  sort_file.py
