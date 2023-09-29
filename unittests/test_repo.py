@@ -2,7 +2,7 @@ import os
 import pytest
 import types
 from invoke import MockContext
-import repo
+import repo as testee
 
 
 def mock_run(self, *args):
@@ -13,7 +13,7 @@ def run_in_dir(self, *args, **kwargs):
     print(*args, 'in', self.cwd)
 
 
-class MockCheck(repo.Check):
+class MockCheck(testee.Check):
     def __init__(self, c, *args, **kwargs):
         print('call Check() with args', args, kwargs)
         super().__init__(c, *args, **kwargs)
@@ -39,17 +39,17 @@ def test_get_repofiles(monkeypatch, capsys):
     def mock_run(self, *args, **kwargs):
         print(*args, 'in', self.cwd)
         return types.SimpleNamespace(stdout='file1\nfile2.py\nfile3.json\nfile4.py\n')
-    monkeypatch.setattr(repo, 'get_project_dir', lambda x: 'path/to/repo')
+    monkeypatch.setattr(testee, 'get_project_dir', lambda x: 'path/to/repo')
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
-    assert repo.get_repofiles(c, '.') == (os.getcwd(), ['file2.py', 'file4.py'])
+    assert testee.get_repofiles(c, '.') == (os.getcwd(), ['file2.py', 'file4.py'])
     assert capsys.readouterr().out == 'git ls-tree -r --name-only master in {}\n'.format(os.getcwd())
 
-    assert repo.get_repofiles(c, 'x') == ('path/to/repo', ['file2.py', 'file4.py'])
+    assert testee.get_repofiles(c, 'x') == ('path/to/repo', ['file2.py', 'file4.py'])
     assert capsys.readouterr().out == 'git ls-tree -r --name-only master in path/to/repo\n'
 
-    monkeypatch.setattr(repo, 'get_project_dir', lambda x: '')
-    assert repo.get_repofiles(c, 'x') == ('', [])
+    monkeypatch.setattr(testee, 'get_project_dir', lambda x: '')
+    assert testee.get_repofiles(c, 'x') == ('', [])
     assert capsys.readouterr().out == 'not a code repository\n'
 
 
@@ -62,7 +62,7 @@ def test_get_branchname(monkeypatch, capsys):
         return types.SimpleNamespace(stdout='* master\n  another\n')
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
-    testobj = repo.Check(c)
+    testobj = testee.Check(c)
     assert testobj.get_branchname('path/to/repo') == 'current'
     assert capsys.readouterr().out == 'git branch in path/to/repo\n'
     monkeypatch.setattr(MockContext, 'run', mock_run_2)
@@ -70,8 +70,34 @@ def test_get_branchname(monkeypatch, capsys):
     assert testobj.get_branchname('path/to/repo') == ''
     assert capsys.readouterr().out == 'git branch in path/to/repo\n'
 
+def test_check_init(monkeypatch, capsys):
+    monkeypatch.setattr(testee, 'frozen_repos', ['do-not-process'])
+    monkeypatch.setattr(testee, 'all_repos', ['a' ,'b'])
+    monkeypatch.setattr(MockContext, 'run', mock_run)
+    c = MockContext()
+    with pytest.raises(ValueError) as exc:
+        testee.Check(c, context='x')
+    assert str(exc.value) == 'wrong context for this routine'
 
-def test_check(monkeypatch, capsys):
+    checker = testee.Check(c)
+    assert checker.context == 'local'
+    assert not checker.push
+    assert not checker.verbose
+    assert checker.include == ['a', 'b']
+    assert checker.exclude == ['do-not-process']
+    assert not checker.is_gitrepo
+    assert not checker.is_private
+
+    checker = testee.Check(c, context='remote', push=True, verbose=True, include='q,r', exclude='r,s')
+    assert checker.context == 'remote'
+    assert checker.push
+    assert checker.verbose
+    assert checker.include == ['q', 'r']
+    assert checker.exclude == ['do-not-process', 'r', 's']
+    assert not checker.is_gitrepo
+    assert not checker.is_private
+
+def test_check_run(monkeypatch, capsys):
     """eigenlijk test op de sturing binnen de run() methode
     """
     def mock_changes(*args):
@@ -80,74 +106,62 @@ def test_check(monkeypatch, capsys):
         return True, '', ''
     def mock_push(*args):
         return [], ''
-
-    monkeypatch.setattr(repo, 'frozen_repos', ['do-not-process'])
-    monkeypatch.setattr(repo, 'TODAY', 'today')
-    monkeypatch.setattr(MockContext, 'run', mock_run)
+    monkeypatch.setattr(testee.Check, 'get_locations', lambda *x: ('pwd', 'root'))
+    monkeypatch.setattr(testee.Check, 'register_uncommitted', lambda *x: (False, '', ''))
+    monkeypatch.setattr(testee.Check, 'register_outgoing', lambda *x: (False, '', ''))
+    monkeypatch.setattr(testee, 'all_repos', ['check-it'])
+    monkeypatch.setattr(testee, 'git_repos', ['check-it'])
+    monkeypatch.setattr(testee, 'private_repos', ['check-it'])
+    monkeypatch.setattr(testee, 'TODAY', 'today')
     c = MockContext()
-    with pytest.raises(ValueError) as exc:
-        repo.Check(c, context='x')
-    assert str(exc.value) == 'wrong context for this routine'
-    monkeypatch.setattr(repo, 'all_repos', ['do-not-process'])
-    # breakpoint()
-    repo.Check(c).run()
-    with open(repo.LOCALCHG) as f:
+    testee.Check(c).run()
+    with open(testee.LOCALCHG) as f:
         data = f.read()
     assert data == 'check local repos on today\n\n'
     assert capsys.readouterr().out == '\nno change details\n'
 
-    monkeypatch.setattr(repo, 'all_repos', ['check-it'])
-    monkeypatch.setattr(repo, 'git_repos', ['check-it'])
-    monkeypatch.setattr(repo, 'private_repos', ['check-it'])
-    monkeypatch.setattr(repo.Check, 'get_locations', lambda *x: ('pwd', 'root'))
-    monkeypatch.setattr(repo.Check, 'register_uncommitted', lambda *x: (False, '', ''))
-    monkeypatch.setattr(repo.Check, 'register_outgoing', lambda *x: (False, '', ''))
-    repo.Check(c).run()
-    with open(repo.LOCALCHG) as f:
-        data = f.read()
-    assert data == 'check local repos on today\n\n'
-    assert capsys.readouterr().out == '\nno change details\n'
-    repo.Check(c, verbose=True).run()
-    with open(repo.LOCALCHG) as f:
+    testee.Check(c, verbose=True).run()
+    with open(testee.LOCALCHG) as f:
         data = f.read()
     assert data == 'check local repos on today\n\n'
     assert capsys.readouterr().out == 'no changes for check-it\n\nno change details\n'
 
-    monkeypatch.setattr(repo.Check, 'register_uncommitted', lambda *x: (True, 'xxx', 'aaa'))
-    monkeypatch.setattr(repo.Check, 'register_outgoing', lambda *x: (False, '', ''))
-    repo.Check(c).run()
-    with open(repo.LOCALCHG) as f:
+    monkeypatch.setattr(testee.Check, 'register_uncommitted', lambda *x: (True, 'xxx', 'aaa\n'))
+    monkeypatch.setattr(testee.Check, 'register_outgoing', lambda *x: (False, '', '\n'))
+    testee.Check(c).run()
+    with open(testee.LOCALCHG) as f:
         data = f.read()
-    assert data == 'check local repos on today\n\naaa'
+    assert data == 'check local repos on today\n\naaa\n\n'
     assert capsys.readouterr().out == 'xxx for check-it\n\nfor details see /tmp/repo_local_changes\n'
 
-    monkeypatch.setattr(repo.Check, 'register_uncommitted', lambda *x: (False, '', ''))
-    monkeypatch.setattr(repo.Check, 'register_outgoing', lambda *x: (True, 'yyy', 'bbb'))
-    monkeypatch.setattr(repo.Check, 'execute_push', lambda *x: 'ccc')
-    repo.Check(c, push=True).run()
-    with open(repo.LOCALCHG) as f:
+    monkeypatch.setattr(testee.Check, 'register_uncommitted', lambda *x: (False, '', '\n'))
+    monkeypatch.setattr(testee.Check, 'register_outgoing', lambda *x: (True, 'yyy', 'bbb\n'))
+    monkeypatch.setattr(testee.Check, 'execute_push', lambda *x: 'ccc')
+    testee.Check(c, push=True).run()
+    with open(testee.LOCALCHG) as f:
         data = f.read()
-    assert data == 'check local repos on today\n\nbbbccc'
+    assert data == 'check local repos on today\n\n\nbbb\nccc'
     assert capsys.readouterr().out == ('yyy for check-it\n\n'
                                        'for details see /tmp/repo_local_changes\n')
 
-    monkeypatch.setattr(repo.Check, 'register_uncommitted', lambda *x: (True, 'xxx', 'aaa'))
-    monkeypatch.setattr(repo.Check, 'register_outgoing', lambda *x: (True, 'yyy', 'bbb'))
-    repo.Check(c, context='remote').run()
-    with open(repo.REPOCHG) as f:
+    monkeypatch.setattr(testee.Check, 'register_uncommitted', lambda *x: (True, 'xxx', 'aaa\n'))
+    monkeypatch.setattr(testee.Check, 'register_outgoing', lambda *x: (True, 'yyy', 'bbb\n'))
+    monkeypatch.setattr(testee, 'all_repos', ['check-it', 'check-not'])
+    testee.Check(c, context='remote', exclude='check-not').run()
+    with open(testee.REPOCHG) as f:
         data = f.read()
-    assert data == 'check remote repos on today\n\naaabbb'
+    assert data == 'check remote repos on today\n\naaa\nbbb\n'
     assert capsys.readouterr().out == ('xxx and yyy for check-it\n\n'
                                        'for details see /tmp/repo_changes\n')
 
 
 def test_get_locations(monkeypatch, capsys):
-    monkeypatch.setattr(repo, 'HOME', 'homedir')
-    monkeypatch.setattr(repo, 'git_repos', ['name'])
-    monkeypatch.setattr(repo, 'private_repos', {'name': 'same_or_other_name'})
+    monkeypatch.setattr(testee, 'HOME', 'homedir')
+    monkeypatch.setattr(testee, 'git_repos', ['name'])
+    monkeypatch.setattr(testee, 'private_repos', {'name': 'same_or_other_name'})
     # monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
-    testobj = repo.Check(c, 'local')
+    testobj = testee.Check(c, 'local')
     testobj.is_gitrepo, testobj.is_private = True, True
     assert testobj.get_locations('name') == ('homedir/same_or_other_name', 'homedir')
     testobj.is_gitrepo, testobj.is_private = True, False
@@ -157,7 +171,7 @@ def test_get_locations(monkeypatch, capsys):
     testobj.is_gitrepo, testobj.is_private = False, False
     assert testobj.get_locations('name') == ('homedir/projects/name', 'homedir')
     c = MockContext()
-    testobj = repo.Check(c, 'remote')
+    testobj = testee.Check(c, 'remote')
     testobj.is_gitrepo, testobj.is_private = True, True
     assert testobj.get_locations('name') == ('homedir/git-repos/name', 'homedir/git-repos')
     testobj.is_gitrepo, testobj.is_private = True, False
@@ -177,8 +191,8 @@ def test_register_changes(monkeypatch, capsys):
         return types.SimpleNamespace(stdout='')
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
-    monkeypatch.setattr(repo.Check, 'get_branchname', lambda *x: 'master')
-    testobj = repo.Check(c)
+    monkeypatch.setattr(testee.Check, 'get_branchname', lambda *x: 'master')
+    testobj = testee.Check(c)
     testobj.is_gitrepo, testobj.is_private = True, True
     assert testobj.register_uncommitted('pwd') == (True,
             'uncommitted changes (on branch master)',
@@ -196,7 +210,7 @@ def test_register_changes(monkeypatch, capsys):
     assert capsys.readouterr().out == 'hg status --quiet\n'
     monkeypatch.setattr(MockContext, 'run', mock_run_2)
     c = MockContext()
-    testobj = repo.Check(c)
+    testobj = testee.Check(c)
     testobj.is_gitrepo, testobj.is_private = False, True
     assert testobj.register_uncommitted('pwd') == (False, '', '')
     assert capsys.readouterr().out == 'git status -uno --short\n'
@@ -219,7 +233,7 @@ def test_register_outgoing(monkeypatch, capsys, tmp_path):
         return types.SimpleNamespace(stdout='xxx', ok=True)
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
-    testobj = repo.Check(c, 'local')
+    testobj = testee.Check(c, 'local')
     testobj.is_gitrepo, testobj.is_private = True, True
     assert testobj.register_outgoing('name', 'root', 'pwd') == ('xxx', 'outgoing changes',
                                                                 'outgoing changes for name\nxxx\n')
@@ -236,7 +250,7 @@ def test_register_outgoing(monkeypatch, capsys, tmp_path):
     assert testobj.register_outgoing('name', 'root', 'pwd') == (True, 'outgoing changes',
                                                                 'outgoing changes for name\nxxx\n')
     assert capsys.readouterr().out == 'hg outgoing\n'
-    testobj = repo.Check(c, 'remote')
+    testobj = testee.Check(c, 'remote')
     testobj.is_gitrepo, testobj.is_private = True, True
     assert testobj.register_outgoing('name', 'root', 'pwd') == ('xxx', 'outgoing changes',
                                                                 'outgoing changes for name\nxxx\n')
@@ -261,7 +275,7 @@ def test_register_outgoing(monkeypatch, capsys, tmp_path):
     os.remove('/tmp/repochecktest/name_tip')
     monkeypatch.setattr(MockContext, 'run', mock_run_2)
     c = MockContext()
-    testobj = repo.Check(c, 'remote')
+    testobj = testee.Check(c, 'remote')
     testobj.is_gitrepo, testobj.is_private = False, False
     # breakpoint()
     assert testobj.register_outgoing('name', '/tmp/repochecktest', 'pwd') == (True,
@@ -279,7 +293,7 @@ def test_execute_push(monkeypatch, capsys):
         return types.SimpleNamespace(stdout='ready.', ok=False)
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
-    testobj = repo.Check(c, 'local')
+    testobj = testee.Check(c, 'local')
     testobj.is_gitrepo, testobj.is_private = True, True
     assert testobj.execute_push('name', 'root', 'pwd') == 'ready.\n'
     assert capsys.readouterr().out == 'git push  origin master\n'
@@ -292,7 +306,7 @@ def test_execute_push(monkeypatch, capsys):
     testobj.is_gitrepo, testobj.is_private = False, False
     assert testobj.execute_push('name', 'root', 'pwd') == 'ready.\nready.\n'
     assert capsys.readouterr().out == 'hg push\nhg up\n'
-    testobj = repo.Check(c, 'remote')
+    testobj = testee.Check(c, 'remote')
     testobj.is_gitrepo, testobj.is_private = True, True
     assert testobj.execute_push('name', 'root', 'pwd') == 'ready.\n'
     assert capsys.readouterr().out == 'git push -u origin master\n'
@@ -307,7 +321,7 @@ def test_execute_push(monkeypatch, capsys):
     assert capsys.readouterr().out == 'hg push\nhg tip > root/name_tip\n'
     monkeypatch.setattr(MockContext, 'run', mock_run_2)
     c = MockContext()
-    testobj = repo.Check(c, 'local')
+    testobj = testee.Check(c, 'local')
     testobj.is_gitrepo, testobj.is_private = True, True
     assert testobj.execute_push('name', 'root', 'pwd') == ''
     assert capsys.readouterr().out == 'git push  origin master\n'
@@ -315,7 +329,7 @@ def test_execute_push(monkeypatch, capsys):
 
 def test_get_tipfilename():
     c = MockContext()
-    testobj = repo.Check(c)
+    testobj = testee.Check(c)
     assert testobj.get_tipfilename('root', 'name') == 'root/name_tip'
 
 
@@ -323,12 +337,12 @@ def test_check_local(monkeypatch, capsys):
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
     monkeypatch.setattr(MockCheck, 'run', mock_check_nok)
-    monkeypatch.setattr(repo, 'Check', MockCheck)
-    repo.check_local(c)
+    monkeypatch.setattr(testee, 'Check', MockCheck)
+    testee.check_local(c)
     assert capsys.readouterr().out == "call Check() with args () {}\ncall Check.run()\n"
-    monkeypatch.setattr(repo.Check, 'run', mock_check_ok)
-    monkeypatch.setattr(repo, 'Check', MockCheck)
-    repo.check_local(c)
+    monkeypatch.setattr(testee.Check, 'run', mock_check_ok)
+    monkeypatch.setattr(testee, 'Check', MockCheck)
+    testee.check_local(c)
     assert capsys.readouterr().out == ("call Check() with args () {}\ncall Check.run()\n"
                                        "use 'check-repo <reponame>' to inspect changes\n"
                                        "    'binfab repo.check-local-changes` for log\n"
@@ -338,7 +352,7 @@ def test_check_local(monkeypatch, capsys):
 def test_check_local_changes(monkeypatch, capsys):
     monkeypatch.setattr(MockContext, 'run', run_in_dir)
     c = MockContext()
-    repo.check_local_changes(c)
+    testee.check_local_changes(c)
     assert capsys.readouterr().out == ('gnome-terminal --geometry=100x40 -- '
                                        'view /tmp/repo_local_changes in ~/projects\n')
 
@@ -346,15 +360,15 @@ def test_check_local_changes(monkeypatch, capsys):
 def test_check_local_notes(monkeypatch, capsys):
     monkeypatch.setattr(MockContext, 'run', run_in_dir)
     c = MockContext()
-    repo.check_local_notes(c)
+    testee.check_local_notes(c)
     assert capsys.readouterr().out == 'treedocs projects.trd in ~/projects\n'
 
 
 def test_check_remote(monkeypatch, capsys):
     monkeypatch.setattr(MockContext, 'run', run_in_dir)
     c = MockContext()
-    monkeypatch.setattr(repo, 'Check', MockCheck)
-    repo.check_remote(c)
+    monkeypatch.setattr(testee, 'Check', MockCheck)
+    testee.check_remote(c)
     assert capsys.readouterr().out == ("call Check() with args ('remote',) {}\n"
                                        "call Check.run()\n")
 
@@ -362,8 +376,8 @@ def test_check_remote(monkeypatch, capsys):
 def test_push_local(monkeypatch, capsys):
     monkeypatch.setattr(MockContext, 'run', run_in_dir)
     c = MockContext()
-    monkeypatch.setattr(repo, 'Check', MockCheck)
-    repo.push_local(c)
+    monkeypatch.setattr(testee, 'Check', MockCheck)
+    testee.push_local(c)
     assert capsys.readouterr().out == ("call Check() with args () {'push': True, 'exclude': None}\n"
                                        "call Check.run()\n")
 
@@ -371,34 +385,34 @@ def test_push_local(monkeypatch, capsys):
 def test_push_remote(monkeypatch, capsys):
     monkeypatch.setattr(MockContext, 'run', run_in_dir)
     c = MockContext()
-    monkeypatch.setattr(repo, 'Check', MockCheck)
-    repo.push_remote(c)
+    monkeypatch.setattr(testee, 'Check', MockCheck)
+    testee.push_remote(c)
     assert capsys.readouterr().out == ("call Check() with args ('remote',) {'push': True,"
                                        " 'exclude': None}\n"
                                        "call Check.run()\n")
 
 
 def test_pushthru(monkeypatch, capsys):
-    monkeypatch.setattr(repo, 'LOCALCHG', '/tmp/local_changes_test')
-    monkeypatch.setattr(repo, 'REPOCHG', '/tmp/repo_changes_test')
-    with open(repo.LOCALCHG, 'w') as f:
+    monkeypatch.setattr(testee, 'LOCALCHG', '/tmp/local_changes_test')
+    monkeypatch.setattr(testee, 'REPOCHG', '/tmp/repo_changes_test')
+    with open(testee.LOCALCHG, 'w') as f:
         f.write('some local change\n')
-    with open(repo.REPOCHG, 'w') as f:
+    with open(testee.REPOCHG, 'w') as f:
         f.write('some other change\n')
-    monkeypatch.setattr(repo, 'Check', MockCheck)
+    monkeypatch.setattr(testee, 'Check', MockCheck)
     c = MockContext()
-    repo.pushthru(c, '')
+    testee.pushthru(c, '')
     assert capsys.readouterr().out == ("call Check() with args () {'push': True}\n"
                                        "call Check.run()\n"
                                        "call Check() with args ('remote',) {'push': True}\n"
                                        "call Check.run()\n\n"
                                        "ready, output in /tmp/pushthru_log\n")
-    repo.pushthru(c, 'name')
+    testee.pushthru(c, 'name,other')
     assert capsys.readouterr().out == ("call Check() with args () {'push': True,"
-                                       " 'include': ['name']}\n"
+                                       " 'include': 'name,other'}\n"
                                        "call Check.run()\n"
                                        "call Check() with args ('remote',) {'push': True,"
-                                       " 'include': ['name']}\n"
+                                       " 'include': 'name,other'}\n"
                                        "call Check.run()\n\n"
                                        "ready, output in /tmp/pushthru_log\n")
 
@@ -409,16 +423,16 @@ def test_overview(monkeypatch, capsys):
         return 'output directory'
     # monkeypatch.setattr(repo.os.path, 'isdir', lambda x: False)
     c = MockContext()
-    repo.overview(c, 'proj', 'x') == ''
+    testee.overview(c, 'proj', 'x') == ''
     assert capsys.readouterr().out == 'wrong spec for output type\n'
 
-    monkeypatch.setattr(repo, 'get_project_root', lambda x: 'project_root')
-    monkeypatch.setattr(repo.os, 'listdir', lambda x: ['oink'])
-    monkeypatch.setattr(repo, 'repo_overzicht', mock_repo_overzicht)
-    repo.overview(c, outtype='txt')
+    monkeypatch.setattr(testee, 'get_project_root', lambda x: 'project_root')
+    monkeypatch.setattr(testee.os, 'listdir', lambda x: ['oink'])
+    monkeypatch.setattr(testee, 'repo_overzicht', mock_repo_overzicht)
+    testee.overview(c, outtype='txt')
     assert capsys.readouterr().out == ("call overzicht met args ('oink', 'project_root/oink', 'txt')\n"
                                        "output in output directory\n")
-    repo.overview(c, 'name,proj', 'csv')
+    testee.overview(c, 'name,proj', 'csv')
     assert capsys.readouterr().out == ("call overzicht met args ('name', 'project_root/name', 'csv')\n"
                                        "call overzicht met args ('proj', 'project_root/proj', 'csv')\n"
                                        "output in output directory\n")
@@ -435,29 +449,29 @@ def test_repo_overzicht(monkeypatch, capsys):
         print('called make_repo_ovz with args', args)
     def mock_repocsv(*args):
         print('called make_repocsv with args', args)
-    monkeypatch.setattr(repo, 'make_repolist_hg', mock_repolist_hg)
-    monkeypatch.setattr(repo, 'make_repolist_git', mock_repolist_git)
-    monkeypatch.setattr(repo, 'make_repo_ovz', mock_repo_ovz)
-    monkeypatch.setattr(repo, 'make_repocsv', mock_repocsv)
+    monkeypatch.setattr(testee, 'make_repolist_hg', mock_repolist_hg)
+    monkeypatch.setattr(testee, 'make_repolist_git', mock_repolist_git)
+    monkeypatch.setattr(testee, 'make_repo_ovz', mock_repo_ovz)
+    monkeypatch.setattr(testee, 'make_repocsv', mock_repocsv)
     monkeypatch.setattr(MockContext, 'run', run_in_dir)
     c = MockContext()
-    monkeypatch.setattr(repo.os, 'listdir', lambda x: ['oink'])
-    monkeypatch.setattr(repo.os.path, 'isdir', lambda x: False)
-    assert repo.repo_overzicht(c, 'name', 'path/to/repo', 'txt') == ''
-    monkeypatch.setattr(repo.os.path, 'isdir', lambda x: True)
-    assert repo.repo_overzicht(c, 'name', 'path/to/repo', 'txt') == ''
+    monkeypatch.setattr(testee.os, 'listdir', lambda x: ['oink'])
+    monkeypatch.setattr(testee.os.path, 'isdir', lambda x: False)
+    assert testee.repo_overzicht(c, 'name', 'path/to/repo', 'txt') == ''
+    monkeypatch.setattr(testee.os.path, 'isdir', lambda x: True)
+    assert testee.repo_overzicht(c, 'name', 'path/to/repo', 'txt') == ''
     # assert capsys.readouterr().out == ""
-    monkeypatch.setattr(repo.os, 'listdir', lambda x: ['.hg'])
-    assert repo.repo_overzicht(c, 'name', 'path/to/repo', 'txt') == 'path/to/.overzicht'
+    monkeypatch.setattr(testee.os, 'listdir', lambda x: ['.hg'])
+    assert testee.repo_overzicht(c, 'name', 'path/to/repo', 'txt') == 'path/to/.overzicht'
     assert capsys.readouterr().out == ("called make_repolist_hg()\n"
                                        "called make_repo_ovz with args ({'.hg': 'outdict_hg'},"
                                        " 'path/to/.overzicht/name_repo.ovz')\n")
-    monkeypatch.setattr(repo.os, 'listdir', lambda x: ['.git'])
-    assert repo.repo_overzicht(c, 'name', 'path/to/repo', 'txt') == 'path/to/.overzicht'
+    monkeypatch.setattr(testee.os, 'listdir', lambda x: ['.git'])
+    assert testee.repo_overzicht(c, 'name', 'path/to/repo', 'txt') == 'path/to/.overzicht'
     assert capsys.readouterr().out == ("called make_repolist_git()\n"
                                        "called make_repo_ovz with args ({'.git': 'outdict_git'},"
                                        " 'path/to/.overzicht/name_repo.ovz')\n")
-    assert repo.repo_overzicht(c, 'name', 'path/to/repo', 'csv') == 'path/to/.overzicht'
+    assert testee.repo_overzicht(c, 'name', 'path/to/repo', 'csv') == 'path/to/.overzicht'
     assert capsys.readouterr().out == ("called make_repolist_git()\n"
                                        "called make_repocsv with args ({'.git': 'outdict_git'},"
                                        " 'path/to/.overzicht/name_repo.csv')\n")
@@ -480,7 +494,7 @@ def test_make_repolist_hg(monkeypatch, capsys):
                                              "yet another line\n"))
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
-    assert repo.make_repolist_hg(c, 'path/to/repo') == {1: {'date': 'Mon Oct 28 2019 21:36:28 +0100',
+    assert testee.make_repolist_hg(c, 'path/to/repo') == {1: {'date': 'Mon Oct 28 2019 21:36:28 +0100',
                                                             'desc': ['line', 'another line']},
                                                         2: {'date': 'Mon Oct 28 2019 22:36:28 +0100',
                                                             'desc': ['yet another line'],
@@ -508,7 +522,7 @@ def test_make_repolist_git(monkeypatch, capsys):
                 " build-bin-scripts              |  70 +++++++++++++++++++++\n"))
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
-    assert repo.make_repolist_git(c, 'path/to/repo') == {
+    assert testee.make_repolist_git(c, 'path/to/repo') == {
         "d98e1b0": {'date': "Sun Jul 24 12:57:55 2022 +0200",
                     'description': "tooltips toegevoegd",
                     'files': ['check_repo.py', 'check_repo_tooltips.py']},
@@ -523,7 +537,7 @@ def test_make_repolist_git(monkeypatch, capsys):
 
 def test_make_repo_ovz(monkeypatch, capsys, tmp_path):
     filename = tmp_path / 'repo_ovz_outfile'
-    repo.make_repo_ovz({'naam1': {'date': 'ddd', 'desc': ['xx', 'x'], 'files': ['file1', 'file2']},
+    testee.make_repo_ovz({'naam1': {'date': 'ddd', 'desc': ['xx', 'x'], 'files': ['file1', 'file2']},
                         'naam2': {'date': 'eee', 'desc': ['yy', 'y']}}, filename)
     with open(filename) as f:
         data = f.read()
@@ -531,11 +545,11 @@ def test_make_repo_ovz(monkeypatch, capsys, tmp_path):
 
 
 def test_make_repocsv(monkeypatch, capsys, tmp_path):
-    monkeypatch.setattr(repo.csv, 'writer', MockWriter)
+    monkeypatch.setattr(testee.csv, 'writer', MockWriter)
     filename = tmp_path / 'repo_ovz_outfile'
     if filename.exists():
         filename.unlink()
-    repo.make_repocsv({'1': {'date': 'ddd', 'desc': ['x;x', 'x'], 'files': ['file1', 'file2']},
+    testee.make_repocsv({'1': {'date': 'ddd', 'desc': ['x;x', 'x'], 'files': ['file1', 'file2']},
                         '2': {'date': 'eee', 'desc': ['y,y', 'y']}}, filename)
     assert filename.exists()
     assert capsys.readouterr().out == (
@@ -577,40 +591,40 @@ def test_add2gitweb(monkeypatch, capsys, tmp_path):
             return "orig description"
         return "description"
     def mock_get_desc():
-        print('called repo.get_repodesc')
+        print('called testee.get_repodesc')
         return 'repodesc'
-    monkeypatch.setattr(repo, 'get_repodesc', mock_get_desc)
+    monkeypatch.setattr(testee, 'get_repodesc', mock_get_desc)
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
-    monkeypatch.setattr(repo.pathlib.Path, 'exists', lambda *x: False)
-    repo.add2gitweb(c, 'name')
+    monkeypatch.setattr(testee.pathlib.Path, 'exists', lambda *x: False)
+    testee.add2gitweb(c, 'name')
     assert capsys.readouterr().out == (
-            f'touch {repo.GITLOC}/name/.git/git-daemon-export-ok\n'
-            'called repo.get_repodesc\n'
-            f'echo "repodesc" > {repo.GITLOC}/name/.git/description\n')
-    repo.add2gitweb(c, 'name', frozen=True)
+            f'touch {testee.GITLOC}/name/.git/git-daemon-export-ok\n'
+            'called testee.get_repodesc\n'
+            f'echo "repodesc" > {testee.GITLOC}/name/.git/description\n')
+    testee.add2gitweb(c, 'name', frozen=True)
     assert capsys.readouterr().out == (
-            f'touch {repo.GITLOC}/.frozen/name/.git/git-daemon-export-ok\n'
-            'called repo.get_repodesc\n'
-            f'echo "repodesc" > {repo.GITLOC}/.frozen/name/.git/description\n')
-    monkeypatch.setattr(repo.pathlib.Path, 'exists', lambda *x: True)
-    monkeypatch.setattr(repo.pathlib.Path, 'read_text', mock_read)
-    repo.add2gitweb(c, 'name')
+            f'touch {testee.GITLOC}/.frozen/name/.git/git-daemon-export-ok\n'
+            'called testee.get_repodesc\n'
+            f'echo "repodesc" > {testee.GITLOC}/.frozen/name/.git/description\n')
+    monkeypatch.setattr(testee.pathlib.Path, 'exists', lambda *x: True)
+    monkeypatch.setattr(testee.pathlib.Path, 'read_text', mock_read)
+    testee.add2gitweb(c, 'name')
     assert capsys.readouterr().out == (
-            f'echo "description" > {repo.GITLOC}/name/.git/description\n')
+            f'echo "description" > {testee.GITLOC}/name/.git/description\n')
     counter2 = 0
-    monkeypatch.setattr(repo.pathlib.Path, 'exists', mock_exists)
-    monkeypatch.setattr(repo.pathlib.Path, 'read_text', mock_read)
-    repo.add2gitweb(c, 'name')
+    monkeypatch.setattr(testee.pathlib.Path, 'exists', mock_exists)
+    monkeypatch.setattr(testee.pathlib.Path, 'read_text', mock_read)
+    testee.add2gitweb(c, 'name')
     assert capsys.readouterr().out == (
-            'called repo.get_repodesc\n'
-            f'echo "repodesc" > {repo.GITLOC}/name/.git/description\n')
+            'called testee.get_repodesc\n'
+            f'echo "repodesc" > {testee.GITLOC}/name/.git/description\n')
     counter = counter2 = 0
-    monkeypatch.setattr(repo.pathlib.Path, 'exists', mock_exists_2)
-    monkeypatch.setattr(repo.pathlib.Path, 'read_text', mock_read_2)
-    repo.add2gitweb(c, 'name')
+    monkeypatch.setattr(testee.pathlib.Path, 'exists', mock_exists_2)
+    monkeypatch.setattr(testee.pathlib.Path, 'read_text', mock_read_2)
+    testee.add2gitweb(c, 'name')
     assert capsys.readouterr().out == (
-            f'echo "orig description" > {repo.GITLOC}/name/.git/description\n')
+            f'echo "orig description" > {testee.GITLOC}/name/.git/description\n')
 
 def _test_get_repodesc(monkeypatch, capsys):  # mohgelijk te onbenullig en lastig om te testen
     ...
@@ -619,64 +633,64 @@ def _test_get_repodesc(monkeypatch, capsys):  # mohgelijk te onbenullig en lasti
 def test_check_and_run(monkeypatch, capsys):
     monkeypatch.setattr(MockContext, 'run', run_in_dir)
     c = MockContext()
-    monkeypatch.setattr(repo, 'get_project_dir', lambda x: '')
-    repo.check_and_run_for_project(c, '', 'command-string')
+    monkeypatch.setattr(testee, 'get_project_dir', lambda x: '')
+    testee.check_and_run_for_project(c, '', 'command-string')
     assert capsys.readouterr().out == 'you are not in a known project directory\n'
-    repo.check_and_run_for_project(c, 'name', 'command-string')
+    testee.check_and_run_for_project(c, 'name', 'command-string')
     assert capsys.readouterr().out == 'name is not a known project\n'
-    monkeypatch.setattr(repo, 'get_project_dir', lambda x: 'path/to/repo')
-    repo.check_and_run_for_project(c, 'repo', 'command-string')
+    monkeypatch.setattr(testee, 'get_project_dir', lambda x: 'path/to/repo')
+    testee.check_and_run_for_project(c, 'repo', 'command-string')
     assert capsys.readouterr().out == 'command-string in path/to/repo\n'
-    monkeypatch.setattr(repo, 'get_project_dir', lambda x: os.getcwd())
-    repo.check_and_run_for_project(c, '', 'command-string')
+    monkeypatch.setattr(testee, 'get_project_dir', lambda x: os.getcwd())
+    testee.check_and_run_for_project(c, '', 'command-string')
     assert capsys.readouterr().out == 'command-string in /home/albert/bin\n'
 
 
 def test_dtree(monkeypatch, capsys):
-    monkeypatch.setattr(repo, 'check_and_run_for_project', mock_check_and_run)
+    monkeypatch.setattr(testee, 'check_and_run_for_project', mock_check_and_run)
     c = MockContext()
-    repo.dtree(c)
+    testee.dtree(c)
     assert capsys.readouterr().out == ("call check_and_run_for_project() with args ('',"
                                        " '~/projects/doctree/ensure-qt projdocs.trd')\n")
-    repo.dtree(c, 'name')
+    testee.dtree(c, 'name')
     assert capsys.readouterr().out == ("call check_and_run_for_project() with args ('name',"
                                        " '~/projects/doctree/ensure-qt projdocs.trd')\n")
 
 
 def test_qgit(monkeypatch, capsys):
-    monkeypatch.setattr(repo, 'check_and_run_for_project', mock_check_and_run)
+    monkeypatch.setattr(testee, 'check_and_run_for_project', mock_check_and_run)
     c = MockContext()
-    repo.qgit(c)
+    testee.qgit(c)
     assert capsys.readouterr().out == "call check_and_run_for_project() with args ('', 'qgit')\n"
-    repo.qgit(c, 'name')
+    testee.qgit(c, 'name')
     assert capsys.readouterr().out == "call check_and_run_for_project() with args ('name', 'qgit')\n"
 
 
 def test_mee_bezig(monkeypatch, capsys):
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
-    repo.mee_bezig(c)
+    testee.mee_bezig(c)
     assert capsys.readouterr().out == 'treedocs ~/projects/projects.trd\n'
 
 
 def test_preadme(monkeypatch, capsys):
-    monkeypatch.setattr(repo, 'check_and_run_for_project', mock_check_and_run)
+    monkeypatch.setattr(testee, 'check_and_run_for_project', mock_check_and_run)
     c = MockContext()
-    repo.preadme(c)
+    testee.preadme(c)
     assert capsys.readouterr().out == ("call check_and_run_for_project() with args ('',"
                                        " 'pedit readme.rst')\n")
-    repo.preadme(c, 'name')
+    testee.preadme(c, 'name')
     assert capsys.readouterr().out == ("call check_and_run_for_project() with args ('name',"
                                        " 'pedit readme.rst')\n")
 
 
 def test_prshell(monkeypatch, capsys):
-    monkeypatch.setattr(repo, 'check_and_run_for_project', mock_check_and_run)
+    monkeypatch.setattr(testee, 'check_and_run_for_project', mock_check_and_run)
     c = MockContext()
-    repo.prshell(c)
+    testee.prshell(c)
     assert capsys.readouterr().out == ("call check_and_run_for_project() with args ('',"
                                        " 'gnome-terminal --geometry=132x43+4+40')\n")
-    repo.prshell(c, 'name')
+    testee.prshell(c, 'name')
     assert capsys.readouterr().out == ("call check_and_run_for_project() with args ('name',"
                                        " 'gnome-terminal --geometry=132x43+4+40')\n")
 
@@ -684,65 +698,110 @@ def test_prshell(monkeypatch, capsys):
 def test_rebuild_filenamelist(monkeypatch, capsys, tmp_path):
     def mock_get_repofiles(*args):
         print('called get_repofiles() for `{}`'.format(args[1]))
-        return 'path_to_repo', ['file1', 'file2']
-    monkeypatch.setattr(repo, 'FILELIST', str(tmp_path / 'filelist'))
-    monkeypatch.setattr(repo, 'all_repos', ['repo1', 'repo2'])
-    monkeypatch.setattr(repo, 'frozen_repos', ['repo2'])
-    monkeypatch.setattr(repo, 'get_repofiles', mock_get_repofiles)
+        return 'path_to_repo', ['file2', 'test_file1', 'file1', 'test_file2']
+    monkeypatch.setattr(testee, 'FILELIST', str(tmp_path / 'filelist'))
+    monkeypatch.setattr(testee, 'all_repos', ['repo1', 'repo2'])
+    monkeypatch.setattr(testee, 'frozen_repos', ['repo2'])
+    monkeypatch.setattr(testee, 'get_repofiles', mock_get_repofiles)
     c = MockContext()
-    repo.rebuild_filenamelist(c)
-    with open(repo.FILELIST) as f:
+    testee.rebuild_filenamelist(c, 'prog')
+    with open(f'{testee.FILELIST}-prog') as f:
         data = f.read()
     assert data == 'path_to_repo/file1\npath_to_repo/file2\n'
     assert capsys.readouterr().out == 'called get_repofiles() for `repo1`\n'
+    testee.rebuild_filenamelist(c, mode='test')
+    with open(f'{testee.FILELIST}-test') as f:
+        data = f.read()
+    assert data == 'path_to_repo/test_file1\npath_to_repo/test_file2\n'
+    assert capsys.readouterr().out == 'called get_repofiles() for `repo1`\n'
+    testee.rebuild_filenamelist(c, 'x')
+    with open(f'{testee.FILELIST}-x') as f:
+        data = f.read()
+    assert data == ('path_to_repo/file1\npath_to_repo/file2\n'
+                    'path_to_repo/test_file1\npath_to_repo/test_file2\n')
+    assert capsys.readouterr().out == 'called get_repofiles() for `repo1`\n'
+
+
+def test_search_p(monkeypatch, capsys):
+    def mock_search(c, *args):
+        print('called search with args', args)
+    monkeypatch.setattr(testee, 'search', mock_search)
+    monkeypatch.setattr(MockContext, 'run', mock_run)
+    c = MockContext()
+    testee.search_p(c, rebuild=True)
+    assert capsys.readouterr().out == "called search with args ('', True, 'prog')\n"
+    testee.search_p(c, 'find_me')
+    assert capsys.readouterr().out == "called search with args ('find_me', False, 'prog')\n"
+
+
+def test_search_t(monkeypatch, capsys):
+    def mock_search(c, *args):
+        print('called search with args', args)
+    monkeypatch.setattr(testee, 'search', mock_search)
+    monkeypatch.setattr(MockContext, 'run', mock_run)
+    c = MockContext()
+    testee.search_t(c, rebuild=True)
+    assert capsys.readouterr().out == "called search with args ('', True, 'test')\n"
+    testee.search_t(c, 'find_me')
+    assert capsys.readouterr().out == "called search with args ('find_me', False, 'test')\n"
+
+
+def test_search_all(monkeypatch, capsys):
+    def mock_search(c, *args):
+        print('called search with args', args)
+    monkeypatch.setattr(testee, 'search', mock_search)
+    monkeypatch.setattr(MockContext, 'run', mock_run)
+    c = MockContext()
+    testee.search_all(c, rebuild=True)
+    assert capsys.readouterr().out == "called search with args ('', True, 'both')\n"
+    testee.search_all(c, 'find_me')
+    assert capsys.readouterr().out == "called search with args ('find_me', False, 'both')\n"
 
 
 def test_search(monkeypatch, capsys, tmp_path):
     def mock_rebuild(*args):
         print('called rebuild_filenamelist')
     tmpfilelist = tmp_path / 'filelist'
-    monkeypatch.setattr(repo, 'FILELIST', str(tmpfilelist))
-    monkeypatch.setattr(repo, 'rebuild_filenamelist', mock_rebuild)
+    monkeypatch.setattr(testee, 'FILELIST', str(tmpfilelist))
+    monkeypatch.setattr(testee, 'rebuild_filenamelist', mock_rebuild)
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
-    if os.path.exists(repo.FILELIST):
-        os.remove(repo.FILELIST)
-    repo.search(c)
+    testee.search(c)
     assert capsys.readouterr().out == ('called rebuild_filenamelist\n'
-                                       f'afrift -m multi {tmpfilelist} -e py -P\n')
-    repo.search(c, rebuild=True)
+                                       f'afrift -m multi {tmpfilelist}-both -e py -P\n')
+    testee.search(c, rebuild=True)
     assert capsys.readouterr().out == ('called rebuild_filenamelist\n'
-                                       f'afrift -m multi {tmpfilelist} -e py -P\n')
-    repo.search(c, 'name')
+                                       f'afrift -m multi {tmpfilelist}-both -e py -P\n')
+    testee.search(c, 'name', mode='test')
     assert capsys.readouterr().out == ('called rebuild_filenamelist\n'
-                                       f'afrift -m multi {tmpfilelist} -e py -PN -s name\n')
-    repo.search(c, 'name', rebuild=True)
+                                       f'afrift -m multi {tmpfilelist}-test -e py -PN -s name\n')
+    testee.search(c, 'name', rebuild=True, mode='prog')
     assert capsys.readouterr().out == ('called rebuild_filenamelist\n'
-                                       f'afrift -m multi {tmpfilelist} -e py -PN -s name\n')
-    with open(repo.FILELIST, 'w') as f:
+                                       f'afrift -m multi {tmpfilelist}-prog -e py -PN -s name\n')
+    with open(f'{testee.FILELIST}-both', 'w') as f:
         f.write('')
-    repo.search(c)
-    assert capsys.readouterr().out == f'afrift -m multi {tmpfilelist} -e py -P\n'
-    repo.search(c, rebuild=True)
+    testee.search(c)
+    assert capsys.readouterr().out == f'afrift -m multi {tmpfilelist}-both -e py -P\n'
+    testee.search(c, rebuild=True)
     assert capsys.readouterr().out == ('called rebuild_filenamelist\n'
-                                       f'afrift -m multi {tmpfilelist} -e py -P\n')
-    repo.search(c, 'name')
-    assert capsys.readouterr().out == f'afrift -m multi {tmpfilelist} -e py -PN -s name\n'
-    repo.search(c, 'name', rebuild=True)
+                                       f'afrift -m multi {tmpfilelist}-both -e py -P\n')
+    testee.search(c, 'name')
+    assert capsys.readouterr().out == f'afrift -m multi {tmpfilelist}-both -e py -PN -s name\n'
+    testee.search(c, 'name', rebuild=True)
     assert capsys.readouterr().out == ('called rebuild_filenamelist\n'
-                                       f'afrift -m multi {tmpfilelist} -e py -PN -s name\n')
+                                       f'afrift -m multi {tmpfilelist}-both -e py -PN -s name\n')
 
 
 def test_runtests(monkeypatch, capsys):
-    monkeypatch.setattr(repo, 'check_and_run_for_project', mock_check_and_run)
+    monkeypatch.setattr(testee, 'check_and_run_for_project', mock_check_and_run)
     c = MockContext()
     with pytest.raises(TypeError) as exc:
-        repo.runtests(c)
+        testee.runtests(c)
     assert str(exc.value) == "runtests() missing 1 required positional argument: 'name'"
-    repo.runtests(c, 'name')
+    testee.runtests(c, 'name')
     assert capsys.readouterr().out == ("call check_and_run_for_project() with args"
                                        " ('name', 'run_unittests ')\n")
-    repo.runtests(c, 'name', 'test')
+    testee.runtests(c, 'name', 'test')
     assert capsys.readouterr().out == ("call check_and_run_for_project() with args ("
                                        "'name', 'run_unittests test')\n")
 
