@@ -299,11 +299,11 @@ def pushthru(c, names):
     """push from working to "central" and on to bitbucket if possible
 
     either name specific repos or check all
-    when no name is specified, the "_check" variants are used
+    when no name is specified, the Check class variants are used
     """
     if names:
-        Check(c, push=True, include=names.split(',')).run()
-        Check(c, 'remote', push=True, include=names.split(',')).run()
+        Check(c, push=True, include=names).run()
+        Check(c, 'remote', push=True, include=names).run()
     else:
         Check(c, push=True).run()
         Check(c, 'remote', push=True).run()
