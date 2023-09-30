@@ -1,0 +1,66 @@
+#! /bin/sh
+
+# prerequisites:
+# install nginx, fcgiwrap, python-django, python-cherrypy, php, php-fpm, php-sqlite, php-pgsql,
+# gunicorn, gitweb, cgitb
+# install server-stuff and scripts repos so that invoke scripts and fabsrv shortcut are available
+
+if [ -e /etc/nginx/sites-available ]; then 
+    echo 'sites-available already present';
+else
+    mkdir /etc/nginx/sites-available
+fi
+if [ -e /etc/nginx/sites-enabled ]; then 
+    echo 'sites-enabled already present';
+else
+    mkdir /etc/nginx/sites-enabled
+fi
+
+fabsrv modconfa -n hosts         	# append own domains to local hosts
+fabsrv modconfb -n nginx		# copy own nginx.conf to /etc/nginx/ (with backup)
+fabsrv modconfb -n fcgiwrap 		# copy fcgiwrap.conf to /etc/nginx/ 
+fabsrv modconfb -n php                  # copy php.ini to activate sqlite and postgres drivers
+
+# modify and activate various domains
+fabsrv nginx.modconf -n flatpages,django,fastcgi,cherrypy,php-sites,trac
+fabsrv nginx.addconf -n flatpages,django,fastcgi,cherrypy,php-sites,trac
+
+# enable viewing repos
+fabsrv modconf -n gitweb   # vertelt de server waar de repos staan  
+fabsrv modconf -n hgweb	   # wil ik deze nog? zo ja, dan moet mercurial ook geïnstalleerd zijn
+fabsrv modconf -n cgit 	   # dit lijkt genoeg te zijn
+
+# permissies op home directory instellen zodat http user er kan kijken (nodig voor gitweb/cgit?)
+sudo chmod +x /home/albert
+
+# localhost root opzetten
+# over te nemen uit www/nginx_root naar localhost root (binfab www.copy etc.):
+# index.html
+# info.php
+# sites.html
+# directory static
+# symlinks chello, jvs, mama en webdocs
+
+# misschien moet ik dit wel opgeven, ik moet een heleboel interactoef doen lijkt het:
+#
+# fcgiwrap.socket enablen (wordt pas actief na restart)
+# nginx service enablen en starten - huidge config verwacht ook fcgiwrap.params in /etc/nginx in plaats van fastcgi.params, is misschien niet nodig (zijn praktisch gelijk)
+# php-fpm.service idem
+# postgresql.service idem - nb zorg dat de datadirectory aanwezig is
+# sudo -iu postgres && initdb -D /var/lib/postgres/data
+# daarna moet je natuurlijk ook nog de database inhoud maken/voorbereiden:
+# [albert@PyintheSky ~ $] sudo su postgres
+# postgres@PyintheSky /home/albert $ psql
+# postgres=# CREATE USER albert
+# postgres-# WITH SUPERUSER CREATEDB CREATEROLE
+# postgres-# PASSWORD '42!Levens';
+# CREATE ROLE
+# postgres=# \q
+# postgres@PyintheSky /home/albert $ exit
+# exit
+# 
+# en dan
+# binfab restore-mongo <laatste backup>
+# binfab restore-pg <laatste-backup>
+
+# fabsrv nginx.restart
