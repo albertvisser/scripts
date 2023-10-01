@@ -409,31 +409,6 @@ def test_push_remote(monkeypatch, capsys):
                                        "call Check.run()\n")
 
 
-def test_pushthru(monkeypatch, capsys):
-    monkeypatch.setattr(testee, 'LOCALCHG', '/tmp/local_changes_test')
-    monkeypatch.setattr(testee, 'REPOCHG', '/tmp/repo_changes_test')
-    with open(testee.LOCALCHG, 'w') as f:
-        f.write('some local change\n')
-    with open(testee.REPOCHG, 'w') as f:
-        f.write('some other change\n')
-    monkeypatch.setattr(testee, 'Check', MockCheck)
-    c = MockContext()
-    testee.pushthru(c, '')
-    assert capsys.readouterr().out == ("call Check() with args () {'push': True}\n"
-                                       "call Check.run()\n"
-                                       "call Check() with args ('remote',) {'push': True}\n"
-                                       "call Check.run()\n\n"
-                                       "ready, output in /tmp/pushthru_log\n")
-    testee.pushthru(c, 'name,other')
-    assert capsys.readouterr().out == ("call Check() with args () {'push': True,"
-                                       " 'include': 'name,other'}\n"
-                                       "call Check.run()\n"
-                                       "call Check() with args ('remote',) {'push': True,"
-                                       " 'include': 'name,other'}\n"
-                                       "call Check.run()\n\n"
-                                       "ready, output in /tmp/pushthru_log\n")
-
-
 def test_overview(monkeypatch, capsys):
     def mock_repo_overzicht(c, *args):
         print('call overzicht met args', args)

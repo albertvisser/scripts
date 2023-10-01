@@ -272,108 +272,20 @@ def check_remote(c):   # , dry_run=False):
     Check(c, 'remote').run()  # , dry_run=dry_run)
 
 
-@task(help={'exclude': 'comma separated list of repostories not to push'})
+@task(help={'exclude': 'comma separated list of repostories not to push',
+            'include': 'comma separated list of repostories to push, excluding the others'})
 def push_local(c, exclude=None, include=None):  # , dry_run=False):
-    """push all repos from working to "central" with possibility to exclude
-    To exclude multiple repos you need to provide a string with escaped commas
-    e.g. binfab push_remote
-         binfab push remote:exclude=apropos
-         binfab push_remote:exclude="apropos,albums"
+    """push all or included repos from working to "central" with possibility to exclude
     """
     Check(c, push=True, exclude=exclude, include=include).run()   # , dry_run=dry_run)
 
 
-@task(help={'exclude': 'comma separated list of repostories not to push'})
+@task(help={'exclude': 'comma separated list of repostories not to push',
+            'include': 'comma separated list of repostories to push, excluding the others'})
 def push_remote(c, exclude=None, include=None):   # , dry_run=False):
-    """push all repos from "central" to BitBucket with possibility to exclude
-    To exclude multiple repos you need to provide a string with escaped commas
-    e.g. binfab push_remote
-         binfab push remote:exclude=apropos
-         binfab push_remote:exclude="apropos,albums"
+    """push all or included repos from "central" to Git with possibility to exclude
     """
     Check(c, 'remote', push=True, exclude=exclude, include=include).run()  # , dry_run=dry_run)
-
-
-@task(help={'names': 'comma separated list of repostories to push'})
-def pushthru(c, names):
-    """push from working to "central" and on to bitbucket if possible
-
-    either name specific repos or check all
-    when no name is specified, the Check class variants are used
-    """
-    if names:
-        Check(c, push=True, include=names).run()
-        Check(c, 'remote', push=True, include=names).run()
-    else:
-        Check(c, push=True).run()
-        Check(c, 'remote', push=True).run()
-    with open(P2ULOG, 'w') as _out:
-        for fname in (LOCALCHG, REPOCHG):
-            with open(fname) as _in:
-                for line in _in:
-                    _out.write(line)
-    print(f'\nready, output in {P2ULOG}')
-    # return
-    # print('niet uitgevoerd, moet herschreven worden o.a. naar gebruik van git')
-    # return
-    # errors = False
-    # with open(P2ULOG, 'w') as _out:
-    #     for name in names.split(','):
-    #         if name not in all_repos:
-    #             # logline = '{} not pushed: is not on bitbucket'.format(name)
-    #             logline = f'{name} not pushed: is not registered as a remote repo'
-    #             print(logline)
-    #             _out.write(logline + "\n")
-    #             errors = True
-    #             continue
-    #         localpath = os.path.join('~', 'projects', name)
-    #         # centralpath = os.path.join('~', 'hg_repos', name)
-    #         centralpath = os.path.join('~', 'git-repos', name)
-    #         if name in private_repos:
-    #             localpath = os.path.join('~', name)
-    #             centralpath = centralpath.replace('repos', 'private')
-    #         elif name in frozen_repos:
-    #             localpath = os.path.join('~', 'projects', '.frozen', name)
-    #         # elif name in django_repos:  # ??
-    #         #     localpath = localpath.replace('projects', os.path.join('www', 'django'))
-    #         # elif name in cherrypy_repos:  # ??
-    #         #     localpath = localpath.replace('projects', os.path.join('www', 'cherrypy'))
-    #         # elif name == 'bitbucket':
-    #         #     localpath = localpath.replace('projects', 'www')
-    #         #     centralpath = centralpath.replace(name, 'avisser.bitbucket.org')
-    #         with c.cd(localpath):
-    #             # result = c.run('hg outgoing', warn=True, hide=True)
-    #             result = c.run('git log origin/master..master', warn=True, hide=True)
-    #         _out.write(result.stdout + "\n")
-    #         if result.failed:
-    #             # logline = '{} - hg outgoing failed'.format(name)
-    #             logline = f'{name} - git outgoing check failed'
-    #             _out.write(logline + "\n")
-    #             _out.write(result.stderr + "\n")
-    #             errors = True
-    #         else:
-    #             with c.cd(localpath):
-    #                 # result = c.run('hg push --remotecmd update', warn=True, hide=True)
-    #                 result = c.run('git push', warn=True, hide=True)
-    #             _out.write(result.stdout + "\n")
-    #             if result.failed:
-    #                 logline = f'{name} - pushing failed'
-    #                 _out.write(logline + "\n")
-    #                 _out.write(result.stderr + "\n")
-    #                 errors = True
-    #                 continue
-    #         with c.cd(centralpath):
-    #             # result = c.run('hg push', warn=True, hide=True)
-    #             result = c.run('git push', warn=True, hide=True)
-    #         _out.write(result.stdout + "\n")
-    #         if result.failed:
-    #             # logline = '{} - pushing to bitbucket failed'.format(name)
-    #             logline = f'{name} - pushing to github failed'
-    #             _out.write(logline + "\n")
-    #             _out.write(result.stderr + "\n")
-    #             errors = True
-    # extra = ' with errors' if errors else ''
-    # print(f'ready{extra}, output in {P2ULOG}')
 
 
 @task(help={'names': 'comma separated list of repostories to list',
