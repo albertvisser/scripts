@@ -296,6 +296,18 @@ def test_enable(monkeypatch, capsys):
                                        'called ScriptLib.update\n'
                                        'key3 enabled\n')
 
+def test_list_disabled(monkeypatch, capsys):
+    monkeypatch.setattr(testee, 'ScriptLib', MockLib)
+    c = MockContext()
+    testee.list_disabled(c)
+    assert capsys.readouterr().out == ('called ScriptLib.__init__\n'
+                                       "called ScriptLib.get_all_names with args"
+                                       " {'skip_active': True}\n"
+                                       'tom\n'
+                                       'dick\n'
+                                       'harry\n'
+                                       'sally\n')
+
 
 def test_check_and_update(monkeypatch, capsys):
     def mock_check(*args):
@@ -437,10 +449,13 @@ def test_scriptlib_get_all_names(monkeypatch, capsys):
     testobj = testee.ScriptLib()
     assert capsys.readouterr().out == 'called ScriptLib.__init__\n'
     testobj.data.clear()
-    testobj.data.read_dict({'section1': {'key1': 'value1', 'key2': 'value2'},
-                            'section1.disabled': {'key3': 'value3'}})
-    assert testobj.get_all_names() == ['key1', 'key2', 'key3']
+    testobj.data.read_dict({'section1': {'key1': 'value1'},
+                            'section1.disabled': {'key3': 'value3'},
+                            'section2': {'key2': 'value2'},
+                            'section2.disabled': {'key4': 'value4'}})
+    assert testobj.get_all_names() == ['key1', 'key3', 'key2', 'key4']
     assert testobj.get_all_names(skip_inactive=True) == ['key1', 'key2']
+    assert testobj.get_all_names(skip_active=True) == ['key3', 'key4']
 
 def test_scriptlib_add_link(monkeypatch, capsys, tmp_path):
     def mock_islink(self):

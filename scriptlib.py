@@ -144,6 +144,14 @@ def enable(c, name):
     print(f'{name} enabled')
 
 
+@task
+def list_disabled(c):
+    "toon alle disabled scriptlets om desgewenst te kunnen enablen"
+    lib = ScriptLib()
+    for name in lib.get_all_names(skip_active=True):
+        print(name)
+
+
 def check_and_update(lib, name):
     "if the library version and the actual version of a script or symlink differ, replace in library"
     library_version, actual_version = check_file(lib, name)
@@ -217,11 +225,13 @@ class ScriptLib:
                 return section
         return None
 
-    def get_all_names(self, skip_inactive=False):
+    def get_all_names(self, skip_inactive=False, skip_active=False):
         "maak een lijst van alle script- en symlink namen"
         names = []
         for section in self.data:
             if skip_inactive and section.endswith('disabled'):
+                continue
+            if skip_active and not section.endswith('disabled'):
                 continue
             names += list(self.data[section])
         return names
