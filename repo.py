@@ -273,25 +273,25 @@ def check_remote(c):   # , dry_run=False):
 
 
 @task(help={'exclude': 'comma separated list of repostories not to push'})
-def push_local(c, exclude=None):  # , dry_run=False):
+def push_local(c, exclude=None, include=None):  # , dry_run=False):
     """push all repos from working to "central" with possibility to exclude
     To exclude multiple repos you need to provide a string with escaped commas
     e.g. binfab push_remote
          binfab push remote:exclude=apropos
          binfab push_remote:exclude="apropos,albums"
     """
-    Check(c, push=True, exclude=exclude).run()   # , dry_run=dry_run)
+    Check(c, push=True, exclude=exclude, include=include).run()   # , dry_run=dry_run)
 
 
 @task(help={'exclude': 'comma separated list of repostories not to push'})
-def push_remote(c, exclude=None):   # , dry_run=False):
+def push_remote(c, exclude=None, include=None):   # , dry_run=False):
     """push all repos from "central" to BitBucket with possibility to exclude
     To exclude multiple repos you need to provide a string with escaped commas
     e.g. binfab push_remote
          binfab push remote:exclude=apropos
          binfab push_remote:exclude="apropos,albums"
     """
-    Check(c, 'remote', push=True, exclude=exclude).run()  # , dry_run=dry_run)
+    Check(c, 'remote', push=True, exclude=exclude, include=include).run()  # , dry_run=dry_run)
 
 
 @task(help={'names': 'comma separated list of repostories to push'})

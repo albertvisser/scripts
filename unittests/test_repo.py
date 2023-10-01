@@ -378,7 +378,16 @@ def test_push_local(monkeypatch, capsys):
     c = MockContext()
     monkeypatch.setattr(testee, 'Check', MockCheck)
     testee.push_local(c)
-    assert capsys.readouterr().out == ("call Check() with args () {'push': True, 'exclude': None}\n"
+    assert capsys.readouterr().out == ("call Check() with args () {'push': True, 'exclude': None,"
+                                       " 'include': None}\n"
+                                       "call Check.run()\n")
+    testee.push_local(c, exclude='x,y')
+    assert capsys.readouterr().out == ("call Check() with args () {'push': True, 'exclude': 'x,y',"
+                                       " 'include': None}\n"
+                                       "call Check.run()\n")
+    testee.push_local(c, include='x,y')
+    assert capsys.readouterr().out == ("call Check() with args () {'push': True, 'exclude': None,"
+                                       " 'include': 'x,y'}\n"
                                        "call Check.run()\n")
 
 
@@ -388,7 +397,15 @@ def test_push_remote(monkeypatch, capsys):
     monkeypatch.setattr(testee, 'Check', MockCheck)
     testee.push_remote(c)
     assert capsys.readouterr().out == ("call Check() with args ('remote',) {'push': True,"
-                                       " 'exclude': None}\n"
+                                       " 'exclude': None, 'include': None}\n"
+                                       "call Check.run()\n")
+    testee.push_remote(c, exclude='x,y')
+    assert capsys.readouterr().out == ("call Check() with args ('remote',) {'push': True,"
+                                       " 'exclude': 'x,y', 'include': None}\n"
+                                       "call Check.run()\n")
+    testee.push_remote(c, include='x,y')
+    assert capsys.readouterr().out == ("call Check() with args ('remote',) {'push': True,"
+                                       " 'exclude': None, 'include': 'x,y'}\n"
                                        "call Check.run()\n")
 
 
