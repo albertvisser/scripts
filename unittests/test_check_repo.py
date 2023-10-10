@@ -1,7 +1,7 @@
 import types
 import pathlib
 import pytest
-
+import mockqtwidgets as mockqtw
 import check_repo
 from check_repo_tooltips import tooltips
 
@@ -9,9 +9,9 @@ from check_repo_tooltips import tooltips
 def testobj(monkeypatch, capsys):
     def mock_init(self, *args):
         print('called QMainWindow.__init__()')
-    monkeypatch.setattr(check_repo.qtw, 'QApplication', MockApplication)
+    monkeypatch.setattr(check_repo.qtw, 'QApplication', mockqtw.MockApplication)
     monkeypatch.setattr(check_repo.qtw.QWidget, '__init__', mock_init)
-    monkeypatch.setattr(check_repo.qtw, 'QWidget', MockWidget)
+    monkeypatch.setattr(check_repo.qtw, 'QWidget', mockqtw.MockWidget)
     monkeypatch.setattr(check_repo.Gui, 'get_repofiles', mock_get_repofiles)
     monkeypatch.setattr(check_repo.Gui, 'setup_visual', mock_setup_visual)
     monkeypatch.setattr(check_repo.Gui, 'refresh_frame', mock_refresh_frame)
@@ -19,12 +19,12 @@ def testobj(monkeypatch, capsys):
     capsys.readouterr()  # swallow stdout/stderr
     return app
 
-def setup_app(monkeypatch):
+def setup_app(monkeypatch):  # deze wordt gebruikt
     def mock_init(self, *args):
         print('called QMainWindow.__init__()')
-    monkeypatch.setattr(check_repo.qtw, 'QApplication', MockApplication)
+    monkeypatch.setattr(check_repo.qtw, 'QApplication', mockqtw.MockApplication)
     monkeypatch.setattr(check_repo.qtw.QWidget, '__init__', mock_init)
-    monkeypatch.setattr(check_repo.qtw, 'QWidget', MockWidget)
+    monkeypatch.setattr(check_repo.qtw, 'QWidget', mockqtw.MockWidget)
     return check_repo.Gui(pathlib.Path('base'), 'git')
 
 def mock_run(*args):
@@ -36,8 +36,8 @@ def mock_sp_run(*args, **kwargs):
 
 def mock_setup_visual(self, *args):
     print('called Gui.setup_visual()')
-    self.list = MockListWidget()
-    self.cb_branch = MockComboBox()
+    self.list = mockqtw.MockListWidget()
+    self.cb_branch = mockqtw.MockComboBox()
 
 def mock_refresh_frame(self, *args):
     print('called Gui.refresh_frame()')
@@ -50,16 +50,351 @@ def mock_update_branches(self):
     print('called Gui.update_branches()')
 
 # --- redefine gui elements to make testing easier (or possible at all)
-class MockApplication:
-    def __init__(self, *args):
-        print('called MockApplication.__init__()')
-    def exec_(self):
-        print('called MockApplication.exec_()')
-
-
+# class MockApplication:
+#     def __init__(self, *args):
+#         print('called MockApplication.__init__()')
+#     def exec_(self):
+#         print('called MockApplication.exec_()')
+#
+#
+# class MockWidget:
+#     def __init__(self):
+#         print('called QWidget.__init__()')
+#     def setWindowTitle(self, *args):
+#         print('called QWidget.setWindowTitle() with args `{}`'.format(args))
+#     def setWindowIcon(self, *args):
+#         print('called QWidget.setWindowIcon()`')
+#     def resize(self, *args):
+#         print('called QWidget.resize() with args `{}`'.format(args))
+#
+#
+# class MockIcon:
+#     def __init__(self, *args):
+#         print('called Icon.__init__() for `{}`'.format(args[0]))
+#     def fromTheme(self, *args):
+#         print('called Icon.fromTheme() with args', args)
+#
+#
+# class MockMenuBar:
+#     def __init__(self):
+#         self.menus = []
+#     def clear(self):
+#         self.menus = []
+#     def addMenu(self, text):
+#         newmenu = MockMenu(text)
+#         self.menus.append(newmenu)
+#         return newmenu
+#
+#
+# class MockMenu:
+#     def __init__(self, text=''):
+#         self.menutext = text
+#         self.actions = []
+#     def addAction(self, newaction):
+#         if isinstance(newaction, str):
+#             newaction = MockAction(newaction, None)
+#         self.actions.append(newaction)
+#         return newaction
+#     def addSeparator(self):
+#         newaction = MockAction('-----', None)
+#         self.actions.append(newaction)
+#         return newaction
+#
+#
+# class MockSignal:
+#     def __init__(self, *args):
+#         print('called signal.__init__()')
+#     def connect(self, *args):
+#         print('called signal.connect()')
+#
+#
+# class MockAction:
+#     triggered = MockSignal()
+#     def __init__(self, text, func):
+#         print('create QAction with text `{}`'.format(text))
+#         self.label = text
+#         self.callback = func
+#         self.shortcuts = []
+#         self.checkable = self.checked = False
+#         self.statustip = ''
+#     def setCheckable(self, state):
+#         self.checkable = state
+#     def setChecked(self, state):
+#         self.checked = state
+#     def setShortcut(self, data):
+#         print('call action.setShortcut with arg `{}`'.format(data))
+#     def setShortcuts(self, data):
+#         self.shortcuts = data
+#     def setStatusTip(self, data):
+#         self.statustip = data
+#
+#
+# class MockStatusBar:
+#     def showMessage(self, *args):
+#         print('called statusbar.showMessage({})'.format(args[0]))
+#
+#
+# class MockDialog:
+#     def __init__(self, parent, *args):
+#         self.parent = parent
+#         print('called dialog.__init()__ with args `{}`'.format(args))
+#     def exec_(self):
+#         self.parent.dialog_data = {'x': 'y'}
+#         return check_repo.qtw.QDialog.Accepted
+#     def setWindowTitle(self, *args):
+#         print('called dialog.setWindowTitle() with args `{}`'.format(args))
+#     def setLayout(self, *args):
+#         print('called dialog.setLayout()')
+#     def accept(self):
+#         print('called dialog.accept()')
+#         return check_repo.qtw.QDialog.Accepted
+#     def reject(self):
+#         print('called dialog.reject()')
+#         return check_repo.qtw.QDialog.Rejected
+#
+#
+# class MockVBoxLayout:
+#     def __init__(self, *args):
+#         print('called MockVBoxLayout.__init__()')
+#     def addWidget(self, *args):
+#         print('called vbox.addWidget()')
+#     def addLayout(self, *args):
+#         print('called vbox.addLayout()')
+#     def addStretch(self, *args):
+#         print('called vbox.addStretch()')
+#     def addSpacing(self, *args):
+#         print('called vbox.addSpacing()')
+#
+#
+# class MockHBoxLayout:
+#     def __init__(self, *args):
+#         print('called MockHBoxLayout.__init__()')
+#     def addWidget(self, *args):
+#         print('called hbox.addWidget()')
+#     def addLayout(self, *args):
+#         print('called hbox.addLayout()')
+#     def addStretch(self, *args):
+#         print('called hbox.addStretch()')
+#     def insertStretch(self, *args):
+#         print('called hbox.insertStretch()')
+#
+#
+# class MockGridLayout:
+#     def __init__(self, *args):
+#         print('called MockGridLayout.__init__()')
+#     def addWidget(self, *args):
+#         print('called grid.addWidget()')
+#     def addLayout(self, *args):
+#         print('called grid.addLayout()')
+#     def addStretch(self, *args):
+#         print('called grid.addStretch()')
+#
+#
+# class MockLabel:
+#     def __init__(self, *args):
+#         print('called MockLabel.__init__()')
+#
+#
+# class MockCheckBox:
+#     def __init__(self, *args):
+#         print('called MockCheckBox.__init__()')
+#         self.checked = None
+#     def setChecked(self, value):
+#         print('called check.setChecked({})'.format(value))
+#         self.checked = value
+#     def isChecked(self):
+#         print('called check.isChecked()')
+#         return self.checked
+#
+#
+# class MockComboBox:
+#     currentIndexChanged = MockSignal()
+#     def __init__(self, *args, **kwargs):
+#         print('called combo.__init__()')
+#         self._items = kwargs.get('items', [])
+#     def clear(self):
+#         print('called combo.clear()')
+#     def clearEditText(self):
+#         print('called combo.clearEditText()')
+#     def addItems(self, itemlist):
+#         print('called combo.addItems({})'.format(itemlist))
+#     def height(self):
+#         return 100
+#     def setEditable(self, value):
+#         print('called combo.setEditable({})'.format(value))
+#         self.checked = value
+#     def setCurrentIndex(self, value):
+#         print('called combo.setCurrentIndex({})'.format(value))
+#         self.checked = value
+#     def currentText(self):
+#         print('called combo.currentText()')
+#         return 'current'
+#     def setToolTip(self, value):
+#         print(f'called combo.setToolTip({value})')
+#
+#
+# class MockPushButton:
+#     def __init__(self, *args):
+#         print('called MockPushButton.__init__()')
+#         self.clicked = MockSignal()
+#     def setMenu(self, *args):
+#         print('called QPushButton.setMenu()')
+#     def setShortcut(self, *args):
+#         print('called QPushButton.setShortcut with args', args)
+#     def setDefault(self, *args):
+#         print('called QPushButton.setDefault with args', args)
+#     def setToolTip(self, value):
+#         print(f'called QPushButton.setToolTip({value})')
+#
+#
+# class MockLineEdit:
+#     def __init__(self, *args):
+#         print('called lineedit.__init__()')
+#     def setText(self, *args):
+#         print('called lineedit.settext(`{}`)'.format(args[0]))
+#     def setMinimumHeight(self, *args):
+#         print('called lineedit.setMinHeight({})'.format(args[0]))
+#     def clear(self):
+#         print('called lineedit.clear()')
+#     def text(self):
+#         return 'new seltext'
+#
+#
+# class MockButtonBox:
+#     Ok = 1
+#     Cancel = 2
+#     accepted = MockSignal()
+#     rejected = MockSignal()
+#     def __init__(self, *args):
+#         print('called buttonbox.__init__(`{}`)'.format(args[0]))
+#
+#
+# class MockMessageBox:
+#     Yes = 1
+#     No = 2
+#     Cancel = 0
+#     def __init__(self, *args):
+#         print('called messagebox.__init__()')
+#     def setText(self, *args):
+#         print('called messagebox.setText()')
+#     def setInformativeText(self, *args):
+#         print('called messagebox.setInformativeText()')
+#     def setStandardButtons(self, *args):
+#         print('called messagebox.setStandardButtons()')
+#     def setDefaultButton(self, *args):
+#         print('called messagebox.setDefaultButton()')
+#     def exec_(self, *args):
+#         pass
+#
+#
+# class MockListWidget:
+#     itemDoubleClicked = MockSignal()
+#     def __init__(self, *args):
+#         print('called list.__init__()')
+#         try:
+#             self.list = args[0]
+#         except IndexError:
+#             self.list = []
+#     def __len__(self):
+#         return len(self.list)
+#     def clear(self):
+#         print('called list.clear()')
+#     def setSelectionMode(self, *args):
+#         print('called list.setSelectionMode()')
+#     def addItems(self, *args):
+#         print('called list.addItems() with arg `{}`'.format(args[0]))
+#     def currentItem(self):
+#         pass
+#     def setCurrentRow(self, row):
+#         print('called list.setCurrentRow with rownumber', row)
+#     def item(self, *args):
+#         return self.list[args[0]]
+#     def setFocus(self):
+#         print('called list.setFocus()')
+#     def selectedItems(self):
+#         print('called list.selectedItems() on `{}`'.format(self.list))
+#         return [MockListWidgetItem('item 1'), MockListWidgetItem('item 2')]
+#     def takeItem(self, *args):
+#         print('called list.takeItem(`{}`) on `{}`'.format(args[0], self.list))
+#     def row(self, *args):
+#         print('called list.row() on `{}`'.format(self.list))
+#         return args[0]
+#     def addItem(self, *args):
+#         print('called list.addItem(`{}`) on `{}`'.format(args[0], self.list))
+#         self.list.append(args[0])
+#
+#
+# class MockListWidgetItem:
+#     def __init__(self, *args):
+#         print('called listitem.__init__()')
+#         self.name = args[0]
+#     def text(self):
+#         return self.name
+#     def setSelected(self, *args):
+#         print('called listitem.setSelected({}) for `{}`'.format(args[0], self.name))
+#
+#
+# class MockScintilla:
+#     SloppyBraceMatch = True
+#     PlainFoldStyle = 1
+#     def __init__(self, *args):
+#         print('called editor.__init__()')
+#     def setText(self, data):
+#         print('called editor.setText with data `{}`'.format(data))
+#     def setReadOnly(self, value):
+#         print('called editor.setReadOnly with value `{}`'.format(value))
+#     def setFont(self, data):
+#         print('called editor.setFont')
+#     def setMarginsFont(self, data):
+#         print('called editor.setMarginsFont')
+#     def setMarginWidth(self, *args):
+#         print('called editor.setMarginWidth')
+#     def setMarginLineNumbers(self, *args):
+#         print('called editor.setMarginLineNumbers')
+#     def setMarginsBackgroundColor(self, *args):
+#         print('called editor.setMarginsBackgroundColor')
+#     def setBraceMatching(self, *args):
+#         print('called editor.setBraceMatching')
+#     def setAutoIndent(self, *args):
+#         print('called editor.setAutoIndent')
+#     def setFolding(self, *args):
+#         print('called editor.setFolding')
+#     def setCaretLineVisible(self, *args):
+#         print('called editor.setCaretLineVisible')
+#     def setCaretLineBackgroundColor(self, *args):
+#         print('called editor.setCaretLineBackgroundColor')
+#     def setLexer(self, *args):
+#         print('called editor.setLexer')
+#
+#
+# class MockFont:
+#     def __init__(self, *args):
+#         print('called font.__init__()')
+#     def setFamily(self, *args):
+#         print('called editor.setFamily')
+#     def setFixedPitch(self, *args):
+#         print('called editor.setFixedPitch')
+#     def setPointSize(self, *args):
+#         print('called editor.setPointSize')
+#
+#
+# class MockFontMetrics:
+#     def __init__(self, *args):
+#         print('called fontmetrics.__init__()')
+#     def width(self, *args):
+#         print('called editor.width()')
+#
+#
+# class MockLexerDiff:
+#     def __init__(self, *args):
+#         print('called lexer.__init__()')
+#     def setDefaultFont(self, *args):
+#         print('called editor.setDefaultFont')
+#
+#
 class MockGui:
     def __init__(self, *args):
-        self.app = MockApplication()
+        self.app = mockqtw.MockApplication()
         print('called Gui.__init__() with args', args)
     def show(self):
         print('called Gui.show()')
@@ -75,342 +410,6 @@ class MockGui:
         print('called Gui.update()')
 
 
-class MockWidget:
-    def __init__(self):
-        print('called QWidget.__init__()')
-    def setWindowTitle(self, *args):
-        print('called QWidget.setWindowTitle() with args `{}`'.format(args))
-    def setWindowIcon(self, *args):
-        print('called QWidget.setWindowIcon()`')
-    def resize(self, *args):
-        print('called QWidget.resize() with args `{}`'.format(args))
-
-
-class MockIcon:
-    def __init__(self, *args):
-        print('called Icon.__init__() for `{}`'.format(args[0]))
-    def fromTheme(self, *args):
-        print('called Icon.fromTheme() with args', args)
-
-
-class MockMenuBar:
-    def __init__(self):
-        self.menus = []
-    def clear(self):
-        self.menus = []
-    def addMenu(self, text):
-        newmenu = MockMenu(text)
-        self.menus.append(newmenu)
-        return newmenu
-
-
-class MockMenu:
-    def __init__(self, text=''):
-        self.menutext = text
-        self.actions = []
-    def addAction(self, newaction):
-        if isinstance(newaction, str):
-            newaction = MockAction(newaction, None)
-        self.actions.append(newaction)
-        return newaction
-    def addSeparator(self):
-        newaction = MockAction('-----', None)
-        self.actions.append(newaction)
-        return newaction
-
-
-class MockSignal:
-    def __init__(self, *args):
-        print('called signal.__init__()')
-    def connect(self, *args):
-        print('called signal.connect()')
-
-
-class MockAction:
-    triggered = MockSignal()
-    def __init__(self, text, func):
-        print('create QAction with text `{}`'.format(text))
-        self.label = text
-        self.callback = func
-        self.shortcuts = []
-        self.checkable = self.checked = False
-        self.statustip = ''
-    def setCheckable(self, state):
-        self.checkable = state
-    def setChecked(self, state):
-        self.checked = state
-    def setShortcut(self, data):
-        print('call action.setShortcut with arg `{}`'.format(data))
-    def setShortcuts(self, data):
-        self.shortcuts = data
-    def setStatusTip(self, data):
-        self.statustip = data
-
-
-class MockStatusBar:
-    def showMessage(self, *args):
-        print('called statusbar.showMessage({})'.format(args[0]))
-
-
-class MockDialog:
-    def __init__(self, parent, *args):
-        self.parent = parent
-        print('called dialog.__init()__ with args `{}`'.format(args))
-    def exec_(self):
-        self.parent.dialog_data = {'x': 'y'}
-        return check_repo.qtw.QDialog.Accepted
-    def setWindowTitle(self, *args):
-        print('called dialog.setWindowTitle() with args `{}`'.format(args))
-    def setLayout(self, *args):
-        print('called dialog.setLayout()')
-    def accept(self):
-        print('called dialog.accept()')
-        return check_repo.qtw.QDialog.Accepted
-    def reject(self):
-        print('called dialog.reject()')
-        return check_repo.qtw.QDialog.Rejected
-
-
-class MockVBoxLayout:
-    def __init__(self, *args):
-        print('called MockVBoxLayout.__init__()')
-    def addWidget(self, *args):
-        print('called vbox.addWidget()')
-    def addLayout(self, *args):
-        print('called vbox.addLayout()')
-    def addStretch(self, *args):
-        print('called vbox.addStretch()')
-    def addSpacing(self, *args):
-        print('called vbox.addSpacing()')
-
-
-class MockHBoxLayout:
-    def __init__(self, *args):
-        print('called MockHBoxLayout.__init__()')
-    def addWidget(self, *args):
-        print('called hbox.addWidget()')
-    def addLayout(self, *args):
-        print('called hbox.addLayout()')
-    def addStretch(self, *args):
-        print('called hbox.addStretch()')
-    def insertStretch(self, *args):
-        print('called hbox.insertStretch()')
-
-
-class MockGridLayout:
-    def __init__(self, *args):
-        print('called MockGridLayout.__init__()')
-    def addWidget(self, *args):
-        print('called grid.addWidget()')
-    def addLayout(self, *args):
-        print('called grid.addLayout()')
-    def addStretch(self, *args):
-        print('called grid.addStretch()')
-
-
-class MockLabel:
-    def __init__(self, *args):
-        print('called MockLabel.__init__()')
-
-
-class MockCheckBox:
-    def __init__(self, *args):
-        print('called MockCheckBox.__init__()')
-        self.checked = None
-    def setChecked(self, value):
-        print('called check.setChecked({})'.format(value))
-        self.checked = value
-    def isChecked(self):
-        print('called check.isChecked()')
-        return self.checked
-
-
-class MockComboBox:
-    currentIndexChanged = MockSignal()
-    def __init__(self, *args, **kwargs):
-        print('called combo.__init__()')
-        self._items = kwargs.get('items', [])
-    def clear(self):
-        print('called combo.clear()')
-    def clearEditText(self):
-        print('called combo.clearEditText()')
-    def addItems(self, itemlist):
-        print('called combo.addItems({})'.format(itemlist))
-    def height(self):
-        return 100
-    def setEditable(self, value):
-        print('called combo.setEditable({})'.format(value))
-        self.checked = value
-    def setCurrentIndex(self, value):
-        print('called combo.setCurrentIndex({})'.format(value))
-        self.checked = value
-    def currentText(self):
-        print('called combo.currentText()')
-        return 'current'
-    def setToolTip(self, value):
-        print(f'called combo.setToolTip({value})')
-
-
-class MockPushButton:
-    def __init__(self, *args):
-        print('called MockPushButton.__init__()')
-        self.clicked = MockSignal()
-    def setMenu(self, *args):
-        print('called QPushButton.setMenu()')
-    def setShortcut(self, *args):
-        print('called QPushButton.setShortcut with args', args)
-    def setDefault(self, *args):
-        print('called QPushButton.setDefault with args', args)
-    def setToolTip(self, value):
-        print(f'called QPushButton.setToolTip({value})')
-
-
-class MockLineEdit:
-    def __init__(self, *args):
-        print('called lineedit.__init__()')
-    def setText(self, *args):
-        print('called lineedit.settext(`{}`)'.format(args[0]))
-    def setMinimumHeight(self, *args):
-        print('called lineedit.setMinHeight({})'.format(args[0]))
-    def clear(self):
-        print('called lineedit.clear()')
-    def text(self):
-        return 'new seltext'
-
-
-class MockButtonBox:
-    Ok = 1
-    Cancel = 2
-    accepted = MockSignal()
-    rejected = MockSignal()
-    def __init__(self, *args):
-        print('called buttonbox.__init__(`{}`)'.format(args[0]))
-
-
-class MockMessageBox:
-    Yes = 1
-    No = 2
-    Cancel = 0
-    def __init__(self, *args):
-        print('called messagebox.__init__()')
-    def setText(self, *args):
-        print('called messagebox.setText()')
-    def setInformativeText(self, *args):
-        print('called messagebox.setInformativeText()')
-    def setStandardButtons(self, *args):
-        print('called messagebox.setStandardButtons()')
-    def setDefaultButton(self, *args):
-        print('called messagebox.setDefaultButton()')
-    def exec_(self, *args):
-        pass
-
-
-class MockListWidget:
-    itemDoubleClicked = MockSignal()
-    def __init__(self, *args):
-        print('called list.__init__()')
-        try:
-            self.list = args[0]
-        except IndexError:
-            self.list = []
-    def __len__(self):
-        return len(self.list)
-    def clear(self):
-        print('called list.clear()')
-    def setSelectionMode(self, *args):
-        print('called list.setSelectionMode()')
-    def addItems(self, *args):
-        print('called list.addItems() with arg `{}`'.format(args[0]))
-    def currentItem(self):
-        pass
-    def setCurrentRow(self, row):
-        print('called list.setCurrentRow with rownumber', row)
-    def item(self, *args):
-        return self.list[args[0]]
-    def setFocus(self):
-        print('called list.setFocus()')
-    def selectedItems(self):
-        print('called list.selectedItems() on `{}`'.format(self.list))
-        return [MockListWidgetItem('item 1'), MockListWidgetItem('item 2')]
-    def takeItem(self, *args):
-        print('called list.takeItem(`{}`) on `{}`'.format(args[0], self.list))
-    def row(self, *args):
-        print('called list.row() on `{}`'.format(self.list))
-        return args[0]
-    def addItem(self, *args):
-        print('called list.addItem(`{}`) on `{}`'.format(args[0], self.list))
-        self.list.append(args[0])
-
-
-class MockListWidgetItem:
-    def __init__(self, *args):
-        print('called listitem.__init__()')
-        self.name = args[0]
-    def text(self):
-        return self.name
-    def setSelected(self, *args):
-        print('called listitem.setSelected({}) for `{}`'.format(args[0], self.name))
-
-
-class MockScintilla:
-    SloppyBraceMatch = True
-    PlainFoldStyle = 1
-    def __init__(self, *args):
-        print('called editor.__init__()')
-    def setText(self, data):
-        print('called editor.setText with data `{}`'.format(data))
-    def setReadOnly(self, value):
-        print('called editor.setReadOnly with value `{}`'.format(value))
-    def setFont(self, data):
-        print('called editor.setFont')
-    def setMarginsFont(self, data):
-        print('called editor.setMarginsFont')
-    def setMarginWidth(self, *args):
-        print('called editor.setMarginWidth')
-    def setMarginLineNumbers(self, *args):
-        print('called editor.setMarginLineNumbers')
-    def setMarginsBackgroundColor(self, *args):
-        print('called editor.setMarginsBackgroundColor')
-    def setBraceMatching(self, *args):
-        print('called editor.setBraceMatching')
-    def setAutoIndent(self, *args):
-        print('called editor.setAutoIndent')
-    def setFolding(self, *args):
-        print('called editor.setFolding')
-    def setCaretLineVisible(self, *args):
-        print('called editor.setCaretLineVisible')
-    def setCaretLineBackgroundColor(self, *args):
-        print('called editor.setCaretLineBackgroundColor')
-    def setLexer(self, *args):
-        print('called editor.setLexer')
-
-
-class MockFont:
-    def __init__(self, *args):
-        print('called font.__init__()')
-    def setFamily(self, *args):
-        print('called editor.setFamily')
-    def setFixedPitch(self, *args):
-        print('called editor.setFixedPitch')
-    def setPointSize(self, *args):
-        print('called editor.setPointSize')
-
-
-class MockFontMetrics:
-    def __init__(self, *args):
-        print('called fontmetrics.__init__()')
-    def width(self, *args):
-        print('called editor.width()')
-
-
-class MockLexerDiff:
-    def __init__(self, *args):
-        print('called lexer.__init__()')
-    def setDefaultFont(self, *args):
-        print('called editor.setDefaultFont')
-
-
-# -- and now for the actual testing stuff ---
 def test_main(monkeypatch, capsys):
     class MockParser:
         def add_argument(self, *args, **kwargs):
@@ -439,7 +438,7 @@ def test_startapp(monkeypatch, capsys, tmp_path):
         return counter != 1
     monkeypatch.setattr(check_repo.pathlib.Path, 'cwd', lambda *x: tmp_path)
     monkeypatch.setattr(check_repo.pathlib.Path, 'exists', lambda *x: True)
-    monkeypatch.setattr(check_repo.qtw, 'QApplication', MockApplication)
+    monkeypatch.setattr(check_repo.qtw, 'QApplication', mockqtw.MockApplication)
     monkeypatch.setattr(check_repo, 'Gui', MockGui)
     monkeypatch.setattr(check_repo, 'HOME', pathlib.Path('/homedir'))
     monkeypatch.setattr(check_repo, 'root', pathlib.Path('/rootdir'))
@@ -499,12 +498,12 @@ class TestCheckTextDialog:
         monkeypatch.setattr(check_repo.qtw.QDialog, '__init__', mock_init)
         monkeypatch.setattr(check_repo.qtw.QDialog, 'setWindowTitle', mock_setWindowTitle)
         monkeypatch.setattr(check_repo.qtw.QDialog, 'setLayout', mock_setLayout)
-        monkeypatch.setattr(check_repo.qtw, 'QVBoxLayout', MockVBoxLayout)
-        monkeypatch.setattr(check_repo.qtw, 'QHBoxLayout', MockHBoxLayout)
-        monkeypatch.setattr(check_repo.qtw, 'QCheckBox', MockCheckBox)
-        monkeypatch.setattr(check_repo.qtw, 'QLabel', MockLabel)
-        monkeypatch.setattr(check_repo.qtw, 'QLineEdit', MockLineEdit)
-        monkeypatch.setattr(check_repo.qtw, 'QPushButton', MockPushButton)
+        monkeypatch.setattr(check_repo.qtw, 'QVBoxLayout', mockqtw.MockVBoxLayout)
+        monkeypatch.setattr(check_repo.qtw, 'QHBoxLayout', mockqtw.MockHBoxLayout)
+        monkeypatch.setattr(check_repo.qtw, 'QCheckBox', mockqtw.MockCheckBox)
+        monkeypatch.setattr(check_repo.qtw, 'QLabel', mockqtw.MockLabel)
+        monkeypatch.setattr(check_repo.qtw, 'QLineEdit', mockqtw.MockLineEdit)
+        monkeypatch.setattr(check_repo.qtw, 'QPushButton', mockqtw.MockPushButton)
         check_repo.CheckTextDialog('parent', 'title', 'message')
         assert capsys.readouterr().out == (
              'called dialog.__init()__ with args `()`\n'
@@ -546,8 +545,8 @@ class TestCheckTextDialog:
         monkeypatch.setattr(check_repo.qtw.QDialog, 'accept', mock_accept)
         monkeypatch.setattr(check_repo.CheckTextDialog, '__init__', mock_init)
         test_obj = check_repo.CheckTextDialog(types.SimpleNamespace(dialog_data=()))
-        test_obj.check = MockCheckBox()
-        test_obj.text = MockLineEdit()
+        test_obj.check = mockqtw.MockCheckBox()
+        test_obj.text = mockqtw.MockLineEdit()
         test_obj.check.setChecked(True)
         test_obj.text.setText('text')
         test_obj.accept()
@@ -579,16 +578,16 @@ class TestDiffViewDialog:
         monkeypatch.setattr(check_repo.qtw.QDialog, 'resize', mock_resize)
         monkeypatch.setattr(check_repo.qtw.QDialog, 'setLayout', mock_setLayout)
         monkeypatch.setattr(check_repo.qtw.QDialog, 'addAction', mock_addAction)
-        monkeypatch.setattr(check_repo.qtw, 'QVBoxLayout', MockVBoxLayout)
-        monkeypatch.setattr(check_repo.qtw, 'QHBoxLayout', MockHBoxLayout)
-        monkeypatch.setattr(check_repo.qtw, 'QCheckBox', MockCheckBox)
-        monkeypatch.setattr(check_repo.qtw, 'QLabel', MockLabel)
-        monkeypatch.setattr(check_repo.sci, 'QsciScintilla', MockScintilla)
-        monkeypatch.setattr(check_repo.sci, 'QsciLexerDiff', MockLexerDiff)
-        monkeypatch.setattr(check_repo.gui, 'QFont', MockFont)
-        monkeypatch.setattr(check_repo.gui, 'QFontMetrics', MockFontMetrics)
-        monkeypatch.setattr(check_repo.qtw, 'QPushButton', MockPushButton)
-        monkeypatch.setattr(check_repo.qtw, 'QAction', MockAction)
+        monkeypatch.setattr(check_repo.qtw, 'QVBoxLayout', mockqtw.MockVBoxLayout)
+        monkeypatch.setattr(check_repo.qtw, 'QHBoxLayout', mockqtw.MockHBoxLayout)
+        monkeypatch.setattr(check_repo.qtw, 'QCheckBox', mockqtw.MockCheckBox)
+        monkeypatch.setattr(check_repo.qtw, 'QLabel', mockqtw.MockLabel)
+        monkeypatch.setattr(check_repo.sci, 'QsciScintilla', mockqtw.MockScintilla)
+        monkeypatch.setattr(check_repo.sci, 'QsciLexerDiff', mockqtw.MockLexerDiff)
+        monkeypatch.setattr(check_repo.gui, 'QFont', mockqtw.MockFont)
+        monkeypatch.setattr(check_repo.gui, 'QFontMetrics', mockqtw.MockFontMetrics)
+        monkeypatch.setattr(check_repo.qtw, 'QPushButton', mockqtw.MockPushButton)
+        monkeypatch.setattr(check_repo.qtw, 'QAction', mockqtw.MockAction)
         check_repo.DiffViewDialog('parent', 'title', 'caption')
         assert capsys.readouterr().out == (
             'called dialog.__init()__ with args `()`\n'
@@ -658,23 +657,32 @@ class TestFriendlyReminder:
         monkeypatch.setattr(check_repo.qtw.QDialog, '__init__', mock_init)
         monkeypatch.setattr(check_repo.qtw.QDialog, 'setWindowTitle', mock_setWindowTitle)
         monkeypatch.setattr(check_repo.qtw.QDialog, 'setLayout', mock_setLayout)
-        monkeypatch.setattr(check_repo.qtw, 'QVBoxLayout', MockVBoxLayout)
-        monkeypatch.setattr(check_repo.qtw, 'QHBoxLayout', MockHBoxLayout)
-        monkeypatch.setattr(check_repo.qtw, 'QCheckBox', MockCheckBox)
-        monkeypatch.setattr(check_repo.qtw, 'QPushButton', MockPushButton)
+        monkeypatch.setattr(check_repo.qtw, 'QVBoxLayout', mockqtw.MockVBoxLayout)
+        monkeypatch.setattr(check_repo.qtw, 'QHBoxLayout', mockqtw.MockHBoxLayout)
+        monkeypatch.setattr(check_repo.qtw, 'QLabel', mockqtw.MockLabel)
+        monkeypatch.setattr(check_repo.qtw, 'QCheckBox', mockqtw.MockCheckBox)
+        monkeypatch.setattr(check_repo.qtw, 'QPushButton', mockqtw.MockPushButton)
         check_repo.FriendlyReminder('parent')
         assert capsys.readouterr().out == (
              'called dialog.__init()__ with args `()`\n'
              "called dialog.setWindowTitle() with args `('Friendly Reminder',)`\n"
              'called MockVBoxLayout.__init__()\n'
-             'called MockHBoxLayout.__init__()\n'
+             'called MockLabel.__init__()\n'
+             'called vbox.addWidget()\n'
+             'called vbox.addSpacing()\n'
+             'called MockLabel.__init__()\n'
+             'called vbox.addWidget()\n'
+             'called vbox.addSpacing()\n'
              'called MockCheckBox.__init__()\n'
-             'called hbox.addWidget()\n'
-             'called vbox.addLayout()\n'
-             'called MockHBoxLayout.__init__()\n'
-             'called MockCheckBox.__init__()\n'
-             'called hbox.addWidget()\n'
-             'called vbox.addLayout()\n'
+             'called vbox.addWidget()\n'
+             # 'called MockHBoxLayout.__init__()\n'
+             # 'called MockCheckBox.__init__()\n'
+             # 'called hbox.addWidget()\n'
+             # 'called vbox.addLayout()\n'
+             # 'called MockHBoxLayout.__init__()\n'
+             # 'called MockCheckBox.__init__()\n'
+             # 'called hbox.addWidget()\n'
+             # 'called vbox.addLayout()\n'
              'called MockHBoxLayout.__init__()\n'
              'called hbox.addStretch()\n'
              'called MockPushButton.__init__()\n'
@@ -701,40 +709,19 @@ class TestFriendlyReminder:
         monkeypatch.setattr(check_repo.qtw.QDialog, 'accept', mock_accept)
         monkeypatch.setattr(check_repo.FriendlyReminder, '__init__', mock_init)
         testobj = check_repo.FriendlyReminder(types.SimpleNamespace(title='title'))
-        testobj.linted = MockCheckBox()
-        testobj.tested = MockCheckBox()
+        testobj.complete = mockqtw.MockCheckBox()
+        testobj.tested = mockqtw.MockCheckBox()
         assert capsys.readouterr().out == ('called dialog.__init__()\n'
                                            'called MockCheckBox.__init__()\n'
                                            'called MockCheckBox.__init__()\n')
-        testobj.linted.setChecked(False)
-        testobj.tested.setChecked(False)
+        testobj.complete.setChecked(False)
         testobj.accept()
         assert capsys.readouterr().out == ('called check.setChecked(False)\n'
-                                           'called check.setChecked(False)\n'
-                                           'called check.isChecked()\n'
-                                           "display message `You didn't tick all the boxes`\n"
-                )
-        testobj.linted.setChecked(False)
-        testobj.tested.setChecked(True)
-        testobj.accept()
-        assert capsys.readouterr().out == ('called check.setChecked(False)\n'
-                                           'called check.setChecked(True)\n'
                                            'called check.isChecked()\n'
                                            "display message `You didn't tick all the boxes`\n")
-        testobj.linted.setChecked(True)
-        testobj.tested.setChecked(False)
+        testobj.complete.setChecked(True)
         testobj.accept()
         assert capsys.readouterr().out == ('called check.setChecked(True)\n'
-                                           'called check.setChecked(False)\n'
-                                           'called check.isChecked()\n'
-                                           'called check.isChecked()\n'
-                                           "display message `You didn't tick all the boxes`\n")
-        testobj.linted.setChecked(True)
-        testobj.tested.setChecked(True)
-        testobj.accept()
-        assert capsys.readouterr().out == ('called check.setChecked(True)\n'
-                                           'called check.setChecked(True)\n'
-                                           'called check.isChecked()\n'
                                            'called check.isChecked()\n'
                                            'called dialog.accept()\n')
 
@@ -763,27 +750,27 @@ class TestGui:
             print('called widget.setLayout()')
         def mock_addAction(self, *args):
             print('called widget.addAction()')
-        monkeypatch.setattr(check_repo.qtw, 'QApplication', MockApplication)
+        monkeypatch.setattr(check_repo.qtw, 'QApplication', mockqtw.MockApplication)
         monkeypatch.setattr(check_repo.qtw.QWidget, '__init__', mock_init)
         monkeypatch.setattr(check_repo.qtw.QWidget, 'setWindowTitle', mock_setWindowTitle)
-        monkeypatch.setattr(check_repo.gui, 'QIcon', MockIcon)
+        monkeypatch.setattr(check_repo.gui, 'QIcon', mockqtw.MockIcon)
         monkeypatch.setattr(check_repo.qtw.QWidget, 'setWindowIcon', mock_setWindowIcon)
         monkeypatch.setattr(check_repo.qtw.QWidget, 'resize', mock_resize)
         monkeypatch.setattr(check_repo.qtw.QWidget, 'setLayout', mock_setLayout)
         monkeypatch.setattr(check_repo.qtw.QWidget, 'addAction', mock_addAction)
-        monkeypatch.setattr(check_repo.qtw, 'QVBoxLayout', MockVBoxLayout)
-        monkeypatch.setattr(check_repo.qtw, 'QHBoxLayout', MockVBoxLayout)
-        monkeypatch.setattr(check_repo.qtw, 'QCheckBox', MockCheckBox)
-        monkeypatch.setattr(check_repo.qtw, 'QComboBox', MockComboBox)
-        monkeypatch.setattr(check_repo.qtw, 'QListWidget', MockListWidget)
-        monkeypatch.setattr(check_repo.qtw, 'QLabel', MockLabel)
-        monkeypatch.setattr(check_repo.sci, 'QsciScintilla', MockScintilla)
-        monkeypatch.setattr(check_repo.sci, 'QsciLexerDiff', MockLexerDiff)
-        monkeypatch.setattr(check_repo.gui, 'QFont', MockFont)
-        monkeypatch.setattr(check_repo.gui, 'QFontMetrics', MockFontMetrics)
-        monkeypatch.setattr(check_repo.qtw, 'QPushButton', MockPushButton)
-        monkeypatch.setattr(check_repo.qtw, 'QMenu', MockMenu)
-        monkeypatch.setattr(check_repo.qtw, 'QAction', MockAction)
+        monkeypatch.setattr(check_repo.qtw, 'QVBoxLayout', mockqtw.MockVBoxLayout)
+        monkeypatch.setattr(check_repo.qtw, 'QHBoxLayout', mockqtw.MockVBoxLayout)
+        monkeypatch.setattr(check_repo.qtw, 'QCheckBox', mockqtw.MockCheckBox)
+        monkeypatch.setattr(check_repo.qtw, 'QComboBox', mockqtw.MockComboBox)
+        monkeypatch.setattr(check_repo.qtw, 'QListWidget', mockqtw.MockListWidget)
+        monkeypatch.setattr(check_repo.qtw, 'QLabel', mockqtw.MockLabel)
+        monkeypatch.setattr(check_repo.sci, 'QsciScintilla', mockqtw.MockScintilla)
+        monkeypatch.setattr(check_repo.sci, 'QsciLexerDiff', mockqtw.MockLexerDiff)
+        monkeypatch.setattr(check_repo.gui, 'QFont', mockqtw.MockFont)
+        monkeypatch.setattr(check_repo.gui, 'QFontMetrics', mockqtw.MockFontMetrics)
+        monkeypatch.setattr(check_repo.qtw, 'QPushButton', mockqtw.MockPushButton)
+        monkeypatch.setattr(check_repo.qtw, 'QMenu', mockqtw.MockMenu)
+        monkeypatch.setattr(check_repo.qtw, 'QAction', mockqtw.MockAction)
         monkeypatch.setattr(check_repo.Gui, 'get_repofiles', mock_get_repofiles)
         monkeypatch.setattr(check_repo.Gui, 'refresh_frame', mock_refresh_frame)
         monkeypatch.setattr(check_repo.Gui, 'setup_stashmenu', mock_setup_stashmenu)
@@ -925,9 +912,9 @@ class TestGui:
             print('called QMainWindow.__init__()')
         def mock_populate(self):
             print('called Gui.populate_frame()')
-        monkeypatch.setattr(check_repo.qtw, 'QApplication', MockApplication)
+        monkeypatch.setattr(check_repo.qtw, 'QApplication', mockqtw.MockApplication)
         monkeypatch.setattr(check_repo.qtw.QWidget, '__init__', mock_init)
-        monkeypatch.setattr(check_repo.qtw, 'QWidget', MockWidget)
+        monkeypatch.setattr(check_repo.qtw, 'QWidget', mockqtw.MockWidget)
         monkeypatch.setattr(check_repo.Gui, 'get_repofiles', mock_get_repofiles)
         monkeypatch.setattr(check_repo.Gui, 'setup_visual', mock_setup_visual)
         monkeypatch.setattr(check_repo.Gui, 'populate_frame', mock_populate)
@@ -948,9 +935,9 @@ class TestGui:
         def mock_init(self, *args):
             print('called QMainWindow.__init__()')
         monkeypatch.setattr(check_repo.subprocess, 'run', mock_sp_run)
-        monkeypatch.setattr(check_repo.qtw, 'QApplication', MockApplication)
+        monkeypatch.setattr(check_repo.qtw, 'QApplication', mockqtw.MockApplication)
         monkeypatch.setattr(check_repo.qtw.QWidget, '__init__', mock_init)
-        monkeypatch.setattr(check_repo.qtw, 'QWidget', MockWidget)
+        monkeypatch.setattr(check_repo.qtw, 'QWidget', mockqtw.MockWidget)
         monkeypatch.setattr(check_repo.Gui, 'setup_visual', mock_setup_visual)
         monkeypatch.setattr(check_repo.Gui, 'refresh_frame', mock_refresh_frame)
         test_obj = setup_app(monkeypatch)
@@ -1016,7 +1003,7 @@ class TestGui:
 
     def test_get_selected_files(self, monkeypatch, capsys, testobj):
         def mock_select():
-            return MockListWidgetItem('M  item1'), MockListWidgetItem('?? item2')
+            return mockqtw.MockListWidgetItem('M  item1'), mockqtw.MockListWidgetItem('?? item2')
         monkeypatch.setattr(testobj.list, 'selectedItems', mock_select)
         testobj.outtype = ''
         assert testobj.get_selected_files() == [('', 'M  item1'), ('', '?? item2')]
@@ -1202,7 +1189,7 @@ class TestGui:
         assert capsys.readouterr().out == 'called Gui.get_selected_files\n'
 
     def test_set_outtype(self, monkeypatch, capsys, testobj):
-        testobj.cb_list = MockComboBox()
+        testobj.cb_list = mockqtw.MockComboBox()
         testobj.set_outtype()
         assert testobj.outtype == 'current'
         assert capsys.readouterr().out == ('called combo.__init__()\n'
@@ -1218,12 +1205,12 @@ class TestGui:
             print('run_and_report with args:', *args)
         monkeypatch.setattr(check_repo.qtw.QInputDialog, 'getText', mock_gettext)
         monkeypatch.setattr(check_repo.Gui, 'run_and_report', mock_run)
-        monkeypatch.setattr(MockDialog, 'exec_', lambda *x: check_repo.qtw.QDialog.Rejected)
-        monkeypatch.setattr(check_repo, 'FriendlyReminder', MockDialog)
+        monkeypatch.setattr(mockqtw.MockDialog, 'exec_', lambda *x: check_repo.qtw.QDialog.Rejected)
+        monkeypatch.setattr(check_repo, 'FriendlyReminder', mockqtw.MockDialog)
         testobj.commit_all()
         assert capsys.readouterr().out == 'called dialog.__init()__ with args `()`\n'
-        monkeypatch.setattr(MockDialog, 'exec_', lambda *x: check_repo.qtw.QDialog.Accepted)
-        monkeypatch.setattr(check_repo, 'FriendlyReminder', MockDialog)
+        monkeypatch.setattr(mockqtw.MockDialog, 'exec_', lambda *x: check_repo.qtw.QDialog.Accepted)
+        monkeypatch.setattr(check_repo, 'FriendlyReminder', mockqtw.MockDialog)
         testobj.commit_all()
         assert capsys.readouterr().out == ('called dialog.__init()__ with args `()`\n'
                                            "run_and_report with args:"
@@ -1265,8 +1252,8 @@ class TestGui:
         monkeypatch.setattr(check_repo.Gui, 'run_and_report', mock_run)
         monkeypatch.setattr(check_repo.Gui, 'filter_tracked', mock_filter_tracked)
         monkeypatch.setattr(check_repo.Gui, 'get_selected_files', mock_get_selected_none)
-        monkeypatch.setattr(MockDialog, 'exec_', lambda *x: check_repo.qtw.QDialog.Rejected)
-        monkeypatch.setattr(check_repo, 'FriendlyReminder', MockDialog)
+        monkeypatch.setattr(mockqtw.MockDialog, 'exec_', lambda *x: check_repo.qtw.QDialog.Rejected)
+        monkeypatch.setattr(check_repo, 'FriendlyReminder', mockqtw.MockDialog)
         testobj.commit_selected()
         assert capsys.readouterr().out == ('call get_selected_filenames()\n'
                                            'call filter_tracked()\n')
@@ -1297,7 +1284,7 @@ class TestGui:
         assert capsys.readouterr().out == ('call get_selected_filenames()\n'
                                            'called dialog.__init()__ with args `()`\n')
 
-        monkeypatch.setattr(MockDialog, 'exec_', lambda *x: check_repo.qtw.QDialog.Accepted)
+        monkeypatch.setattr(mockqtw.MockDialog, 'exec_', lambda *x: check_repo.qtw.QDialog.Accepted)
         #monkeypatch.setattr(check_repo.Gui, 'get_selected_files', mock_get_selected)
         testobj.commit_selected()
         assert capsys.readouterr().out == ('call get_selected_filenames()\n'
@@ -1680,9 +1667,9 @@ class TestGui:
                                            'called Gui.update_branches()\n')
 
     def test_setup_stashmenu(self, monkeypatch, capsys, testobj):
-        monkeypatch.setattr(check_repo.qtw, 'QMenu', MockMenu)
-        monkeypatch.setattr(check_repo.qtw, 'QAction', MockAction)
-        assert isinstance(testobj.setup_stashmenu(), MockMenu)
+        monkeypatch.setattr(check_repo.qtw, 'QMenu', mockqtw.MockMenu)
+        monkeypatch.setattr(check_repo.qtw, 'QAction', mockqtw.MockAction)
+        assert isinstance(testobj.setup_stashmenu(), mockqtw.MockMenu)
         assert capsys.readouterr().out == ('create QAction with text `&New Stash`\n'
                                            'called signal.connect()\n'
                                            'create QAction with text `&Apply Stash`\n'
