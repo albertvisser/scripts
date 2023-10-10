@@ -451,7 +451,6 @@ class Gui(qtw.QWidget):
             if FriendlyReminder(self).exec_() == qtw.QDialog.Rejected:
                 return
         filenames = self.filter_tracked(filelist)
-        print(filenames)
         if filenames:
             message, ok = qtw.QInputDialog.getText(self, self.title, 'Enter a commit message:')
             if ok:
