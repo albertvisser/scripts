@@ -7,7 +7,9 @@ import psutil
 import configparser
 import subprocess  # voor die ene die niet met invoke lukt
 from invoke import task
-from settings import PROJECTS_BASE, SESSIONS, DEVEL, get_project_dir  # , private_repos
+SESSIONS = 'not used anymore'
+DEVEL = 'not used anymore'
+from settings import PROJECTS_BASE, get_project_dir  # , private_repos
 # from repo import check_and_run_for_project
 sessionfile_root = '/tmp'
 # session_pids_name = 'session_pids_start_at'

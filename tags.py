@@ -3,7 +3,8 @@
 import os
 from invoke import task
 from repo import get_repofiles
-from settings import DEVEL, all_repos
+DEVEL = 'not used anymore'
+from settings import all_repos
 
 
 def list_repofiles(c, name):
