@@ -246,7 +246,7 @@ def check_local(c):  # , dry_run=False):
     test = Check(c).run()   # , dry_run=dry_run)
     if test:
         print("use 'check-repo <reponame>' to inspect changes")
-        print("    'binfab repo.check-local-changes` for log")
+        print("    'binfab repo.check-local-changes` (or `repolog`) for log")
         print("    'binfab repo.check-local-notes` for remarks")
 
 
