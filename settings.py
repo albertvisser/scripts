@@ -10,8 +10,6 @@ apache_root = '/var/www/html'
 # project/session management
 PROJECTS_BASE = os.path.expanduser('~/projects')
 GITLOC = os.path.expanduser('~/git-repos')
-SESSIONS = os.path.expanduser('~/bin/.sessions')
-DEVEL = os.path.expanduser('~/devel')
 
 # repository management
 cherrypy_repos = ['logviewer', 'rst2html', 'magiokis-cherry']
@@ -19,12 +17,11 @@ django_repos = ['actiereg', 'albums', 'myprojects', 'magiokis-django']
 fcgi_repos = ['absentie', 'doctool', 'magiokis', 'albums-cgi', 'magiokis-php']
 private_repos = {'scripts': 'bin', 'server-stuff': 'nginx-config'}
 non_web_repos = ['apropos', 'compare-tool', 'cssedit', 'doctree', 'filefindr', 'hotkeys',
-                 'htmledit', 'modreader', 'notetree', 'probreg', 'xmledit', 'albumsgui',
-                 'lminstreloc', 'sdvmm']
+                 'htmledit', 'modreader', 'notetree', 'probreg', 'xmledit', 'albumsgui']
 non_deploy_repos = ['cobtools', 'jvsdoe', 'leesjcl', 'pythoneer']
 bb_repos = django_repos + cherrypy_repos + non_web_repos + fcgi_repos
 sf_repos = ['apropos']
-git_repos = ['mylinter'] + bb_repos
+git_repos = ['mylinter', 'lminstreloc', 'sdvmm', 'mockgui'] + bb_repos
 non_bb_repos = []  # non_deploy_repos
 all_repos = git_repos + list(private_repos) + non_bb_repos
 frozen_repos = fcgi_repos + [cherrypy_repos[-1], django_repos[-1]]
