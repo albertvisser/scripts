@@ -47,7 +47,7 @@ def dump_mongo(c, names=''):
         return
     for name in names.split(','):
         # result = c.run('mongodump -d {} -o ~/mongodump/{}/'.format(name, date))
-        result = c.run(f'mongodump -d {name} -o {path}/')
+        result = c.run(f'mongodump -d {name}_database -o {path}/')
 
 
 @task
