@@ -143,12 +143,13 @@ def stage(c, sitename, new_only=False, filename='', list_only=False):
 
     # commit de gestagede files zodat ze niet nog een keer geselecteerd worden
     with c.cd(root):
-        if filename:
-            c.run(f'hg add {filename}')
-        elif new_only:
-            c.run(f'hg add {" ".join(newfiles)}')
+        # if filename:
+        #     c.run(f'hg add {filename}')
+        # elif new_only:
+        #     c.run(f'hg add {" ".join(newfiles)}')
         now = datetime.datetime.today().strftime('%d-%m-%Y %H:%M')
-        c.run(f'hg ci -m "staged on {now}"')
+        # c.run(f'hg ci -m "staged on {now}"')
+        c.run(f'hg ci {" ".join(files)} -m "staged on {now}"')
 
 
 @task(help={'name': 'name of webapp to start'})
