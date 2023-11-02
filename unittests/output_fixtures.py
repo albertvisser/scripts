@@ -73,7 +73,7 @@ called HBox.addWidget with arg of type <class 'mockgui.mockqtwidgets.MockPushBut
 called HBox.addStretch
 called VBox.addLayout with arg of type <class 'mockgui.mockqtwidgets.MockHBoxLayout'>
 called dialog.setLayout()
-called Action.__init__ with text `Done`
+called Action.__init__ with args ('Done', {testobj})
 called Signal.connect with args ({testobj.close},)
 called Action.setShortcut with arg `Esc`
 called dialog.addAction()
@@ -141,11 +141,14 @@ called VBox.addStretch
 called Icon.fromTheme with args ()
 called PushButton.__init__ with args (None, 'Open Extrn', {testobj})
 called PushButton.setToolTip with arg `{docs}`
-called Action.__init__ with text `Open project &Docs`
+called Menu.addAction with args `Open project &Docs` None
+called Action.__init__ with args ('Open project &Docs', None)
 called Signal.connect with args ({testobj.open_docs},)
-called Action.__init__ with text `Open CGit (local repos)`
+called Menu.addAction with args `Open CGit (local repos)` None
+called Action.__init__ with args ('Open CGit (local repos)', None)
 called Signal.connect with args ({testobj.open_cgit},)
-called Action.__init__ with text `Open GitWeb (remote repos)`
+called Menu.addAction with args `Open GitWeb (remote repos)` None
+called Action.__init__ with args ('Open GitWeb (remote repos)', None)
 called Signal.connect with args ({testobj.open_gitweb},)
 called PushButton.setMenu()
 called PushButton.setShortcut with args ('Shift+F6',)
@@ -242,7 +245,7 @@ called VBox.addWidget with arg of type <class 'mockgui.mockqtwidgets.MockPushBut
 called VBox.addStretch
 called VBox.addLayout with arg of type <class 'mockgui.mockqtwidgets.MockVBoxLayout'>
 called widget.setLayout()
-called Action.__init__ with text `Done`
+called Action.__init__ with args ('Done', {testobj})
 called Signal.connect with args ({testobj.close},)
 called Action.setShortcut with arg `Ctrl+Q`
 called widget.addAction()
@@ -265,13 +268,13 @@ called Gui.refresh_frame()
 """
 populate = setup_app + """\
 called Gui.get_repofiles()
-called List.clear()
+called List.clear
 called List.addItem with arg `file1.py` on `[]`
 called List.addItem with arg `file2.py` on `['file1.py']`
 called List.setCurrentRow with rownumber 0
 called Gui.update_branches()
 called List.setFocus
-called List.clear()
+called List.clear
 called List.addItem with arg `file1.py` on `['file1.py', 'file2.py']`
 called List.addItem with arg `file2.py` on `['file1.py', 'file2.py', 'file1.py']`
 called List.setCurrentRow with rownumber 0

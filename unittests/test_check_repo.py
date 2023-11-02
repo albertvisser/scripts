@@ -1083,15 +1083,15 @@ class TestGui:
         monkeypatch.setattr(check_repo.qtw, 'QAction', mockqtw.MockAction)
         assert isinstance(testobj.setup_stashmenu(), mockqtw.MockMenu)
         assert capsys.readouterr().out == (
-                'called Action.__init__ with text `&New Stash`\n'
+                f"called Action.__init__ with args ('&New Stash', {testobj})\n"
                 f'called Signal.connect with args ({testobj.stash_push},)\n'
-                'called Action.__init__ with text ``\n'
-                'called Action.__init__ with text `&Apply Stash`\n'
+                'called Menu.addAction\n'
+                f"called Action.__init__ with args ('&Apply Stash', {testobj})\n"
                 f'called Signal.connect with args ({testobj.stash_pop},)\n'
-                'called Action.__init__ with text ``\n'
-                'called Action.__init__ with text `&Remove Stash`\n'
+                'called Menu.addAction\n'
+                f"called Action.__init__ with args ('&Remove Stash', {testobj})\n"
                 f'called Signal.connect with args ({testobj.stash_kill},)\n'
-                'called Action.__init__ with text ``\n')
+                'called Menu.addAction\n')
 
     def test_stash_push(self, monkeypatch, capsys, testobj):
         def mock_information(self, title, message):
