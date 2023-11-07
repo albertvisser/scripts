@@ -97,22 +97,22 @@ def stage(c, sitename, new_only=False, filename='', list_only=False):
     # bepaal en controleer de mirror locatie
     root = os.path.join(R2HBASE, sitename)
     if not os.path.exists(root):
-        print(f'no existing mirror location found for `{sitename}`')
+        print(f'No existing mirror location found for `{sitename}`')
         return
     with c.cd(root):
         result = c.run('hg st', hide='out', warn=True)
     if result.failed:
-        print('mirror location should be a mercurial repository')
+        print('Mirror location should be a Mercurial repository')
         return
 
     # bepaal en controleer de te stagen files
     newfiles = [line.split()[1] for line in result.stdout.split('\n') if line and line[0] == '?']
     if filename:
         if not os.path.exists(os.path.join(root, filename)):
-            print('no such file')
+            print('No such file')
             return
         if filename not in newfiles:
-            print('not a new file')
+            print('Not a new file')
             return
         files = [filename]
     elif new_only:
@@ -120,7 +120,7 @@ def stage(c, sitename, new_only=False, filename='', list_only=False):
     else:
         files = [line.split()[1] for line in result.stdout.split('\n') if line and line[0] != '?']
     if not files:
-        print('nothing to stage')
+        print('Nothing to stage')
         return
 
     # bij list optie: toon namen en exit
