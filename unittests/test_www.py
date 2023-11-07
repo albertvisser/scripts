@@ -2,7 +2,7 @@ import os
 import pytest
 import types
 from invoke import MockContext
-import www
+import www as testee
 
 
 def mock_run(self, *args):
@@ -14,69 +14,69 @@ def run_in_dir(self, *args, **kwargs):
 
 
 def test_copy(monkeypatch, capsys):
-    monkeypatch.setattr(www, 'home_root', 'home')
-    monkeypatch.setattr(www, 'server_root', 'server')
+    monkeypatch.setattr(testee, 'home_root', 'home')
+    monkeypatch.setattr(testee, 'server_root', 'server')
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
-    www.copy(c, 'html,file')
+    testee.copy(c, 'html,file')
     assert capsys.readouterr().out == ('sudo cp  home/html server/html\n'
                                        'sudo cp  home/file server/file\n')
     monkeypatch.setattr(os.path, 'isdir', lambda x: True)
-    www.copy(c, 'dir')
+    testee.copy(c, 'dir')
     assert capsys.readouterr().out == 'sudo cp -r home/dir server/dir\n'
 
 
 def test_link(monkeypatch, capsys):
-    monkeypatch.setattr(www, 'home_root', 'home')
-    monkeypatch.setattr(www, 'server_root', 'server')
+    monkeypatch.setattr(testee, 'home_root', 'home')
+    monkeypatch.setattr(testee, 'server_root', 'server')
     monkeypatch.setattr(os, 'readlink', lambda x: 'link to dest of {}'.format(x))
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
-    www.link(c, 'html,file')
+    testee.link(c, 'html,file')
     assert capsys.readouterr().out == ('sudo ln -s link to dest of home/html server\n'
                                        'sudo ln -s link to dest of home/file server\n')
 
 
 def test_edit(monkeypatch, capsys):
-    monkeypatch.setattr(www, 'home_root', 'home')
+    monkeypatch.setattr(testee, 'home_root', 'home')
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
-    www.edit(c, 'html,file')
+    testee.edit(c, 'html,file')
     assert capsys.readouterr().out == 'htmledit home/html\nhtmledit home/file\n'
 
 
 def test_update_sites(monkeypatch, capsys):
     def mock_copy(c, *args):
         print('call copy with args', args)
-    monkeypatch.setattr(www, 'copy', mock_copy)
+    monkeypatch.setattr(testee, 'copy', mock_copy)
     monkeypatch.setattr(MockContext, 'run', run_in_dir)
     c = MockContext()
-    www.update_sites(c)
+    testee.update_sites(c)
     assert capsys.readouterr().out == ('python check_hosts.py in ~/projects/mydomains\n'
                                        "call copy with args ('sites.html',)\n")
 
 
-def test_list(monkeypatch, capsys):
-    monkeypatch.setattr(www, 'server_root', 'server')
+def test_list_wwwroot(monkeypatch, capsys):
+    monkeypatch.setattr(testee, 'server_root', 'server')
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
-    www.list(c)
+    testee.list_wwwroot(c)
     assert capsys.readouterr().out == 'ls -l server\n'
 
 
 def test_list_apache(monkeypatch, capsys):
-    monkeypatch.setattr(www, 'apache_root', 'apache')
+    monkeypatch.setattr(testee, 'apache_root', 'apache')
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
-    www.list_apache(c)
+    testee.list_apache(c)
     assert capsys.readouterr().out == 'ls -l apache\n'
 
 
 def test_edit_apache(monkeypatch, capsys):
-    monkeypatch.setattr(www, 'apache_root', 'apache')
+    monkeypatch.setattr(testee, 'apache_root', 'apache')
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
-    www.edit_apache(c, 'html,file')
+    testee.edit_apache(c, 'html,file')
     assert capsys.readouterr().out == ('cp apache/html /tmp/html\npedit /tmp/html\n'
                                        'sudo cp /tmp/html apache/html\ncp apache/file /tmp/file\n'
                                        'pedit /tmp/file\nsudo cp /tmp/file apache/file\n')
@@ -96,23 +96,23 @@ def test_permits(monkeypatch, capsys):
         if counter < 2:
             return ['name']
         return []
-    monkeypatch.setattr(www.os.path, 'abspath', lambda x: 'abs/{}'.format(x))
-    monkeypatch.setattr(www.os, 'listdir', lambda x: ['name'])
-    monkeypatch.setattr(www.os.path, 'isfile', lambda x: True)
-    monkeypatch.setattr(www.os.path, 'isdir', lambda x: True)
+    monkeypatch.setattr(testee.os.path, 'abspath', lambda x: 'abs/{}'.format(x))
+    monkeypatch.setattr(testee.os, 'listdir', lambda x: ['name'])
+    monkeypatch.setattr(testee.os.path, 'isfile', lambda x: True)
+    monkeypatch.setattr(testee.os.path, 'isdir', lambda x: True)
     monkeypatch.setattr(MockContext, 'run', mock_run_fail)
     c = MockContext()
-    www.permits(c, 'here', do_files=True)
+    testee.permits(c, 'here', do_files=True)
     assert capsys.readouterr().out == 'chmod 644 abs/here/name\nchmod failed on file abs/here/name\n'
-    www.permits(c, 'here')
+    testee.permits(c, 'here')
     assert capsys.readouterr().out == ('chmod 755 abs/here/name\n'
                                        'chmod failed on directory abs/here/name\n')
     monkeypatch.setattr(MockContext, 'run', mock_run_ok)
     c = MockContext()
-    www.permits(c, 'here', do_files=True)
+    testee.permits(c, 'here', do_files=True)
     assert capsys.readouterr().out == 'chmod 644 abs/here/name\n'
-    monkeypatch.setattr(www.os, 'listdir', mock_listdir)
-    www.permits(c, 'here')
+    monkeypatch.setattr(testee.os, 'listdir', mock_listdir)
+    testee.permits(c, 'here')
     assert capsys.readouterr().out == 'chmod 755 abs/here/name\n'
 
 
@@ -122,32 +122,32 @@ def _test_stage(monkeypatch, capsys):
 
 
 def test_startapp(monkeypatch, capsys):
-    monkeypatch.setattr(www, 'webapps', [])
+    monkeypatch.setattr(testee, 'webapps', [])
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
-    www.startapp(c, 'name')
+    testee.startapp(c, 'name')
     assert capsys.readouterr().out == 'unknown webapp\n'
-    monkeypatch.setattr(www, 'webapps', {'name': {'profile': 'appname', 'adr': 'domain',
+    monkeypatch.setattr(testee, 'webapps', {'name': {'profile': 'appname', 'adr': 'domain',
                                                   'start_server': False}})
-    www.startapp(c, 'name')
+    testee.startapp(c, 'name')
     assert capsys.readouterr().out == ('vivaldi-snapshot --app=http://domain --class=WebApp-appname '
                                        '--user-data-dir=/home/albert/.local/share/ice/profiles/'
                                        'appname\n')
-    monkeypatch.setattr(www, 'webapps', {'name': {'profile': 'appname', 'adr': 'domain',
+    monkeypatch.setattr(testee, 'webapps', {'name': {'profile': 'appname', 'adr': 'domain',
                                                   'start_server': '='}})
-    monkeypatch.setattr(www.os.path, 'exists', lambda x: False)
-    www.startapp(c, 'name')
+    monkeypatch.setattr(testee.os.path, 'exists', lambda x: False)
+    testee.startapp(c, 'name')
     assert capsys.readouterr().out == ('fabsrv server.start -n name\n'
                                        'vivaldi-snapshot --app=http://domain --class=WebApp-appname '
                                        '--user-data-dir=/home/albert/.local/share/ice/profiles/'
                                        'appname\n')
-    monkeypatch.setattr(www.os.path, 'exists', lambda x: True)
-    www.startapp(c, 'name')
+    monkeypatch.setattr(testee.os.path, 'exists', lambda x: True)
+    testee.startapp(c, 'name')
     assert capsys.readouterr().out == ('vivaldi-snapshot --app=http://domain --class=WebApp-appname '
                                        '--user-data-dir=/home/albert/.local/share/ice/profiles/'
                                        'appname\n')
-    monkeypatch.setattr(www, 'webapps', {'name': {'appid': 'appname', 'start_server': False}})
-    www.startapp(c, 'name')
+    monkeypatch.setattr(testee, 'webapps', {'name': {'appid': 'appname', 'start_server': False}})
+    testee.startapp(c, 'name')
     # assert capsys.readouterr().out == ('/home/albert/.local/share/vivaldi-snapshot/vivaldi-snapshot'
     assert capsys.readouterr().out == ('/opt/vivaldi/vivaldi'
                                        ' --profile-directory=Default --app-id=appname\n')
