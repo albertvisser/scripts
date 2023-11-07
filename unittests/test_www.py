@@ -121,6 +121,88 @@ def _test_stage(monkeypatch, capsys):
     c = MockContext()
 
 
+def test_list_staged(monkeypatch, capsys, tmp_path):
+    monkeypatch.setattr(MockContext, 'run', mock_run)
+    c = MockContext()
+    mock_base = tmp_path / 'list-staged'
+    monkeypatch.setattr(testee, 'R2HBASE', mock_base)
+    testee.list_staged(c, 'testsite')
+    assert capsys.readouterr().out == 'No existing mirror location found for `testsite`\n'
+    (mock_base / 'testsite').mkdir(parents=True)
+    testee.list_staged(c, 'testsite')
+    assert capsys.readouterr().out == 'No staging directory found for `testsite`\n'
+    stagingloc = mock_base / 'testsite' / '.staging'
+    stagingloc.mkdir(parents=True)
+    testee.list_staged(c, 'testsite')
+    assert capsys.readouterr().out == '0 files staged\n'
+
+
+def test_list_staged_reflinks(monkeypatch, capsys, tmp_path):
+    monkeypatch.setattr(MockContext, 'run', mock_run)
+    c = MockContext()
+    mock_base = tmp_path / 'list-staged'
+    monkeypatch.setattr(testee, 'R2HBASE', mock_base)
+    stagingloc = mock_base / 'testsite' / '.staging'
+    stagingloc.mkdir(parents=True)
+    (stagingloc / 'index.html').touch()
+    (stagingloc / 'page2' ).mkdir()
+    (stagingloc / 'page2' / 'index.html').touch()
+    (stagingloc / 'page2' / 'doc1').mkdir()
+    (stagingloc / 'page2' / 'doc1' / 'index.html').touch()
+    (stagingloc / 'page2' / 'doc2').mkdir()
+    (stagingloc / 'page2' / 'doc2' / 'index.html').touch()
+    (stagingloc / 'page2' / 'doc3').mkdir()
+    (stagingloc / 'page2' / 'doc3' / 'index.html').touch()
+    (stagingloc / 'page3' ).mkdir()
+    (stagingloc / 'page3' / 'index.html').touch()
+    testee.list_staged(c, 'testsite')
+    assert capsys.readouterr().out == 'index\npage2\npage3\n3 files in page2/\n6 files staged\n'
+    testee.list_staged(c, 'testsite', full=True)
+    assert capsys.readouterr().out == ('index\npage2\npage2/doc1\npage2/doc2\npage2/doc3\npage3\n'
+                                       '6 files staged\n')
+
+
+def test_list_staged_reflinks_false(monkeypatch, capsys, tmp_path):
+    monkeypatch.setattr(MockContext, 'run', mock_run)
+    c = MockContext()
+    mock_base = tmp_path / 'list-staged'
+    monkeypatch.setattr(testee, 'R2HBASE', mock_base)
+    stagingloc = mock_base / 'testsite' / '.staging'
+    stagingloc.mkdir(parents=True)
+    (stagingloc / 'index.html').touch()
+    (stagingloc / 'page2.html').touch()
+    (stagingloc / 'page3.html').touch()
+    (stagingloc / 'page2' ).mkdir()
+    (stagingloc / 'page2' / 'doc1.html').touch()
+    (stagingloc / 'page2' / 'doc2.html').touch()
+    testee.list_staged(c, 'testsite')
+    assert capsys.readouterr().out == 'index\npage2\npage3\n2 files in page2/\n5 files staged\n'
+    testee.list_staged(c, 'testsite', full=True)
+    assert capsys.readouterr().out == ('index\npage2\npage2/doc1\npage2/doc2\npage3\n'
+                                       '5 files staged\n')
+
+
+def test_check_for_seflinks(monkeypatch, capsys):
+    class MockDirEntry:
+        def __init__(self, name):
+            self.name = name
+    monkeypatch.setattr(testee.os, 'scandir', lambda x: [MockDirEntry('index.html')])
+    assert testee.has_seflinks_true('x')
+    monkeypatch.setattr(testee.os, 'scandir', lambda x: [MockDirEntry('index.html'),
+                                                         MockDirEntry('reflist.html')])
+    assert testee.has_seflinks_true('x')
+    monkeypatch.setattr(testee.os, 'scandir', lambda x: [MockDirEntry('index.html'),
+                                                         MockDirEntry('gargl.html')])
+    assert not testee.has_seflinks_true('x')
+    monkeypatch.setattr(testee.os, 'scandir', lambda x: [MockDirEntry('index.html'),
+                                                         MockDirEntry('hi_there!')])
+    assert testee.has_seflinks_true('x')
+    monkeypatch.setattr(testee.os, 'scandir', lambda x: [MockDirEntry('index.html'),
+                                                         MockDirEntry('gargl.html'),
+                                                         MockDirEntry('hi_there!')])
+    assert not testee.has_seflinks_true('x')
+
+
 def test_startapp(monkeypatch, capsys):
     monkeypatch.setattr(testee, 'webapps', [])
     monkeypatch.setattr(MockContext, 'run', mock_run)

@@ -4,6 +4,7 @@ import os
 import datetime
 from invoke import task
 from settings import home_root, server_root, apache_root, webapps
+R2HBASE = os.path.expanduser(os.path.join('~', 'projects', 'rst2html', 'rst2html-data'))
 
 
 @task(help={'names': 'comma separated list of filenames'})
@@ -39,7 +40,7 @@ def update_sites(c):
 
 
 @task
-def list(c):
+def list_wwwroot(c):
     "list files in default nginx root"
     c.run(f'ls -l {server_root}')
 
@@ -94,10 +95,7 @@ def stage(c, sitename, new_only=False, filename='', list_only=False):
     met de `filename` optie kan een enkel nieuw document worden toegevoegd
     """
     # bepaal en controleer de mirror locatie
-    root = os.path.expanduser(os.path.join('~', 'www', sitename))
-    if not os.path.exists(root):
-        root = os.path.expanduser(os.path.join('~', 'projects', 'rst2html', 'rst2html-data',
-                                               sitename))
+    root = os.path.join(R2HBASE, sitename)
     if not os.path.exists(root):
         print(f'no existing mirror location found for `{sitename}`')
         return
@@ -150,6 +148,74 @@ def stage(c, sitename, new_only=False, filename='', list_only=False):
         now = datetime.datetime.today().strftime('%d-%m-%Y %H:%M')
         # c.run(f'hg ci -m "staged on {now}"')
         c.run(f'hg ci {" ".join(files)} -m "staged on {now}"')
+
+
+@task(help={'sitename': 'name of site as used in rst2html config',
+            'full': 'also list files in subdirs'})
+def list_staged(c, sitename, full=False):
+    """voor site gemaakt met rst2html: list staged files
+    """
+    root = os.path.join(R2HBASE, sitename)
+    if not os.path.exists(root):
+        print(f'No existing mirror location found for `{sitename}`')
+        return
+    # seflinks = True: geen twee maar drie levels: root bevat alleen index.html
+    stagecount = 0
+
+    if not os.path.exists(os.path.join(root, '.staging')):
+        print(f'No staging directory found for `{sitename}`')
+        return
+    first_level = sorted(os.scandir(os.path.join(root, '.staging')), key=lambda x: x.name)
+    filelist = []
+    subdirlist = []
+    for item in first_level:
+        if item.is_dir():
+            # seflinks = True
+            second_level = os.scandir(item)
+            if has_seflinks_true(sitename):
+                subdircount = 0
+                for subitem in second_level:
+                    if subitem.is_dir():
+                        if full:
+                            filelist.append(os.path.join(item.name, subitem.name))
+                        subdircount += 1
+                    elif subitem.is_file:
+                        filelist.append(item.name)
+                        stagecount += 1
+                if subdircount and not full:
+                     subdirlist.append(f'{subdircount} files in {item.name}/')
+                stagecount += subdircount
+            else:
+                if full:
+                    for subitem in os.scandir(item):
+                        filelist.append(os.path.join(item.name, os.path.splitext(subitem.name)[0]))
+                        stagecount += 1
+                else:
+                    subdircount = len(list(os.scandir(item)))
+                    subdirlist.append(f'{subdircount} files in {item.name}/')
+                    stagecount += subdircount
+        elif item.is_file():
+            filelist.append(os.path.splitext(item.name)[0])
+            stagecount += 1
+    for item in sorted(filelist):
+        print(item)
+    for item in subdirlist:
+        print(item)
+    print(f'{stagecount} files staged')
+
+
+def has_seflinks_true(sitename):
+    """als er geen andere htmls aanwezig zijn dan index en eventueel reflist dan gaan we er van uit
+    # dat dit een site is met setting `seflinks` is True
+    """
+    root = os.path.join(R2HBASE, sitename, '.staging')
+    pages_in_root = [x.name for x in os.scandir(root) if os.path.splitext(x.name)[1] == '.html']
+    pages_in_root.remove('index.html')
+    try:
+        pages_in_root.remove('reflist.html')
+    except ValueError:  # allow for file being not present
+        pass
+    return not bool(pages_in_root)
 
 
 @task(help={'name': 'name of webapp to start'})
