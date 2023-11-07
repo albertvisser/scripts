@@ -116,10 +116,83 @@ def test_permits(monkeypatch, capsys):
     assert capsys.readouterr().out == 'chmod 755 abs/here/name\n'
 
 
-def _test_stage(monkeypatch, capsys):
-    monkeypatch.setattr(MockContext, 'run', mock_run)
+def test_stage(monkeypatch, capsys, tmp_path):
+    def mock_run(self, *args, **kwargs):
+        print('called c.run with args', *args, kwargs)
+        if args[0] == 'hg st':
+            return types.SimpleNamespace(failed=True)
+    def mock_run_2(self, *args, **kwargs):
+        print('called c.run with args', *args, kwargs)
+        if args[0] == 'hg st':
+            return types.SimpleNamespace(failed=False, stdout='')
+    def mock_run_3(self, *args, **kwargs):
+        print('called c.run with args', *args, kwargs)
+        if args[0] == 'hg st':
+            return types.SimpleNamespace(failed=False, stdout='? somefile\n')
+    def mock_run_4(self, *args, **kwargs):
+        print('called c.run with args', *args, kwargs)
+        if args[0] == 'hg st':
+            return types.SimpleNamespace(failed=False, stdout='M file1\n? file2\n? file3\nM file4\n')
+    class MockDateTime:
+        def today():
+            return types.SimpleNamespace(strftime=lambda *y: 'today')
+    monkeypatch.setattr(testee.datetime, 'datetime', MockDateTime)
+    mock_base = tmp_path / 'stagetest'
+    monkeypatch.setattr(testee, 'R2HBASE', mock_base)
     c = MockContext()
+    monkeypatch.setattr(MockContext, 'run', mock_run)
+    testee.stage(c, 'testsite')
+    assert capsys.readouterr().out == 'No existing mirror location found for `testsite`\n'
+    siteroot = mock_base / 'testsite'
+    siteroot.mkdir(parents=True)
+    testee.stage(c, 'testsite')
+    assert capsys.readouterr().out == ("called c.run with args hg st {'hide': 'out', 'warn': True}\n"
+                                       'Mirror location should be a Mercurial repository\n')
 
+    monkeypatch.setattr(MockContext, 'run', mock_run_2)
+    c = MockContext()
+    testee.stage(c, 'testsite')
+    assert capsys.readouterr().out == ("called c.run with args hg st {'hide': 'out', 'warn': True}\n"
+                                       'Nothing to stage\n')
+
+    testee.stage(c, 'testsite', filename='somefile', list_only=True)
+    assert capsys.readouterr().out == ("called c.run with args hg st {'hide': 'out', 'warn': True}\n"
+                                       'No such file\n')
+    (siteroot / 'somefile').touch()
+    testee.stage(c, 'testsite', filename='somefile', list_only=True)
+    assert capsys.readouterr().out == ("called c.run with args hg st {'hide': 'out', 'warn': True}\n"
+                                       'Not a new file\n')
+    monkeypatch.setattr(MockContext, 'run', mock_run_3)
+    c = MockContext()
+    testee.stage(c, 'testsite', filename='somefile', list_only=True)
+    assert capsys.readouterr().out == ("called c.run with args hg st {'hide': 'out', 'warn': True}\n"
+                                       'somefile\n\n'
+                                       '1 files to be staged\n')
+    testee.stage(c, 'testsite', filename='somefile')
+    stagingdir = siteroot / '.staging'
+    assert stagingdir.exists()
+    assert capsys.readouterr().out == ("called c.run with args hg st {'hide': 'out', 'warn': True}\n"
+                                       'called c.run with args cp somefile .staging/somefile {}\n'
+                                       '1 files staged\n'
+                                       'called c.run with args'
+                                       ' hg ci somefile -m "staged on today" {}\n')
+
+    monkeypatch.setattr(MockContext, 'run', mock_run_4)
+    c = MockContext()
+    testee.stage(c, 'testsite', new_only=True)
+    assert capsys.readouterr().out == ("called c.run with args hg st {'hide': 'out', 'warn': True}\n"
+                                       'called c.run with args cp file2 .staging/file2 {}\n'
+                                       'called c.run with args cp file3 .staging/file3 {}\n'
+                                       '2 files staged\n'
+                                       'called c.run with args'
+                                       ' hg ci file2 file3 -m "staged on today" {}\n')
+    testee.stage(c, 'testsite')
+    assert capsys.readouterr().out == ("called c.run with args hg st {'hide': 'out', 'warn': True}\n"
+                                       'called c.run with args cp file1 .staging/file1 {}\n'
+                                       'called c.run with args cp file4 .staging/file4 {}\n'
+                                       '2 files staged\n'
+                                       'called c.run with args'
+                                       ' hg ci file1 file4 -m "staged on today" {}\n')
 
 def test_list_staged(monkeypatch, capsys, tmp_path):
     monkeypatch.setattr(MockContext, 'run', mock_run)
