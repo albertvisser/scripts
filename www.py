@@ -141,13 +141,16 @@ def stage(c, sitename, new_only=False, filename='', list_only=False):
 
     # commit de gestagede files zodat ze niet nog een keer geselecteerd worden
     with c.cd(root):
-        # if filename:
-        #     c.run(f'hg add {filename}')
-        # elif new_only:
-        #     c.run(f'hg add {" ".join(newfiles)}')
+        cfiles = ''
+        if filename:
+            c.run(f'hg add {filename}')
+        elif new_only:
+            c.run(f'hg add {" ".join(newfiles)}')
+        else:
+            cfiles = " ".join(files)
         now = datetime.datetime.today().strftime('%d-%m-%Y %H:%M')
         # c.run(f'hg ci -m "staged on {now}"')
-        c.run(f'hg ci {" ".join(files)} -m "staged on {now}"')
+        c.run(f'hg ci {cfiles} -m "staged on {now}"')
 
 
 @task(help={'sitename': 'name of site as used in rst2html config',
@@ -163,7 +166,7 @@ def list_staged(c, sitename, full=False):
     stagecount = 0
 
     if not os.path.exists(os.path.join(root, '.staging')):
-        print(f'No staging directory found for `{sitename}`')
+        print(f'No staging area found for `{sitename}`')
         return
     first_level = sorted(os.scandir(os.path.join(root, '.staging')), key=lambda x: x.name)
     filelist = []
@@ -216,6 +219,23 @@ def has_seflinks_true(sitename):
     except ValueError:  # allow for file being not present
         pass
     return not bool(pages_in_root)
+
+
+@task(help={'sitename': 'name of site as used in rst2html config'})
+def clear_staged(c, sitename):
+    """voor site gemaakt met rst2html: clear staging area after copying files to live site
+    """
+    root = os.path.join(R2HBASE, sitename)
+    if not os.path.exists(root):
+        print(f'No existing mirror location found for `{sitename}`')
+        return
+    if not os.path.exists(os.path.join(root, '.staging')):
+        print(f'No staging area found for `{sitename}`')
+        return
+    with c.cd(root):
+        c.run('rm -r .staging')
+
+
 
 
 @task(help={'name': 'name of webapp to start'})

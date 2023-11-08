@@ -174,8 +174,8 @@ def test_stage(monkeypatch, capsys, tmp_path):
     assert capsys.readouterr().out == ("called c.run with args hg st {'hide': 'out', 'warn': True}\n"
                                        'called c.run with args cp somefile .staging/somefile {}\n'
                                        '1 files staged\n'
-                                       'called c.run with args'
-                                       ' hg ci somefile -m "staged on today" {}\n')
+                                       'called c.run with args hg add somefile {}\n'
+                                       'called c.run with args hg ci  -m "staged on today" {}\n')
 
     monkeypatch.setattr(MockContext, 'run', mock_run_4)
     c = MockContext()
@@ -184,8 +184,8 @@ def test_stage(monkeypatch, capsys, tmp_path):
                                        'called c.run with args cp file2 .staging/file2 {}\n'
                                        'called c.run with args cp file3 .staging/file3 {}\n'
                                        '2 files staged\n'
-                                       'called c.run with args'
-                                       ' hg ci file2 file3 -m "staged on today" {}\n')
+                                       'called c.run with args hg add file2 file3 {}\n'
+                                       'called c.run with args hg ci  -m "staged on today" {}\n')
     testee.stage(c, 'testsite')
     assert capsys.readouterr().out == ("called c.run with args hg st {'hide': 'out', 'warn': True}\n"
                                        'called c.run with args cp file1 .staging/file1 {}\n'
@@ -193,6 +193,7 @@ def test_stage(monkeypatch, capsys, tmp_path):
                                        '2 files staged\n'
                                        'called c.run with args'
                                        ' hg ci file1 file4 -m "staged on today" {}\n')
+
 
 def test_list_staged(monkeypatch, capsys, tmp_path):
     monkeypatch.setattr(MockContext, 'run', mock_run)
@@ -203,7 +204,7 @@ def test_list_staged(monkeypatch, capsys, tmp_path):
     assert capsys.readouterr().out == 'No existing mirror location found for `testsite`\n'
     (mock_base / 'testsite').mkdir(parents=True)
     testee.list_staged(c, 'testsite')
-    assert capsys.readouterr().out == 'No staging directory found for `testsite`\n'
+    assert capsys.readouterr().out == 'No staging area found for `testsite`\n'
     stagingloc = mock_base / 'testsite' / '.staging'
     stagingloc.mkdir(parents=True)
     testee.list_staged(c, 'testsite')
@@ -274,6 +275,21 @@ def test_check_for_seflinks(monkeypatch, capsys):
                                                          MockDirEntry('gargl.html'),
                                                          MockDirEntry('hi_there!')])
     assert not testee.has_seflinks_true('x')
+
+
+def test_clear_staged(monkeypatch, capsys, tmp_path):
+    monkeypatch.setattr(MockContext, 'run', run_in_dir)
+    c = MockContext()
+    mock_base = tmp_path / 'list-staged'
+    monkeypatch.setattr(testee, 'R2HBASE', mock_base)
+    testee.clear_staged(c, 'testsite')
+    assert capsys.readouterr().out == 'No existing mirror location found for `testsite`\n'
+    (mock_base / 'testsite').mkdir(parents=True)
+    testee.clear_staged(c, 'testsite')
+    assert capsys.readouterr().out == 'No staging area found for `testsite`\n'
+    (mock_base / 'testsite' / '.staging').mkdir(parents=True)
+    testee.clear_staged(c, 'testsite')
+    assert capsys.readouterr().out == f"rm -r .staging in {mock_base / 'testsite'}\n"
 
 
 def test_startapp(monkeypatch, capsys):
