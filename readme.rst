@@ -27,14 +27,16 @@ but in the form of a script that generates these symplink and invocation.
     a script to build additional short scripts by making symlinks and echoing commands into files.
     see below for details.
 
-**check-repo** (symlink to **check-repo.py**, formerly check_local)
+**check-repo**
 
+    (symlink to **check-repo.py**, formerly check_local)
     while a script by this name was replaced with a function in the fabfile, 
     my creativity failed me in choosing a name for a somewhat similar but visual tool 
     that makes it possible to start several basic repo management tasks from a gui
     and without needing to step into the repo first.
 
 **covtest**
+
     script to launch unittests and analyse testcoverage (using pytest and coverage.py)
 
 **db.py**
@@ -60,13 +62,15 @@ but in the form of a script that generates these symplink and invocation.
 
     a couple of `invoke` functions to help with the internalization of source files
 
-**list2scite** (symlink to **list2scite.py**, the testable version)
+**list2scite**
 
+    (symlink to **list2scite.py**, the testable version)
     a script to take a file with filenames (created by e.g. Double Commander)
     and expand it into a command to start SciTE with all these files open
 
-**list2vi** (symlink to **list2vi.py**, the testable version) 
+**list2vi**
 
+    (symlink to **list2vi.py**, the testable version) 
     the same for VI in a terminal
 
 **mee-bezig**
@@ -101,8 +105,9 @@ but in the form of a script that generates these symplink and invocation.
 
     this file.
 
-**rename-files** (symlink to **rename_files.py**, the testable version)
+**rename-files**
 
+    (symlink to **rename_files.py**, the testable version)
     like list2vi/list2scite, apply some action on the selected files and/or directories: 
     take the first word and put it at the end to improve sortability.
 
@@ -118,7 +123,6 @@ but in the form of a script that generates these symplink and invocation.
 **runwithlog**
 
     enable logging for an application that reacts to setting a DEBUG environment variable.
-
     to use, simply prepend this command to the usual call to the app
 
 **session.py**
@@ -193,6 +197,8 @@ This script creates the following symlinks and short starter scripts for my own 
 **a-propos**
     starts up my 'apropos' application. I had to rename it because there appeared
     to be a system tool by that name. No arguments.
+**cgit**
+    start cgit repository browser for local repositories in a separate window
 **comparer**
     starts up my compare tool
 **comparer_from_dc**
@@ -202,6 +208,9 @@ This script creates the following symlinks and short starter scripts for my own 
 **csvhelper**
     starter for routines to make editing a csv file somewhat easier
     to be used in combination with or started from within a text editor
+**dc4sdv**
+    starts Double Commander with Stardew Valley mods downloads directory on the one side
+    and game mods directory on the other
 **diary**
     symlink to ramble
 **doctree**
@@ -211,8 +220,10 @@ This script creates the following symlinks and short starter scripts for my own 
     starts up a program to print the contents of a doctree file
 **flarden**
     points notetree to a collection of text snippets
-**ganestuff**
+**gamestuff**
     starts a treedocs file with information for games I play
+**gitweb**
+    start cgit repository browser for "central" repositories in a separate window
 **hotkeys**
     starts my viewer for keyboard shortcuts in various applications. No arguments.
 **hotrefs**
@@ -228,6 +239,8 @@ This script creates the following symlinks and short starter scripts for my own 
     GUI frontend as replacement for *lint-this* and *lint-all*
 **lint-this**
     apply pylint or flake8 checks to selected files or files in a selected directory
+**lminstreloc**
+    starts up my LMMS Instrument Relocation program
 **mdview**
     Viewer for markdown formatted documents.
     Can be used with Double Commander or from within SciTE etc.
@@ -239,6 +252,12 @@ This script creates the following symlinks and short starter scripts for my own 
     starts up Doctree's predecessor. No arguments.
 **nt2ext**
     show and/or reorganize contents of NoteTree documents
+**pfind-all**
+    search in all tracked python files
+**pfind-prog**
+    search in all tracked python program modules
+**pfind-test**
+    search in all tracked python test modules
 **probreg**
     starts up my 'probreg' application. Optional arguments: either the name of an
     XML file or 'sql' optionally followed by a project name. Without arguments:
@@ -250,6 +269,8 @@ This script creates the following symlinks and short starter scripts for my own 
     Can be used with Double Commander or from within SciTE etc.
 **scratch_pad**
     start a-propos using a file in /tmp (which is not saved over Linux sessions)
+**sdv-modman**
+    starts up my Stardew Valley Mod Manager
 **tickets**
     starts probreg as my issue tracker, replacing trac.lemoncurry.nl
 **treedocs**
@@ -257,9 +278,12 @@ This script creates the following symlinks and short starter scripts for my own 
 **viewhtml**
     viewer for HTML formatted documents.
     Can be used with Double Commander or from within SciTE etc.
+**viewxml**
+    viewer for TML formatted documents.
+    Can be used with Double Commander or from within SciTE etc.
 **webrefs**
     points my hotkeys app to a collection of keyboard shortcuts for web apps
-**xmledit**
+**xmledit** 
     starts up my tree-based xml editor. Takes one (optional) argument: the filename.
 
 It also creates starters for various other programs:
@@ -277,6 +301,8 @@ It also creates starters for various other programs:
 **iview**
     starts up IrfanView under Wine.
     Takes one argument, assuming this is the file to view.
+**leo**
+    (if installed) starts up Leo editor
 **lstart**
     start LMMS on workspace 3
 **mdi**
@@ -306,16 +332,34 @@ It also creates starters for various other programs:
     starts up the Qt5 demo program
 **reaper**
     starts linux version of reaper
+**repocheck**
+    shortcut for `binfab repo.check-local`, to check for changes in local repos
+**repolog**
+    shortcut for `binfab repo.check-local-changes`, to view the extended output of the previous
+**repopush**
+    shortcut for `binfab repo.push-local push-remote`, to migrate all committed changes 
 **sdl-ball**
     starts a game
 **start-gaming**
     starts Steam on workspace 3
+**start-mc**
+    (if installed) start Midnight Commander in a larger than default terminal
 **start-servers**
-    calls fabsrv to start all wsgi servers
+    calls fabsrv to start selected wsgi servers
 **stop-servers**
     calls fabsrv to stop all wsgi servers
 **t-ed**
-    open a terminal in a "code editor" mode I defined
+    open a terminal in a "code editor" mode I defined (replaced by tedit)
+**teditl**
+    starts tedit on the left side of the screen instead of in the middle
+**teditlr**
+    starts tedit two times side by side 
+**teditml**
+    starts tedit at a position next to where it would be using peditl           
+**teditmr**
+    starts tedit at a position next to where it would be using peditr           
+**teditr**
+    starts tedit on the right side of the screen instead of in the middle
 **totalcmd**
     starts up Total Commander under Wine. takes no arguments.
     Uses wmctrl to ensure it starts up in workspace 2 
@@ -331,6 +375,8 @@ It also creates starters for various other programs:
     start Vivaldi (snapshot) browser on workspace 1
 **widevi**
     takes two filenames and starts vi practically full screen to edit the files side-by-side
+**wing**
+    (if installed) starts up WING editor which I sometimes use for GUI debugging
 **wxdemo**
     starter for the wxPython demo program
 
