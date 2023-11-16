@@ -189,6 +189,40 @@ def check_file(lib, name):
     return library_version, actual_version
 
 
+@task
+def check_readme(c):
+    "check if all commands in scriptlib are described in readme and show which are not"
+    lib = ScriptLib()
+    ddict = build_descdict(lib.basepath / 'readme.rst')
+    print('scriptlets not described in readme.rst:')
+    for name in [x for x in lib.get_all_names() if x not in ddict]:
+        print(name)
+
+
+def build_descdict(readme):
+    "create a dictionary of scriptnames and descriptions based on contents of readme file"
+    descdict = {}
+    name, desc = '', []
+    with readme.open() as f:
+        for line in f:
+            line = line.rstrip()
+            if not line:
+                continue
+            if line.startswith('scripts that were replaced'):  # ignore the rest
+                break
+            if line.startswith('**'):
+                if desc:
+                    descdict[name] = desc
+                    desc = []
+                name = line.strip('*')
+            else:
+                if line.startswith(' '):
+                    desc.append(line.lstrip())
+        if desc:
+            descdict[name] = desc
+    return descdict
+
+
 class ScriptLib:
     """Lees en schrijf bin-scripts.conf met behulp van een ConfigParser
 

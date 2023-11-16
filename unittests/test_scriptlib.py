@@ -383,6 +383,64 @@ def test_check_file(monkeypatch, capsys):
     assert capsys.readouterr().out == ''
 
 
+def test_check_readme(monkeypatch, capsys):
+    def mock_build(path):
+        print(f'called build_descdict with arg `{path}`')
+        return {'dick': ['desc']}
+    def mock_build_2(path):
+        print(f'called build_descdict with arg `{path}`')
+        return {'tom': ['desc'], 'dick': [], 'harry': '', 'sally': ''}
+    monkeypatch.setattr(testee, 'build_descdict', mock_build)
+    monkeypatch.setattr(testee, 'ScriptLib', MockLib)
+    c = MockContext()
+    testee.check_readme(c)
+    assert capsys.readouterr().out == ('called ScriptLib.__init__\n'
+                                       'called build_descdict with arg `x/readme.rst`\n'
+                                       'scriptlets not described in readme.rst:\n'
+                                       'called ScriptLib.get_all_names with args {}\n'
+                                       'tom\nharry\nsally\n')
+    monkeypatch.setattr(testee, 'build_descdict', mock_build_2)
+    monkeypatch.setattr(testee, 'ScriptLib', MockLib)
+    c = MockContext()
+    testee.check_readme(c)
+    assert capsys.readouterr().out == ('called ScriptLib.__init__\n'
+                                       'called build_descdict with arg `x/readme.rst`\n'
+                                       'scriptlets not described in readme.rst:\n'
+                                       'called ScriptLib.get_all_names with args {}\n')
+
+def test_build_destdict(monkeypatch, capsys, tmp_path):
+    mock_readme = tmp_path / 'scriptlib' / 'readme'
+    (tmp_path / 'scriptlib').mkdir()
+    # leeg bestand
+    mock_readme.touch()
+    assert testee.build_descdict(mock_readme) == {}
+    # geen scriptnamen
+    mock_readme.write_text('tekst\nmeer tekst')
+    assert testee.build_descdict(mock_readme) == {}
+    # geen beschrijvingen
+    mock_readme.write_text('tekst\n**a name**\n**another name**')
+    assert testee.build_descdict(mock_readme) == {}
+    # geen ingesprongen beschrijving
+    mock_readme.write_text('tekst\n**a name**\nnot a description\n**another name**')
+    assert testee.build_descdict(mock_readme) == {}
+    # wel ingesprongen beschrijving, lege regel
+    mock_readme.write_text('tekst\n**a name**\n  a description\n\n**another name**')
+    assert testee.build_descdict(mock_readme) == {'a name': ['a description']}
+    # twee scripts met beschrijving, multiline beschrijving
+    mock_readme.write_text('tekst\n**a name**\n  a description\n  with extra text\n'
+                           '**another name**\n  a description\n')
+    assert testee.build_descdict(mock_readme) == {'a name': ['a description', 'with extra text'],
+                                                  'another name': ['a description']}
+    # alles na afsluitende tekst
+    mock_readme.write_text('scripts that were replaced\n**a name**\n  a description\n'
+                           '**another name**\n  a description\n')
+    assert testee.build_descdict(mock_readme) == {}
+    # entries voor en na afsluitende tekst
+    mock_readme.write_text('**a name**\n  a description\nscripts that were replaced\n'
+                           '**another name**\n  a description\n')
+    assert testee.build_descdict(mock_readme) == {'a name': ['a description']}
+
+
 def test_scriptlib_init(monkeypatch, capsys):
     def mock_read(*args):
         print('called ScriptLib.read')
