@@ -213,7 +213,10 @@ def has_seflinks_true(sitename):
     """
     root = os.path.join(R2HBASE, sitename, '.staging')
     pages_in_root = [x.name for x in os.scandir(root) if os.path.splitext(x.name)[1] == '.html']
-    pages_in_root.remove('index.html')
+    try:
+        pages_in_root.remove('index.html')
+    except ValueError:  # allow for file being not present
+        pass
     try:
         pages_in_root.remove('reflist.html')
     except ValueError:  # allow for file being not present
