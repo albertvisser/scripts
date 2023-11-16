@@ -11,6 +11,10 @@ __pycache__/
 projdocs*
 .sessionrc
 
+#backups
+.gitignore~
+bin-scripts.conf~
+
 # miscellaneous
 mdi.py
 *vivaldi*
@@ -91,3 +95,10 @@ diary
 pfind-all
 pfind-prog
 pfind-test
+
+teditl
+teditlr
+teditml
+teditmr
+teditr
+repolog

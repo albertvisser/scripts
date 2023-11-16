@@ -1,0 +1,24 @@
+#! /bin/sh
+# edit a single file using vi in a profiled console
+
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+  echo "usage: tedit [ -l | -lm | -rm | -r  ] FILE"
+  echo "  geometry options to show window in specific positions:"
+  echo "   -l = leftmost, -lm = adjacent to leftmost"
+  echo "   -r = rightmost, -rm = adjacent to rightmost"
+  exit
+fi   
+todo=${@:2}
+geo='--geometry=102x54'
+if [ "$1" = "-l" ]; then
+  geo=$geo'+2+0'; 
+elif [ "$1" = "-r" ]; then
+  geo=$geo'+1072+0'; 
+elif [ "$1" = "-mr" ]; then
+  geo=$geo'+848+0'; 
+elif [ "$1" = "-ml" ]; then
+  geo=$geo'+224+0'; 
+elif [ -z $2 ]; then 
+  todo=$1;
+fi
+gnome-terminal $geo -- vim $todo &
