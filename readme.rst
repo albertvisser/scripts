@@ -10,7 +10,6 @@ that pass specific arguments to such a symlink. These are not directly included 
 but in the form of a script that generates these symplink and invocation.
 
 **.gitignore**
-**.hgignore**
 
     indicates which non-tracked files mercurial / git is to ignore
 
