@@ -219,21 +219,38 @@ def test_list_staged_reflinks(monkeypatch, capsys, tmp_path):
     stagingloc = mock_base / 'testsite' / '.staging'
     stagingloc.mkdir(parents=True)
     (stagingloc / 'index.html').touch()
+    (stagingloc / 'pic1.png').touch()
     (stagingloc / 'page2' ).mkdir()
     (stagingloc / 'page2' / 'index.html').touch()
     (stagingloc / 'page2' / 'doc1').mkdir()
     (stagingloc / 'page2' / 'doc1' / 'index.html').touch()
     (stagingloc / 'page2' / 'doc2').mkdir()
+    (stagingloc / 'page2' / 'doc2' / 'pic2.png').touch()
     (stagingloc / 'page2' / 'doc2' / 'index.html').touch()
     (stagingloc / 'page2' / 'doc3').mkdir()
     (stagingloc / 'page2' / 'doc3' / 'index.html').touch()
     (stagingloc / 'page3' ).mkdir()
+    (stagingloc / 'page3' / 'pic3.png').touch()
     (stagingloc / 'page3' / 'index.html').touch()
     testee.list_staged(c, 'testsite')
-    assert capsys.readouterr().out == 'index\npage2\npage3\n3 files in page2/\n6 files staged\n'
+    assert capsys.readouterr().out == ('index.html\n'
+                                       'page2/index.html\n'
+                                       'page3/index.html\n'
+                                       'pic1.png\n'
+                                       '5 files in page2/\n'
+                                       '2 files in page3/\n'
+                                       '9 files staged\n')
     testee.list_staged(c, 'testsite', full=True)
-    assert capsys.readouterr().out == ('index\npage2\npage2/doc1\npage2/doc2\npage2/doc3\npage3\n'
-                                       '6 files staged\n')
+    assert capsys.readouterr().out == ('index.html\n'
+                                       'page2/doc1/index.html\n'
+                                       'page2/doc2/index.html\n'
+                                       'page2/doc2/pic2.png\n'
+                                       'page2/doc3/index.html\n'
+                                       'page2/index.html\n'
+                                       'page3/index.html\n'
+                                       'page3/pic3.png\n'
+                                       'pic1.png\n'
+                                       '9 files staged\n')
 
 
 def test_list_staged_reflinks_false(monkeypatch, capsys, tmp_path):
@@ -244,33 +261,49 @@ def test_list_staged_reflinks_false(monkeypatch, capsys, tmp_path):
     stagingloc = mock_base / 'testsite' / '.staging'
     stagingloc.mkdir(parents=True)
     (stagingloc / 'index.html').touch()
+    (stagingloc / 'pic.png').touch()
     (stagingloc / 'page2.html').touch()
     (stagingloc / 'page3.html').touch()
     (stagingloc / 'page2' ).mkdir()
     (stagingloc / 'page2' / 'doc1.html').touch()
+    (stagingloc / 'page2' / 'pic2.png').touch()
     (stagingloc / 'page2' / 'doc2.html').touch()
     testee.list_staged(c, 'testsite')
-    assert capsys.readouterr().out == 'index\npage2\npage3\n2 files in page2/\n5 files staged\n'
+    assert capsys.readouterr().out == ('index.html\npage2.html\npage3.html\npic.png\n'
+                                       '3 files in page2/\n7 files staged\n')
     testee.list_staged(c, 'testsite', full=True)
-    assert capsys.readouterr().out == ('index\npage2\npage2/doc1\npage2/doc2\npage3\n'
-                                       '5 files staged\n')
+    assert capsys.readouterr().out == ('index.html\n'
+                                       'page2/doc1.html\npage2/doc2.html\npage2/pic2.png\n'
+                                       'page2.html\npage3.html\npic.png\n'
+                                       '7 files staged\n')
 
 
-def test_check_for_seflinks(monkeypatch, capsys):
+def test_has_seflinks_true(monkeypatch, capsys):
     class MockDirEntry:
         def __init__(self, name):
             self.name = name
+    # 1. geen files in staging root -> eigenlijk onbepaald
+    monkeypatch.setattr(testee.os, 'scandir', lambda x: [])
+    assert testee.has_seflinks_true('x')
+    # 2. index.html in staging root -> eigenlijk onbepaald
     monkeypatch.setattr(testee.os, 'scandir', lambda x: [MockDirEntry('index.html')])
     assert testee.has_seflinks_true('x')
+    # 3. index.html en/of reflist.html in staging root -> eigenlijk onbepaald
     monkeypatch.setattr(testee.os, 'scandir', lambda x: [MockDirEntry('index.html'),
                                                          MockDirEntry('reflist.html')])
     assert testee.has_seflinks_true('x')
+    # 4. ook andere html dan index of reflist in staging root -> geen seflinks
     monkeypatch.setattr(testee.os, 'scandir', lambda x: [MockDirEntry('index.html'),
                                                          MockDirEntry('gargl.html')])
     assert not testee.has_seflinks_true('x')
+    # 5. alleen andere html dan index of reflist in staging root -> geen seflinks
+    monkeypatch.setattr(testee.os, 'scandir', lambda x: [MockDirEntry('gargl.html')])
+    assert not testee.has_seflinks_true('x')
+    # 6. index en ander type -> als 2/3
     monkeypatch.setattr(testee.os, 'scandir', lambda x: [MockDirEntry('index.html'),
                                                          MockDirEntry('hi_there!')])
     assert testee.has_seflinks_true('x')
+    # 7. index, ander html en ander type -> als 4
     monkeypatch.setattr(testee.os, 'scandir', lambda x: [MockDirEntry('index.html'),
                                                          MockDirEntry('gargl.html'),
                                                          MockDirEntry('hi_there!')])

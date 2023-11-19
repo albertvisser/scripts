@@ -168,39 +168,31 @@ def list_staged(c, sitename, full=False):
     if not os.path.exists(os.path.join(root, '.staging')):
         print(f'No staging area found for `{sitename}`')
         return
-    first_level = sorted(os.scandir(os.path.join(root, '.staging')), key=lambda x: x.name)
+    # breakpoint()
     filelist = []
     subdirlist = []
-    for item in first_level:
+    for item in sorted(os.scandir(os.path.join(root, '.staging')), key=lambda x: x.name):
         if item.is_dir():
-            # seflinks = True
-            second_level = os.scandir(item)
-            if has_seflinks_true(sitename):
-                subdircount = 0
-                for subitem in second_level:
-                    if subitem.is_dir():
-                        if full:
-                            filelist.append(os.path.join(item.name, subitem.name))
-                        subdircount += 1
-                    elif subitem.is_file:
-                        filelist.append(item.name)
-                        stagecount += 1
-                if subdircount and not full:
-                     subdirlist.append(f'{subdircount} files in {item.name}/')
-                stagecount += subdircount
-            else:
-                if full:
-                    for subitem in os.scandir(item):
-                        filelist.append(os.path.join(item.name, os.path.splitext(subitem.name)[0]))
-                        stagecount += 1
-                else:
-                    subdircount = len(list(os.scandir(item)))
-                    subdirlist.append(f'{subdircount} files in {item.name}/')
-                    stagecount += subdircount
+            subdircount = 0
+            for subitem in sorted(os.scandir(item), key=lambda x: x.name):
+                if subitem.is_dir():
+                    for entry in sorted(os.scandir(subitem), key=lambda x: x.name):
+                        if entry.is_file():  # eigenlijk de enige mogelijkheid
+                            if full:
+                                filelist.append(os.path.join(item.name, subitem.name, entry.name))
+                            subdircount += 1
+                elif subitem.is_file:
+                    if full or (has_seflinks_true(sitename) and
+                                os.path.splitext(subitem.name)[1] == '.html'):
+                        filelist.append(os.path.join(item.name, subitem.name))
+                    subdircount += 1
+            if subdircount and not full:
+                 subdirlist.append(f'{subdircount} files in {item.name}/')
+            stagecount += subdircount
         elif item.is_file():
-            filelist.append(os.path.splitext(item.name)[0])
+            filelist.append(item.name)
             stagecount += 1
-    for item in sorted(filelist):
+    for item in filelist:
         print(item)
     for item in subdirlist:
         print(item)
