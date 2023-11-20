@@ -165,10 +165,10 @@ class Gui(qtw.QWidget):
         self.outtype = 'status'
         # self.filelist = self.get_repofiles() deze zit ook in refresh_frame
 
-        project = path.stem
+        self.project = path.stem
         self.app = qtw.QApplication(sys.argv)
         super().__init__()
-        self.title = f'Uncommitted changes for `{project}`'
+        self.title = f'Uncommitted changes for `{self.project}`'
         self.setup_visual()
 
         # start assuming Meld is present
@@ -499,7 +499,7 @@ class Gui(qtw.QWidget):
     def lint_all(self):
         """execute permissive linting on all files in repository
         """
-        self.just_run(['lintergui', '-m', 'permissive', '-d', '.'])
+        self.just_run(['lintergui', '-m', 'permissive', '-r', self.project])
 
     def annotate(self):
         """show selected files in annotated view"""
