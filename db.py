@@ -103,7 +103,7 @@ def dump_pg(c, names=''):
 @task
 def list_pgdumps(c):
     "list backups made using db.dump-pg"
-    c.run('ls -RU1 ~/pgdump')
+    c.run('ls -R1 ~/pgdump')
 
 
 @task
