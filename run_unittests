@@ -38,6 +38,6 @@ for parm in tests:
             command = ['covtest', '-x', os.path.join(testdir, tests[parm]), modules[parm]]
         else:
             command = ['covtest', os.path.join(testdir, tests[parm]), modules[parm]]
-        subprocess.run(command)
+        subprocess.run(command, check=False)
 if not ok:
     print(usage)

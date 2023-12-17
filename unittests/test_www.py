@@ -29,7 +29,7 @@ def test_copy(monkeypatch, capsys):
 def test_link(monkeypatch, capsys):
     monkeypatch.setattr(testee, 'home_root', 'home')
     monkeypatch.setattr(testee, 'server_root', 'server')
-    monkeypatch.setattr(os, 'readlink', lambda x: 'link to dest of {}'.format(x))
+    monkeypatch.setattr(os, 'readlink', lambda x: f'link to dest of {x}')
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
     testee.link(c, 'html,file')
@@ -96,7 +96,7 @@ def test_permits(monkeypatch, capsys):
         if counter < 2:
             return ['name']
         return []
-    monkeypatch.setattr(testee.os.path, 'abspath', lambda x: 'abs/{}'.format(x))
+    monkeypatch.setattr(testee.os.path, 'abspath', lambda x: f'abs/{x}')
     monkeypatch.setattr(testee.os, 'listdir', lambda x: ['name'])
     monkeypatch.setattr(testee.os.path, 'isfile', lambda x: True)
     monkeypatch.setattr(testee.os.path, 'isdir', lambda x: True)

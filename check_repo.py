@@ -382,15 +382,14 @@ class Gui(qtw.QWidget):
                 except OSError:
                     self.got_meld = False
                     break
-        if not self.got_meld:
-            if filenames:
-                command = [self.repotype, 'diff'] + filenames
-                _out, _err = self.run_and_capture(command)
-                if _err:
-                    qtw.QMessageBox.information(self, self.title, '\n'.join(_err))
-                    return
-                caption = 'Show diffs for: ' + ', '.join(filenames)
-                DiffViewDialog(self, self.title, caption, _out).exec_()
+        if not self.got_meld and filenames:
+            command = [self.repotype, 'diff'] + filenames
+            _out, _err = self.run_and_capture(command)
+            if _err:
+                qtw.QMessageBox.information(self, self.title, '\n'.join(_err))
+                return
+            caption = 'Show diffs for: ' + ', '.join(filenames)
+            DiffViewDialog(self, self.title, caption, _out).exec_()
 
     def add_ignore(self):
         """add selected file to ignore list"""
@@ -446,9 +445,8 @@ class Gui(qtw.QWidget):
         # filenames = self.filter_tracked(self.get_selected_files())
         filelist = self.get_selected_files()
         to_commit = [pathlib.Path(x[1]) for x in filelist]
-        if [y for y in to_commit if y.suffix == '.py'
-                and not y.name.startswith('test_')]:
-            if FriendlyReminder(self).exec_() == qtw.QDialog.Rejected:
+        if ([y for y in to_commit if y.suffix == '.py' and not y.name.startswith('test_')] and
+            FriendlyReminder(self).exec_() == qtw.QDialog.Rejected):
                 return
         filenames = self.filter_tracked(filelist)
         if filenames:
@@ -676,8 +674,7 @@ class Gui(qtw.QWidget):
 
     def run_and_report(self, command_list):
         "shortcut for call to subprocess (reports results from stdout and stderr)"
-        result = subprocess.run(command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                cwd=str(self.path), check=False)
+        result = subprocess.run(command_list, capture_output=True, cwd=str(self.path), check=False)
         if result.stdout is not None:
             text = str(result.stdout, encoding='utf-8').strip('\n')
             if text:
@@ -689,8 +686,7 @@ class Gui(qtw.QWidget):
 
     def run_and_capture(self, command_list):
         "shortcut for call to subprocess (returns stdout and stderr as lists)"
-        result = subprocess.run(command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                cwd=str(self.path), check=False)
+        result = subprocess.run(command_list, capture_output=True, cwd=str(self.path), check=False)
         ret1, ret2 = [], []
         if result.stdout is not None:
             ret1 = [x for x in str(result.stdout, encoding='utf-8').split('\n') if x]

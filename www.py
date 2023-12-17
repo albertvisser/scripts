@@ -2,6 +2,7 @@
 """
 import os
 import datetime
+import contextlib
 from invoke import task
 from settings import home_root, server_root, apache_root, webapps
 R2HBASE = os.path.expanduser(os.path.join('~', 'projects', 'rst2html', 'rst2html-data'))
@@ -205,14 +206,10 @@ def has_seflinks_true(sitename):
     """
     root = os.path.join(R2HBASE, sitename, '.staging')
     pages_in_root = [x.name for x in os.scandir(root) if os.path.splitext(x.name)[1] == '.html']
-    try:
+    with contextlib.suppress(ValueError):  # allow for file being not present
         pages_in_root.remove('index.html')
-    except ValueError:  # allow for file being not present
-        pass
-    try:
+    with contextlib.suppress(ValueError):  # allow for file being not present
         pages_in_root.remove('reflist.html')
-    except ValueError:  # allow for file being not present
-        pass
     return not bool(pages_in_root)
 
 

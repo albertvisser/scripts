@@ -31,6 +31,9 @@ def setup_app(monkeypatch):  # deze wordt gebruikt
 def mock_run(*args):
     print('run with args:', args)
 
+def mock_just_run(command):
+    print(f'call just_run() for `{command}`')
+
 def mock_sp_run(*args, **kwargs):
     print('run with args:', args, kwargs)
     return types.SimpleNamespace(stdout=b'hallo\ndaar\njongens\n')
@@ -63,10 +66,12 @@ class MockGui:
     def check_active(self, *args):
         print('called Gui.check_active()')
     def activate_item(self, *args):
-        print('called Gui.activate_item() with arg `{}`'.format(args[0]))
+        print('called Gui.activate_item() with arg `{args[0]}`')
     def update(self):
         print('called Gui.update()')
 
+def mock_information(self, title, message):
+    print(f'display message `{message}`')
 
 def test_main(monkeypatch, capsys):
     class MockParser:
@@ -144,16 +149,19 @@ def test_startapp(monkeypatch, capsys, tmp_path):
     assert check_repo.startapp(types.SimpleNamespace(project='')) == '. is not a repository'
     assert capsys.readouterr().out == ''
 
+def mock_dialog_init(self, parent, *args):
+    self.parent = parent
+    print('called dialog.__init()__ with args', args)
+
+def mock_setWindowTitle(self, *args):
+    print('called dialog.setWindowTitle() with args', args)
+
+def mock_setLayout(self, *args):
+    print('called dialog.setLayout()')
+
 class TestCheckTextDialog:
     def test_init(self, monkeypatch, capsys, expected_output):
-        def mock_init(self, parent, *args):
-            self.parent = parent
-            print('called dialog.__init()__ with args `{}`'.format(args))
-        def mock_setWindowTitle(self, *args):
-            print('called dialog.setWindowTitle() with args `{}`'.format(args))
-        def mock_setLayout(self, *args):
-            print('called dialog.setLayout()')
-        monkeypatch.setattr(check_repo.qtw.QDialog, '__init__', mock_init)
+        monkeypatch.setattr(check_repo.qtw.QDialog, '__init__', mock_dialog_init)
         monkeypatch.setattr(check_repo.qtw.QDialog, 'setWindowTitle', mock_setWindowTitle)
         monkeypatch.setattr(check_repo.qtw.QDialog, 'setLayout', mock_setLayout)
         monkeypatch.setattr(check_repo.qtw, 'QVBoxLayout', mockqtw.MockVBoxLayout)
@@ -192,18 +200,11 @@ class TestCheckTextDialog:
 
 class TestDiffViewDialog:
     def test_init(self, monkeypatch, capsys, expected_output):
-        def mock_init(self, parent, *args):
-            self.parent = parent
-            print('called dialog.__init()__ with args `{}`'.format(args))
-        def mock_setWindowTitle(self, *args):
-            print('called dialog.setWindowTitle() with args `{}`'.format(args))
         def mock_resize(self, *args):
             print('called dialog.resize()')
-        def mock_setLayout(self, *args):
-            print('called dialog.setLayout()')
         def mock_addAction(self, *args):
             print('called dialog.addAction()')
-        monkeypatch.setattr(check_repo.qtw.QDialog, '__init__', mock_init)
+        monkeypatch.setattr(check_repo.qtw.QDialog, '__init__', mock_dialog_init)
         monkeypatch.setattr(check_repo.qtw.QDialog, 'setWindowTitle', mock_setWindowTitle)
         monkeypatch.setattr(check_repo.qtw.QDialog, 'resize', mock_resize)
         monkeypatch.setattr(check_repo.qtw.QDialog, 'setLayout', mock_setLayout)
@@ -229,14 +230,7 @@ class TestDiffViewDialog:
 
 class TestFriendlyReminder:
     def test_init(self, monkeypatch, capsys, expected_output):
-        def mock_init(self, parent, *args):
-            self.parent = parent
-            print('called dialog.__init()__ with args `{}`'.format(args))
-        def mock_setWindowTitle(self, *args):
-            print('called dialog.setWindowTitle() with args `{}`'.format(args))
-        def mock_setLayout(self, *args):
-            print('called dialog.setLayout()')
-        monkeypatch.setattr(check_repo.qtw.QDialog, '__init__', mock_init)
+        monkeypatch.setattr(check_repo.qtw.QDialog, '__init__', mock_dialog_init)
         monkeypatch.setattr(check_repo.qtw.QDialog, 'setWindowTitle', mock_setWindowTitle)
         monkeypatch.setattr(check_repo.qtw.QDialog, 'setLayout', mock_setLayout)
         monkeypatch.setattr(check_repo.qtw, 'QVBoxLayout', mockqtw.MockVBoxLayout)
@@ -253,8 +247,6 @@ class TestFriendlyReminder:
         def mock_init(self, *args):
             print('called dialog.__init__()')
             self._parent = args[0]
-        def mock_information(self, title, message):
-            print('display message `{}`'.format(message))
         monkeypatch.setattr(check_repo.qtw.QMessageBox, 'information', mock_information)
         monkeypatch.setattr(check_repo.qtw.QDialog, 'accept', mock_accept)
         monkeypatch.setattr(check_repo.FriendlyReminder, '__init__', mock_init)
@@ -287,17 +279,17 @@ class TestGui:
         # de andere methode in de init en de methoden die deze aanroept wel mocken
         def mock_init(self, *args):
             # self.parent = parent
-            print('called widget.__init()__ with args `{}`'.format(args))
+            print('called widget.__init()__ with args', args)
         def mock_setWindowTitle(self, *args):
-            print('called widget.setWindowTitle() with args `{}`'.format(args))
+            print('called widget.setWindowTitle() with args', args)
+        def mock_setLayout(self, *args):
+            print('called widget.setLayout()')
         def mock_setWindowIcon(self, *args):
             print('called widget.setWindowIcon()')
         def mock_resize(self, *args):
             print('called widget.resize()')
         def mock_setup_stashmenu(self, *args):
             print('called widget.setup_stashmenu()')
-        def mock_setLayout(self, *args):
-            print('called widget.setLayout()')
         def mock_addAction(self, *args):
             print('called widget.addAction()')
         monkeypatch.setattr(check_repo.qtw, 'QApplication', mockqtw.MockApplication)
@@ -381,7 +373,7 @@ class TestGui:
 
     def test_populate_frame(self, monkeypatch, capsys, expected_output):
         def mock_setWindowTitle(self, *args):
-            print('called QWidget.setWindowTitle() with args `{}`'.format(args))
+            print('called QWidget.setWindowTitle() with args', args)
         def mock_setWindowIcon(self, *args):
             print('called QWidget.setWindowIcon()`')
         monkeypatch.setattr(check_repo.subprocess, 'run', mock_sp_run)
@@ -408,8 +400,6 @@ class TestGui:
                                            'called ListItem.__init__\n')
 
     def test_edit_selected(self, monkeypatch, capsys, testobj):
-        def mock_just_run(command):
-            print('call just_run() for `{}`'.format(command))
         def mock_get_selected():
             return ('', 'file1'), ('' ,'file2')
         monkeypatch.setattr(testobj, 'get_selected_files', mock_get_selected)
@@ -420,12 +410,8 @@ class TestGui:
                                            'called Gui.refresh_frame()\n')
 
     def test_diff_all(self, monkeypatch, capsys, testobj):
-        def mock_just_run(command):
-            print('call just_run() for `{}`'.format(command))
         def mock_just_run_exc(command):
             raise OSError('run commando gaat fout')
-        def mock_information(self, title, message):
-            print('display message `{}`'.format(message))
         monkeypatch.setattr(check_repo.qtw.QMessageBox, 'information', mock_information)
 
         monkeypatch.setattr(testobj, 'just_run', mock_just_run)
@@ -452,19 +438,15 @@ class TestGui:
         def mock_filter_tracked(*args):
             print('call filter_tracked()')
             return list(*args)
-        def mock_just_run(command):
-            print('call just_run() for `{}`'.format(command))
         def mock_just_run_exc(command):
-            print('call just_run() for `{}`'.format(command))
+            print(f'call just_run() for `{command}`')
             raise OSError
         def mock_run_and_capture(command):
-            print('call run_and_capture() for `{}`'.format(command))
+            print(f'call run_and_capture() for `{command}`')
             return ['out', 'put'], []
         def mock_run_and_capture_err(command):
-            print('call run_and_capture() for `{}`'.format(command))
+            print(f'call run_and_capture() for `{command}`')
             return ['', ''], ['er', 'ror']
-        def mock_information(self, title, message):
-            print('display message `{}`'.format(message))
         class MockDiffView:
             def __init__(self, *args):
                 print('call DiffViewDialog with args', args[1:])
@@ -510,7 +492,7 @@ class TestGui:
 
     def test_add_ignore(self, monkeypatch, capsys, tmp_path, testobj):
         def mock_filter(*args):
-            print('called Gui.filter_tracked() for `{}`'.format(args))
+            print('called Gui.filter_tracked() with args', args)
             return 'file1', 'file2'
         def mock_get_selected():
             print('called Gui.get_selected_files')
@@ -601,23 +583,23 @@ class TestGui:
         monkeypatch.setattr(mockqtw.MockDialog, 'exec_', lambda *x: check_repo.qtw.QDialog.Rejected)
         monkeypatch.setattr(check_repo, 'FriendlyReminder', mockqtw.MockDialog)
         testobj.commit_all()
-        assert capsys.readouterr().out == 'called Dialog.__init__ with args `()`\n'
+        assert capsys.readouterr().out == 'called Dialog.__init__ with args ()\n'
         monkeypatch.setattr(mockqtw.MockDialog, 'exec_', lambda *x: check_repo.qtw.QDialog.Accepted)
         monkeypatch.setattr(check_repo, 'FriendlyReminder', mockqtw.MockDialog)
         testobj.commit_all()
-        assert capsys.readouterr().out == ('called Dialog.__init__ with args `()`\n'
+        assert capsys.readouterr().out == ('called Dialog.__init__ with args ()\n'
                                            "run_and_report with args:"
                                            " ['git', 'commit', '-a', '-m', 'commit_message']\n"
                                            'called Gui.refresh_frame()\n')
         testobj.repotype = 'hg'
         testobj.commit_all()
-        assert capsys.readouterr().out == ('called Dialog.__init__ with args `()`\n'
+        assert capsys.readouterr().out == ('called Dialog.__init__ with args ()\n'
                                            "run_and_report with args:"
                                            " ['hg', 'commit', '-m', 'commit_message']\n"
                                            'called Gui.refresh_frame()\n')
         monkeypatch.setattr(check_repo.qtw.QInputDialog, 'getText', mock_gettext_nok)
         testobj.commit_all()
-        assert capsys.readouterr().out == 'called Dialog.__init__ with args `()`\n'
+        assert capsys.readouterr().out == 'called Dialog.__init__ with args ()\n'
 
     def test_commit_selected(self, monkeypatch, capsys, testobj):
         def mock_get_selected(self):
@@ -675,13 +657,13 @@ class TestGui:
         monkeypatch.setattr(check_repo.Gui, 'get_selected_files', mock_get_selected)
         testobj.commit_selected()
         assert capsys.readouterr().out == ('call get_selected_filenames()\n'
-                                           'called Dialog.__init__ with args `()`\n')
+                                           'called Dialog.__init__ with args ()\n')
 
         monkeypatch.setattr(mockqtw.MockDialog, 'exec_', lambda *x: check_repo.qtw.QDialog.Accepted)
         #monkeypatch.setattr(check_repo.Gui, 'get_selected_files', mock_get_selected)
         testobj.commit_selected()
         assert capsys.readouterr().out == ('call get_selected_filenames()\n'
-                                           'called Dialog.__init__ with args `()`\n'
+                                           'called Dialog.__init__ with args ()\n'
                                            'call filter_tracked()\n'
                                            "run_and_report with args:"
                                            " ['git', 'add', 'file1', 'file2.py', 'test_file3.py']\n"
@@ -693,7 +675,7 @@ class TestGui:
         testobj.repotype = 'hg'
         testobj.commit_selected()
         assert capsys.readouterr().out == ('call get_selected_filenames()\n'
-                                           'called Dialog.__init__ with args `()`\n'
+                                           'called Dialog.__init__ with args ()\n'
                                            'call filter_tracked()\n'
                                            "run_and_report with args: ['hg', 'commit', 'file1',"
                                            " 'file2.py', 'test_file3.py', '-m', 'commit_message']\n"
@@ -702,12 +684,10 @@ class TestGui:
         monkeypatch.setattr(check_repo.qtw.QInputDialog, 'getText', mock_gettext_nok)
         testobj.commit_selected()
         assert capsys.readouterr().out == ('call get_selected_filenames()\n'
-                                           'called Dialog.__init__ with args `()`\n'
+                                           'called Dialog.__init__ with args ()\n'
                                            'call filter_tracked()\n')
 
     def test_amend_commit(self, monkeypatch, capsys, testobj):
-        def mock_information(self, title, message):
-            print('display message `{}`'.format(message))
         def mock_runc(self, *args):
             print('run_and_capture with args:', *args)
             return (('commit_message', ''), '')
@@ -806,8 +786,6 @@ class TestGui:
             return list(*args)
         def mock_run(self, *args):
             print('run with args:', *args)
-        def mock_information(self, title, message):
-            print('display message `{}`'.format(message))
         monkeypatch.setattr(check_repo.Gui, 'just_run', mock_run)
         monkeypatch.setattr(check_repo.Gui, 'filter_tracked', mock_filter_tracked)
         monkeypatch.setattr(check_repo.Gui, 'get_selected_files', mock_get_selected_none)
@@ -834,8 +812,8 @@ class TestGui:
             print('run with args:', *args)
         monkeypatch.setattr(check_repo.Gui, 'just_run', mock_run)
         testobj.lint_all()
-        assert capsys.readouterr().out == ("run with args: ['lintergui', '-m', 'permissive', '-d',"
-                                           " '.']\n")
+        assert capsys.readouterr().out == ("run with args: ['lintergui', '-m', 'permissive', '-r',"
+                                           " 'base']\n")
 
     def test_annotate(self, monkeypatch, capsys, testobj):
         def mock_get_selected(self):
@@ -853,8 +831,6 @@ class TestGui:
         def mock_run_err(self, *args):
             print('run_and_capture with args:', *args)
             return [], ['blame', 'error']
-        def mock_information(self, title, message):
-            print('display message `{}`'.format(message))
         class MockDialog:
             def __init__(self, *args):
                 self.parent = args[0]
@@ -888,8 +864,6 @@ class TestGui:
                 'display message `blame\nerror`\n')
 
     def test_filter_tracked(self, monkeypatch, capsys, testobj):
-        def mock_information(self, title, message):
-            print('display message `{}`'.format(message))
         monkeypatch.setattr(check_repo.qtw.QMessageBox, 'information', mock_information)
         assert testobj.filter_tracked([('?', 'file1'), ('', 'file2'), ('??', 'file3'),
             ('M ', 'file4')]) == ['file2', 'file4']
@@ -918,8 +892,6 @@ class TestGui:
         def mock_run_err(self, *args):
             print('run_and_capture with args:', *args)
             return [], ['branch', 'error']
-        def mock_information(self, title, message):
-            print('display message `{}`'.format(message))
         monkeypatch.setattr(check_repo.qtw.QMessageBox, 'information', mock_information)
         monkeypatch.setattr(check_repo.Gui, 'run_and_capture', mock_run_err)
         testobj.update_branches()
@@ -943,8 +915,6 @@ class TestGui:
         assert capsys.readouterr().out == ''
 
     def test_create_branch(self, monkeypatch, capsys, testobj):
-        def mock_information(self, title, message):
-            print('display message `{}`'.format(message))
         def mock_currenttext():
             print('called ComboBox.currentText')
             return 'current'
@@ -981,8 +951,6 @@ class TestGui:
                 'display message `Enter a new branch name in the combobox first`\n')
 
     def test_switch2branch(self, monkeypatch, capsys, testobj):
-        def mock_information(self, title, message):
-            print('display message `{}`'.format(message))
         def mock_currenttext():
             print('called ComboBox.currentText')
             return 'current'
@@ -1016,13 +984,11 @@ class TestGui:
                 'display message `Select a branch different from the current one first`\n')
 
     def test_merge_branch(self, monkeypatch, capsys, testobj):
-        def mock_information(self, title, message):
-            print('display message `{}`'.format(message))
         def mock_question(self, title, message):
-            print('display question `{}`'.format(message))
+            print(f'display question `{message}`')
             return 'not_yes'
         def mock_question_yes(self, title, message):
-            print('display question `{}`'.format(message))
+            print(f'display question `{message}`')
             return check_repo.qtw.QMessageBox.Yes
         def mock_currenttext():
             print('called ComboBox.currentText')
@@ -1094,8 +1060,6 @@ class TestGui:
                 'called Menu.addAction\n')
 
     def test_stash_push(self, monkeypatch, capsys, testobj):
-        def mock_information(self, title, message):
-            print('display message `{}`'.format(message))
         def mock_run(self, *args):
             print('run_and_report with args:', *args)
         monkeypatch.setattr(check_repo.qtw.QMessageBox, 'information', mock_information)
@@ -1114,8 +1078,6 @@ class TestGui:
         def mock_run_err(self, *args):
             print('run_and_capture with args:', *args)
             return [], ['stash', 'error']
-        def mock_information(self, title, message):
-            print('display message `{}`'.format(message))
         def mock_getitem(self, title, message, items):
             print('call InputDialog.getItem()')
             return 'stash-name: ', True
@@ -1261,21 +1223,19 @@ class TestGui:
         def mock_run_err(*args, **kwargs):
             print('run with args:', args, kwargs)
             return types.SimpleNamespace(stdout=None, stderr=b'got\nan\nerror\n')
-        def mock_information(self, title, message):
-            print('display message `{}`'.format(message))
         def mock_warning(self, title, message):
-            print('display warning `{}`'.format(message))
+            print(f'display warning `{message}`')
         monkeypatch.setattr(check_repo.subprocess, 'run', mock_run)
         monkeypatch.setattr(check_repo.qtw.QMessageBox, 'information', mock_information)
         monkeypatch.setattr(check_repo.qtw.QMessageBox, 'warning', mock_warning)
         testobj.run_and_report(['command', 'list'])
-        assert capsys.readouterr().out == ("run with args: (['command', 'list'],) {'stdout': -1,"
-                                           " 'stderr': -1, 'cwd': 'base', 'check': False}\n"
+        assert capsys.readouterr().out == ("run with args: (['command', 'list'],) {'capture_output':"
+                                           " True, 'cwd': 'base', 'check': False}\n"
                                            'display message `all\nwent\nwell`\n')
         monkeypatch.setattr(check_repo.subprocess, 'run', mock_run_err)
         testobj.run_and_report(['command', 'list'])
-        assert capsys.readouterr().out == ("run with args: (['command', 'list'],) {'stdout': -1,"
-                                           " 'stderr': -1, 'cwd': 'base', 'check': False}\n"
+        assert capsys.readouterr().out == ("run with args: (['command', 'list'],) {'capture_output':"
+                                           " True, 'cwd': 'base', 'check': False}\n"
                                            'display warning `got\nan\nerror`\n')
 
     def test_run_and_capture(self, monkeypatch, capsys, testobj):
@@ -1287,9 +1247,9 @@ class TestGui:
             return types.SimpleNamespace(stdout=None, stderr=b'got\nan\nerror\n')
         monkeypatch.setattr(check_repo.subprocess, 'run', mock_run)
         assert testobj.run_and_capture(['command', 'list']) == (['all', 'went', 'well'], [])
-        assert capsys.readouterr().out == ("run with args: (['command', 'list'],) {'stdout': -1,"
-                                           " 'stderr': -1, 'cwd': 'base', 'check': False}\n")
+        assert capsys.readouterr().out == ("run with args: (['command', 'list'],) {'capture_output':"
+                                           " True, 'cwd': 'base', 'check': False}\n")
         monkeypatch.setattr(check_repo.subprocess, 'run', mock_run_err)
         assert testobj.run_and_capture(['command', 'list']) == ([], ['got', 'an', 'error'])
-        assert capsys.readouterr().out == ("run with args: (['command', 'list'],) {'stdout': -1,"
-                                           " 'stderr': -1, 'cwd': 'base', 'check': False}\n")
+        assert capsys.readouterr().out == ("run with args: (['command', 'list'],) {'capture_output':"
+                                           " True, 'cwd': 'base', 'check': False}\n")

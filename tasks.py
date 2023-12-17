@@ -4,9 +4,10 @@ import os
 import os.path
 import stat
 import datetime
+import contextlib
 from invoke import task, Collection
 
-import settings
+# import settings
 import session
 import repo
 import tags
@@ -119,10 +120,8 @@ def arcstuff(c, names):
                     continue
                 if not line or line.startswith('#'):
                     continue
-                try:
+                with contextlib.suppress(ValueError):
                     line, rest = line.split('#', 1)
-                except ValueError:
-                    pass
                 path = os.path.join(prepend, line) if prepend else line
                 command = f'{command} {path.strip()}'
         c.run(command)
@@ -145,10 +144,8 @@ def chmodrecursive(c, path=None):
             continue
         fnaam = os.path.join(path, entry)
         if os.path.isfile(fnaam):
-            try:
+            with contextlib.suppress(PermissionError):
                 os.chmod(fnaam, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH)
-            except PermissionError:
-                pass
         elif os.path.islink(fnaam):
             continue
         elif os.path.isdir(fnaam):

@@ -26,10 +26,7 @@ def init(c, project, language, check=False):
     if not base:
         print('unknown project')
         return
-    if language == '.':
-        langs = ['en', 'nl']
-    else:
-        langs = language.split(',')
+    langs = ['en', 'nl'] if language == '.' else language.split(',')
     # print(project, language, langs, check)
     # create locale subdirectory
     newpath = os.path.join(base, 'locale')
@@ -93,10 +90,7 @@ def gettext(c, project, source):
             return
     with c.cd(base):
         c.run(f"pygettext {source}")
-        if source == '.':
-            source = 'all'
-        else:
-            source = source.replace('.', '-').replace('/', '-')
+        source = 'all' if source == '.' else source.replace('.', '-').replace('/', '-')
         outfile = f'locale/messages-{source}.pot'
         c.run(f'mv messages.pot {outfile}')
         print(f'created {outfile}')
@@ -113,10 +107,7 @@ def merge(c, project, language, source):
     if not base:
         print('unknown project')
         return
-    if source == '.':
-        source = 'all'
-    else:
-        source = source.replace('.', '-').replace('/', '-')
+    source = 'all' if source == '.' else source.replace('.', '-').replace('/', '-')
     with c.cd(os.path.join(base, 'locale')):
         langfile = f"{language}.po"
         catfile = f'messages-{source}.pot'
@@ -138,7 +129,7 @@ def poedit(c, project, language):
     fnaam = os.path.join('locale', f"{language}.po")
     command = 'poedit'
     if os.path.exists(os.path.join(base, fnaam)):
-        command = ' '.join((command, fnaam))
+        command = f'{command} {fnaam}'
     with c.cd(base):
         c.run(command)
 

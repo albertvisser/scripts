@@ -19,7 +19,7 @@ def main(temp_file):
         path = pathlib.Path(line.strip())
         root = path.parent
         first, last = path.name.rsplit(' ', 1)
-        newpath = root / ', '.join((last, first))
+        newpath = root / f'{last}, {first}'
         path.rename(newpath)
 
 

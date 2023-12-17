@@ -1,6 +1,4 @@
-import os
 import pytest
-import types
 from invoke import MockContext
 import lang
 
@@ -14,7 +12,7 @@ def run_in_dir(self, *args, **kwargs):
 
 
 def test_get_base_dir(monkeypatch, capsys):
-    monkeypatch.setattr(lang, 'get_project_dir', lambda x: 'project_dir for {}'.format(x))
+    monkeypatch.setattr(lang, 'get_project_dir', lambda x: f'project_dir for {x}')
     monkeypatch.setattr(lang.os, 'getcwd', lambda: 'path/to/here')
     assert lang.get_base_dir('.') == 'project_dir for here'
     assert lang.get_base_dir('project') == 'project_dir for project'

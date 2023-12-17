@@ -35,10 +35,7 @@ def list_repofiles(c, name):
 def build(c, names):
     """build tags file for repository (by name or ".")
     """
-    if not names:
-        names = all_repos
-    else:
-        names = names.split(',')
+    names = all_repos if not names else names.split(',')
     for name in names:
         path, files = list_repofiles(c, name)
         if path:
@@ -67,29 +64,21 @@ def check_changes(path, files):
 def check(c, names):
     """check if rebuilding tags file is necessary
     """
-    if not names:
-        names = all_repos
-    else:
-        names = names.split(',')
+    names = all_repos if not names else names.split(',')
     for name in names:
         path, files = list_repofiles(c, name)
-        if path:
-            if check_changes(path, files):
-                print('.tags file rebuild needed for project', name)
+        if path and check_changes(path, files):
+            print('.tags file rebuild needed for project', name)
 
 
 @task(help={'names': 'comma-separated list of repos'})
 def update(c, names):
     """rebuild tags file for repository (by name or ".") if necessary
     """
-    if not names:
-        names = all_repos
-    else:
-        names = names.split(',')
+    names = all_repos if not names else names.split(',')
     for name in names:
         path, files = list_repofiles(c, name)
-        if path:
-            if check_changes(path, files):
-                print('rebuilding .tags file for project', name)
-                with c.cd(path):
-                    c.run('ctags -f .tags ' + ' '.join(files))
+        if path and check_changes(path, files):
+            print('rebuilding .tags file for project', name)
+            with c.cd(path):
+                c.run('ctags -f .tags ' + ' '.join(files))

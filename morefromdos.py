@@ -12,7 +12,7 @@ def fromdos(path, cmp_ext='.py'):
     """apply program "fromdos" to multiple files in a directory
     """
     for command in ['fromdos', 'dos2unix']:
-        result = sp.run(['which', command])
+        result = sp.run(['which', command], check=False)
         if result.returncode == 0:
             break
     else:
@@ -24,7 +24,7 @@ def fromdos(path, cmp_ext='.py'):
         fullname = os.path.join(path, file)
         name, ext = os.path.splitext(file)
         if os.path.isfile(fullname) and (ext == cmp_ext or (cmp_ext == '.' and ext == '')):
-            sp.run([command, fullname])
+            sp.run([command, fullname], check=False)
 
 
 def main(args):

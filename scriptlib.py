@@ -2,6 +2,7 @@
 """
 import pathlib
 import shutil
+import contextlib
 from invoke import task
 from configparser import ConfigParser, DuplicateSectionError
 
@@ -117,10 +118,8 @@ def disable(c, name):
         print(f'{name} is already disabled')
         return
     other_section = section + '.disabled'
-    try:
+    with contextlib.suppress(DuplicateSectionError):
         lib.data.add_section(other_section)
-    except DuplicateSectionError:
-        pass
     scriptlet = lib.data[section][name]
     lib.data.remove_option(section, name)
     lib.data.set(section, name, scriptlet)
@@ -136,7 +135,7 @@ def enable(c, name):
     if not section.endswith('disabled'):
         print(f'{name} is not disabled')
         return
-    other_section = section.rsplit('.', 1)[0]
+    # other_section = section.rsplit('.', 1)[0]  # - was dit nog ergens voor?
     scriptlet = lib.data[section][name]
     lib.data.remove_option(section, name)
     lib.data.set(section, name, scriptlet)
@@ -182,9 +181,9 @@ def check_file(lib, name):
                 actual_version = actual_version[8:]
     else:
         actual_version = '\n'.join([x.lstrip() for x in path.read_text().split('\n')]).strip()
-        if section != 'scripts':  # negeer shebang als dat nodig is
-            if actual_version.startswith('#!'):
-                actual_version = actual_version.split('\n', 1)[1].lstrip()
+        # negeer shebang als dat nodig is
+        if section != 'scripts' and actual_version.startswith('#!'):
+            actual_version = actual_version.split('\n', 1)[1].lstrip()
 
     return library_version, actual_version
 
@@ -215,9 +214,8 @@ def build_descdict(readme):
                     descdict[name] = desc
                     desc = []
                 name = line.strip('*')
-            else:
-                if line.startswith(' '):
-                    desc.append(line.lstrip())
+            elif line.startswith(' '):
+                desc.append(line.lstrip())
         if desc:
             descdict[name] = desc
     return descdict

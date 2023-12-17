@@ -1,6 +1,4 @@
 import types
-import copy
-import contextlib
 import pytest
 import scriptlib as testee
 from invoke import MockContext
@@ -43,8 +41,8 @@ class MockLib:
         # gelezen kan worden
         contents = []
         for name1 in self.data.sections():
-            for name2 in self.data.options(nname1):
-                contents.append(i(str(name), str(name2), self.data.get()))
+            for name2 in self.data.options(name1):
+                contents.append((str(name1), str(name2), self.data.get()))
 
 
 def test_add(monkeypatch, capsys):
@@ -350,7 +348,7 @@ def test_check_file(monkeypatch, capsys):
     monkeypatch.setattr(testee.pathlib.Path, 'read_text', mock_readfile)
     lib = types.SimpleNamespace(find=mock_find, data={'here': {'this': 'old'}})
     assert testee.check_file(lib, 'here') == (None, None)
-    assert capsys.readouterr().out == f"called ScriptLib.find with args ('here',)\n"
+    assert capsys.readouterr().out == "called ScriptLib.find with args ('here',)\n"
 
     lib = types.SimpleNamespace(find=lambda *x: 'symlinks', basepath=testee.pathlib.Path('bin'),
                                 data={'symlinks': {'here': 'old'}})

@@ -1,8 +1,8 @@
 import pytest
 
 check_text = """\
-called dialog.__init()__ with args `()`
-called dialog.setWindowTitle() with args `('title',)`
+called dialog.__init()__ with args ()
+called dialog.setWindowTitle() with args ('title',)
 called VBox.__init__
 called HBox.__init__
 called CheckBox.__init__
@@ -30,8 +30,8 @@ called VBox.addLayout with arg of type <class 'mockgui.mockqtwidgets.MockHBoxLay
 called dialog.setLayout()
 """
 diff_view = """\
-called dialog.__init()__ with args `()`
-called dialog.setWindowTitle() with args `('title',)`
+called dialog.__init()__ with args ()
+called dialog.setWindowTitle() with args ('title',)
 called dialog.resize()
 called VBox.__init__
 called HBox.__init__
@@ -79,8 +79,8 @@ called Action.setShortcut with arg `Esc`
 called dialog.addAction()
 """
 friendly_reminder = """\
-called dialog.__init()__ with args `()`
-called dialog.setWindowTitle() with args `('Friendly Reminder',)`
+called dialog.__init()__ with args ()
+called dialog.setWindowTitle() with args ('Friendly Reminder',)
 called VBox.__init__
 called Label.__init__ with args ('* Did you lint the files to be committed?',)
 called VBox.addWidget with arg of type <class 'mockgui.mockqtwidgets.MockLabel'>
@@ -104,8 +104,8 @@ called dialog.setLayout()
 """
 main_gui = """\
 called Application.__init__
-called widget.__init()__ with args `()`
-called widget.setWindowTitle() with args `('Uncommitted changes for `base`',)`
+called widget.__init()__ with args ()
+called widget.setWindowTitle() with args ('Uncommitted changes for `base`',)
 called Icon.__init__ with arg `/home/albert/.icons/task.png`
 called widget.setWindowIcon()
 called VBox.__init__

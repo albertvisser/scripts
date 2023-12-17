@@ -18,14 +18,14 @@ def test_main(monkeypatch, capsys):
     assert capsys.readouterr().out == 'too many arguments\n'
 
 def test_fromdos_err(monkeypatch, capsys):
-    def mock_run_err(*args):
+    def mock_run_err(*args, **kwargs):
         return SimpleNamespace(returncode=1)
     monkeypatch.setattr(morefromdos.sp, 'run', mock_run_err)
     assert morefromdos.fromdos('dirname') == 'please install `fromdos` or `dos2unix`'
 
 def test_fromdos(monkeypatch, capsys):
     counter = 0
-    def mock_run(*args):
+    def mock_run(*args, **kwargs):
         nonlocal counter
         counter += 1
         if counter == 1:
@@ -35,7 +35,7 @@ def test_fromdos(monkeypatch, capsys):
         return 'file1.py', 'file2.py', 'file3', 'file4.js'
     monkeypatch.setattr(morefromdos.sp, 'run', mock_run)
     monkeypatch.setattr(morefromdos.os, 'listdir', mock_listdir)
-    monkeypatch.setattr(morefromdos.os.path, 'abspath', lambda x: '/'.join(('abspath', x)))
+    monkeypatch.setattr(morefromdos.os.path, 'abspath', lambda x: f'abspath/{x}')
     monkeypatch.setattr(morefromdos.os.path, 'isfile', lambda x: True)
     morefromdos.fromdos('dirname')
     assert capsys.readouterr().out == (
@@ -44,7 +44,7 @@ def test_fromdos(monkeypatch, capsys):
 
 def test_fromdos_ext(monkeypatch, capsys):
     counter = 0
-    def mock_run(*args):
+    def mock_run(*args, **kwargs):
         nonlocal counter
         counter += 1
         if counter == 1:
@@ -54,17 +54,19 @@ def test_fromdos_ext(monkeypatch, capsys):
         return 'file1.py', 'file2.py', 'file3', 'file4.js'
     monkeypatch.setattr(morefromdos.sp, 'run', mock_run)
     monkeypatch.setattr(morefromdos.os, 'listdir', mock_listdir)
-    monkeypatch.setattr(morefromdos.os.path, 'abspath', lambda x: '/'.join(('abspath', x)))
+    monkeypatch.setattr(morefromdos.os.path, 'abspath', lambda x: f'abspath/{x}')
     monkeypatch.setattr(morefromdos.os.path, 'isfile', lambda x: True)
-    morefromdos.fromdos('dirname', 'js') == (
+    morefromdos.fromdos('dirname', 'js')
+    assert capsys.readouterr().out == (
             "called subprocess.run() with args (['fromdos', 'abspath/dirname/file4.js'],)\n")
     counter = 0
-    morefromdos.fromdos('dirname', '.js') == (
+    morefromdos.fromdos('dirname', '.js')
+    assert capsys.readouterr().out == (
             "called subprocess.run() with args (['fromdos', 'abspath/dirname/file4.js'],)\n")
 
 def test_fromdos_noext(monkeypatch, capsys):
     counter = 0
-    def mock_run(*args):
+    def mock_run(*args, **kwargs):
         nonlocal counter
         counter += 1
         if counter == 1:
@@ -74,10 +76,12 @@ def test_fromdos_noext(monkeypatch, capsys):
         return 'file1.py', 'file2.py', 'file3', 'file4.js'
     monkeypatch.setattr(morefromdos.sp, 'run', mock_run)
     monkeypatch.setattr(morefromdos.os, 'listdir', mock_listdir)
-    monkeypatch.setattr(morefromdos.os.path, 'abspath', lambda x: '/'.join(('abspath', x)))
+    monkeypatch.setattr(morefromdos.os.path, 'abspath', lambda x: f'abspath/{x}')
     monkeypatch.setattr(morefromdos.os.path, 'isfile', lambda x: True)
-    morefromdos.fromdos('dirname', '') == (
+    morefromdos.fromdos('dirname', '')
+    assert capsys.readouterr().out == (
             "called subprocess.run() with args (['fromdos', 'abspath/dirname/file3'],)\n")
     counter = 0
-    morefromdos.fromdos('dirname', '.') == (
+    morefromdos.fromdos('dirname', '.')
+    assert capsys.readouterr().out == (
             "called subprocess.run() with args (['fromdos', 'abspath/dirname/file3'],)\n")

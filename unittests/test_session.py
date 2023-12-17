@@ -276,23 +276,26 @@ def test_get_start_end_pids(monkeypatch, capsys):
 
 
 def test_check_process(monkeypatch, capsys):
-    testee.check_process(types.SimpleNamespace(info={'name': 'x'}), True) == (False, False, True)
-    testee.check_process(types.SimpleNamespace(info={'name': 'x'}), False) == (False, False, False)
-    testee.check_process(types.SimpleNamespace(info={'name': 'python3',
-                                                     'cmdline': ['', 'check-repo']}),
-                         'x') == (False, True, 'x')
-    testee.check_process(types.SimpleNamespace(info={'name': 'python3', 'cmdline': ['', 'afrift']}),
-                         'x') == (False, True, 'x')
-    testee.check_process(types.SimpleNamespace(info={'name': 'python3', 'cmdline': ['', 'doctree']}),
-                         'x') == (False, True, 'x')
-    testee.check_process(types.SimpleNamespace(info={'name': 'python3', 'cmdline': ['', 'xx']}),
-                         'x') == (True, False, 'x')
-    testee.check_process(types.SimpleNamespace(info={'name': 'vim', 'cmdline': ['', 'xx/yy']}),
-                         'x') == (False, True, 'x')
-    testee.check_process(types.SimpleNamespace(info={'name': 'vim', 'cmdline': ['', '/xx/yy']}),
-                         'x') == (True, False, 'x')
-    testee.check_process(types.SimpleNamespace(info={'name': 'bash'}), True) == (False, True, True)
-    testee.check_process(types.SimpleNamespace(info={'name': 'bash'}), False) == (False, True, True)
+    testproc = types.SimpleNamespace(info={'name': 'x'})
+    assert testee.check_process(testproc, True) == (False, False, True)
+    testproc = types.SimpleNamespace(info={'name': 'x'})
+    assert testee.check_process(testproc, False) == (False, False, False)
+    testproc = types.SimpleNamespace(info={'name': 'python3', 'cmdline': ['', 'check-repo']})
+    assert testee.check_process(testproc, 'x') == (False, True, 'x')
+    testproc = types.SimpleNamespace(info={'name': 'python3', 'cmdline': ['', 'afrift']})
+    assert testee.check_process(testproc, 'x') == (False, True, 'x')
+    testproc = types.SimpleNamespace(info={'name': 'python3', 'cmdline': ['', 'doctree']})
+    assert testee.check_process(testproc, 'x') == (False, True, 'x')
+    testproc = types.SimpleNamespace(info={'name': 'python3', 'cmdline': ['', 'xx']})
+    assert testee.check_process(testproc, 'x') == (True, False, 'x')
+    testproc = types.SimpleNamespace(info={'name': 'vim', 'cmdline': ['', 'xx/yy']})
+    assert testee.check_process(testproc, 'x') == (False, True, 'x')
+    testproc = types.SimpleNamespace(info={'name': 'vim', 'cmdline': ['', '/xx/yy']})
+    assert testee.check_process(testproc, 'x') == (True, False, 'x')
+    testproc = types.SimpleNamespace(info={'name': 'bash'})
+    assert testee.check_process(testproc, True) == (True, False, True)  # niet (False, True, True)
+    testproc = types.SimpleNamespace(info={'name': 'bash'})
+    assert testee.check_process(testproc, False) == (False, True, True)
 
 
 def test_edit_old(monkeypatch, capsys):

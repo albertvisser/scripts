@@ -47,7 +47,7 @@ def dump_mongo(c, names=''):
         return
     for name in names.split(','):
         # result = c.run('mongodump -d {} -o ~/mongodump/{}/'.format(name, date))
-        result = c.run(f'mongodump -d {name}_database -o {path}/')
+        c.run(f'mongodump -d {name}_database -o {path}/')
 
 
 @task
@@ -111,7 +111,7 @@ def restore_pg(c, filename):
     "restore postgres database)s) from given file (named like <EEjjmmdd>/<database>-<hhmmss>.sql)"
     # breakpoint()
     filepath = pathlib.Path(filename)
-    if len(filepath.parents) <= 2:
+    if len(filepath.parents) <= len(['more than', 'one']):
         filepath = pathlib.Path('~/pgdump') / filename
     if filepath.suffix != '.sql':
         print('filename should end in .sql')

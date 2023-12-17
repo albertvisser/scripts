@@ -118,11 +118,10 @@ class Check:
             if self.is_gitrepo or self.is_private:
                 pwd = os.path.join(root.replace('hg_', 'git-'), name)
                 root = root.replace('hg_', 'git-')
+        elif self.is_private:
+            pwd = os.path.join(root, private_repos[name])
         else:
-            if self.is_private:
-                pwd = os.path.join(root, private_repos[name])
-            else:
-                pwd = os.path.join(root, 'projects', name)
+            pwd = os.path.join(root, 'projects', name)
         return pwd, root
 
     def register_uncommitted(self, pwd):
@@ -174,10 +173,7 @@ class Check:
             with self.c.cd(pwd):
                 result = self.c.run(command, warn=True, hide=True)
                 # print(result, result.ok, result.stdout, result.stderr)
-                if not_hg:
-                    outgoing = result.stdout.strip()
-                else:
-                    outgoing = result.ok
+                outgoing = result.stdout.strip() if not_hg else result.ok
         if outgoing:
             stats_append = 'outgoing changes'
             writestuff = f'outgoing changes for {name}\n'
@@ -304,10 +300,7 @@ def overview(c, names=None, outtype=''):
     root = get_project_root('bb')  # '/home/albert/hg_repos'
     # root = get_project_root('git')  # '/home/albert/git_repos'
     # root = get_project_root('local')  # '/home/albert/projects'
-    if not names:
-        names = list(os.listdir(root))
-    else:
-        names = names.split(',')
+    names = list(os.listdir(root)) if not names else names.split(',')
     for item in names:
         path = os.path.join(root, item)
         outdir = repo_overzicht(c, item, path, outtype)
@@ -409,7 +402,7 @@ def make_repo_ovz(outdict, outfile):
     output: the specified file as written to disk
     """
     with open(outfile, "w") as _out:
-        for key in outdict.keys():
+        for key in outdict:
             _out.write('{}: {}\n'.format(outdict[key]['date'], '\n'.join(outdict[key]['desc'])))
             try:
                 for item in outdict[key]['files']:
@@ -475,10 +468,7 @@ def add2gitweb(c, name, frozen=False):
             olddesc = ''
     else:
         olddesc = ''
-    if origdescfile.exists():
-        gitr_desc = origdescfile.read_text()
-    else:
-        gitr_desc = ''
+    gitr_desc = origdescfile.read_text() if origdescfile.exists() else ''
     if olddesc == '':
         desc = gitr_desc or get_repodesc()
     if olddesc == '':

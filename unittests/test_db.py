@@ -1,7 +1,5 @@
-import os
 import pytest
 import datetime
-import types
 from invoke import MockContext
 import db
 
@@ -55,11 +53,13 @@ def test_dump_mongo(monkeypatch, capsys):
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
     db.dump_mongo(c)
-    assert capsys.readouterr().out == ("called mkdir with args () {'parents': True, 'exist_ok': True}\n"
-                                       'mongodump -o ~/mongodump/20200101-000000/\n')
+    assert capsys.readouterr().out == (
+            "called mkdir with args () {'parents': True, 'exist_ok': True}\n"
+            'mongodump -o ~/mongodump/20200101-000000/\n')
     db.dump_mongo(c, 'database')
-    assert capsys.readouterr().out == ("called mkdir with args () {'parents': True, 'exist_ok': True}\n"
-                                       'mongodump -d database -o ~/mongodump/20200101-000000/\n')
+    assert capsys.readouterr().out == (
+            "called mkdir with args () {'parents': True, 'exist_ok': True}\n"
+            'mongodump -d database_database -o ~/mongodump/20200101-000000/\n')
 
 
 def test_list_mongodumps(monkeypatch, capsys):
@@ -121,7 +121,7 @@ def test_list_pgdumps(monkeypatch, capsys):
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
     db.list_pgdumps(c)
-    assert capsys.readouterr().out == 'ls -RU1 ~/pgdump\n'
+    assert capsys.readouterr().out == 'ls -R1 ~/pgdump\n'
 
 
 def test_restore_pg(monkeypatch, capsys):

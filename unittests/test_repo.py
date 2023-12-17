@@ -43,7 +43,7 @@ def test_get_repofiles(monkeypatch, capsys):
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
     assert testee.get_repofiles(c, '.') == (os.getcwd(), ['file2.py', 'file4.py'])
-    assert capsys.readouterr().out == 'git ls-tree -r --name-only master in {}\n'.format(os.getcwd())
+    assert capsys.readouterr().out == f'git ls-tree -r --name-only master in {os.getcwd()}\n'
 
     assert testee.get_repofiles(c, 'x') == ('path/to/repo', ['file2.py', 'file4.py'])
     assert capsys.readouterr().out == 'git ls-tree -r --name-only master in path/to/repo\n'
@@ -345,7 +345,8 @@ def test_check_local(monkeypatch, capsys):
     testee.check_local(c)
     assert capsys.readouterr().out == ("call Check() with args () {}\ncall Check.run()\n"
                                        "use 'check-repo <reponame>' to inspect changes\n"
-                                       "    'binfab repo.check-local-changes` for log\n"
+                                       "    'binfab repo.check-local-changes` (or `repolog`)"
+                                       " for log\n"
                                        "    'binfab repo.check-local-notes` for remarks\n")
 
 
@@ -415,7 +416,7 @@ def test_overview(monkeypatch, capsys):
         return 'output directory'
     # monkeypatch.setattr(repo.os.path, 'isdir', lambda x: False)
     c = MockContext()
-    testee.overview(c, 'proj', 'x') == ''
+    testee.overview(c, 'proj', 'x')
     assert capsys.readouterr().out == 'wrong spec for output type\n'
 
     monkeypatch.setattr(testee, 'get_project_root', lambda x: 'project_root')
@@ -689,7 +690,7 @@ def test_prshell(monkeypatch, capsys):
 
 def test_rebuild_filenamelist(monkeypatch, capsys, tmp_path):
     def mock_get_repofiles(*args):
-        print('called get_repofiles() for `{}`'.format(args[1]))
+        print(f'called get_repofiles() for `{args[1]}`')
         return 'path_to_repo', ['file2', 'test_file1', 'file1', 'test_file2']
     monkeypatch.setattr(testee, 'FILELIST', str(tmp_path / 'filelist'))
     monkeypatch.setattr(testee, 'all_repos', ['repo1', 'repo2'])

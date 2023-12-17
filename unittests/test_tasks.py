@@ -47,12 +47,11 @@ def test_install_scite(monkeypatch, capsys, tmp_path):
     monkeypatch.setattr(MockContext, 'run', mock_run_2)
     c = MockContext()
     tasks.install_scite(c, 'x')
-    assert capsys.readouterr().out == ('tar -zxf {}\nsudo cp gscite/SciTE /usr/bin\n'
+    assert capsys.readouterr().out == (f'tar -zxf {fname}\nsudo cp gscite/SciTE /usr/bin\n'
                                        'sudo cp gscite/*.properties /etc/scite\n'
                                        'sudo cp gscite/*.html /usr/share/scite\n'
                                        'sudo cp gscite/*.png /usr/share/scite\n'
-                                       'sudo cp gscite/*.jpg /usr/share/scite\nrm gscite -r\n').format(
-                                               fname)
+                                       'sudo cp gscite/*.jpg /usr/share/scite\nrm gscite -r\n')
 
 
 def test_build_scite(monkeypatch, capsys, tmp_path):
@@ -60,29 +59,29 @@ def test_build_scite(monkeypatch, capsys, tmp_path):
         nonlocal counter
         print(*args, 'in', c.cwd)
         counter += 1
-        return types.SimpleNamespace(failed=True, stdout='results from call {}'.format(counter),
-                                     stderr='errors on call {}'.format(counter))
+        return types.SimpleNamespace(failed=True, stdout=f'results from call {counter}',
+                                     stderr=f'errors on call {counter}')
     def mock_run_2(c, *args):
         nonlocal counter
         print(*args, 'in', c.cwd)
         counter += 1
         if counter > 2:
-            return types.SimpleNamespace(failed=True, stdout='results from call {}'.format(counter),
-                                         stderr='errors on call {}'.format(counter))
-        return types.SimpleNamespace(failed=False, stdout='results from call {}'.format(counter))
+            return types.SimpleNamespace(failed=True, stdout=f'results from call {counter}',
+                                         stderr=f'errors on call {counter}')
+        return types.SimpleNamespace(failed=False, stdout=f'results from call {counter}')
     def mock_run_3(c, *args):
         nonlocal counter
         print(*args, 'in', c.cwd)
         counter += 1
         if counter > 3:
-            return types.SimpleNamespace(failed=True, stdout='results from call {}'.format(counter),
-                                         stderr='errors on call {}'.format(counter))
-        return types.SimpleNamespace(failed=False, stdout='results from call {}'.format(counter))
+            return types.SimpleNamespace(failed=True, stdout=f'results from call {counter}',
+                                         stderr=f'errors on call {counter}')
+        return types.SimpleNamespace(failed=False, stdout=f'results from call {counter}')
     def mock_run_4(c, *args):
         nonlocal counter
         print(*args, 'in', c.cwd)
         counter += 1
-        return types.SimpleNamespace(failed=False, stdout='results from call {}'.format(counter))
+        return types.SimpleNamespace(failed=False, stdout=f'results from call {counter}')
     monkeypatch.setattr(tasks, 'SCITELOC', str(tmp_path / 'scite{}_test'))
     fname = tasks.SCITELOC.format('x')
     monkeypatch.setattr(tasks.os.path, 'exists', lambda x: False)
@@ -197,11 +196,9 @@ def test_chmodrecursive(monkeypatch, capsys):
         print('changing file permissions for', args[0])
     monkeypatch.setattr(tasks.os, 'getcwd', lambda: 'current_dir')
     monkeypatch.setattr(tasks.os, 'listdir', mock_listdir)
-    monkeypatch.setattr(tasks.os.path, 'isfile',
-                        lambda x: True if x.endswith('file') or x.endswith('name') else False)
-    monkeypatch.setattr(tasks.os.path, 'islink', lambda x: True if x.endswith('link') else False)
-    monkeypatch.setattr(tasks.os.path, 'isdir',
-                        lambda x: True if x.endswith('dir') or x.endswith('map') else False)
+    monkeypatch.setattr(tasks.os.path, 'isfile', lambda x: x.endswith(('file', 'name')))
+    monkeypatch.setattr(tasks.os.path, 'islink', lambda x: x.endswith('link'))
+    monkeypatch.setattr(tasks.os.path, 'isdir', lambda x: x.endswith(('dir', 'map')))
     monkeypatch.setattr(tasks.os, 'chmod', mock_chmod)
     c = MockContext()
     tasks.chmodrecursive(c)

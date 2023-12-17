@@ -35,7 +35,7 @@ DO_NOT_LINT = frozen_repos + non_deploy_repos  # + private_repos
 #                 {'name': 'jdhooks.js', 'is_dir': False, 'backup': False},
 #                 {'name': 'hooks', 'is_dir': True, 'backup': False})
 
-# deze zijn destijds op Mint gemaakt, de api lijkt nu anders te werken
+# deze zijn een tijd geleden gemaakt, de api lijkt nu anders te werken
 # webapps = {'absenties': {'profile': 'absenties1349', 'adr': 'absenties.lemoncurry.nl',
 #                        'start_server': False},
 #            'actiereg': {'profile': 'actiereg5092', 'adr': 'actiereg.lemoncurry.nl',
@@ -94,16 +94,15 @@ def get_project_root(name, context='local'):
     if context == 'local':
         if is_private:
             root = root.parent
-    else:  # if context in ('remote', 'bb'):
-        if is_private:
-            where = 'hg_private' if context == 'bb' else 'git-repos'
-            root = root.parent / where if context != 'sf' else 'n/a'
-        elif git_repo:
-            root = root.parent / 'git-repos' if context not in ('sf', 'bb') else 'n/a'
-        elif sf_repo:
-            root = root.parent / 'sf_repos' if context not in ('bb', 'git') else 'n/a'
-        else:
-            root = root.parent / 'hg_repos' if context not in ('git', 'sf') else 'n/a'
+    elif is_private:
+        where = 'hg_private' if context == 'bb' else 'git-repos'
+        root = root.parent / where if context != 'sf' else 'n/a'
+    elif git_repo:
+        root = root.parent / 'git-repos' if context not in ('sf', 'bb') else 'n/a'
+    elif sf_repo:
+        root = root.parent / 'sf_repos' if context not in ('bb', 'git') else 'n/a'
+    else:
+        root = root.parent / 'hg_repos' if context not in ('git', 'sf') else 'n/a'
     return root
 
 
