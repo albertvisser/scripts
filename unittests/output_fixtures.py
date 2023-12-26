@@ -174,6 +174,10 @@ called PushButton.__init__ with args ('&Edit', {testobj})
 called PushButton.setToolTip with arg `{edit}`
 called Signal.connect with args ({testobj.edit_selected},)
 called VBox.addWidget with arg of type <class 'mockgui.mockqtwidgets.MockPushButton'>
+called PushButton.__init__ with args ('Count L&ines', {testobj})
+called PushButton.setToolTip with arg `{count}`
+called Signal.connect with args ({testobj.count_selected},)
+called VBox.addWidget with arg of type <class 'mockgui.mockqtwidgets.MockPushButton'>
 called PushButton.__init__ with args ('Show &Diff', {testobj})
 called PushButton.setToolTip with arg `{diff}`
 called Signal.connect with args ({testobj.diff_selected},)
@@ -216,8 +220,10 @@ called VBox.addLayout with arg of type <class 'mockgui.mockqtwidgets.MockVBoxLay
 called VBox.addLayout with arg of type <class 'mockgui.mockqtwidgets.MockVBoxLayout'>
 called VBox.__init__
 called VBox.addStretch
-called Label.__init__ with args ('Or', {testobj})
-called VBox.addWidget with arg of type <class 'mockgui.mockqtwidgets.MockLabel'>
+called PushButton.__init__ with args ('C&ount LOCs', {testobj})
+called PushButton.setToolTip with arg `{count_all}`
+called Signal.connect with args ({testobj.count_all},)
+called VBox.addWidget with arg of type <class 'mockgui.mockqtwidgets.MockPushButton'>
 called PushButton.__init__ with args ('Di&ff all Files', {testobj})
 called PushButton.setToolTip with arg `{diff_all}`
 called Signal.connect with args ({testobj.diff_all},)

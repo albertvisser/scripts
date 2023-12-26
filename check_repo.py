@@ -4,6 +4,8 @@
 import os
 import sys
 import pathlib
+import importlib
+import inspect
 import argparse
 import subprocess
 import PyQt5.QtWidgets as qtw
@@ -247,6 +249,10 @@ class Gui(qtw.QWidget):
         btn.setToolTip(tooltips['edit'])
         btn.clicked.connect(self.edit_selected)
         vbox2.addWidget(btn)
+        btn = qtw.QPushButton('Count L&ines', self)
+        btn.setToolTip(tooltips['count'])
+        btn.clicked.connect(self.count_selected)
+        vbox2.addWidget(btn)
         btn = qtw.QPushButton('Show &Diff', self)
         btn.setToolTip(tooltips['diff'])
         btn.clicked.connect(self.diff_selected)
@@ -289,7 +295,10 @@ class Gui(qtw.QWidget):
 
         hbox = qtw.QHBoxLayout()
         hbox.addStretch()
-        hbox.addWidget(qtw.QLabel('Or', self))
+        btn = qtw.QPushButton('C&ount LOCs', self)
+        btn.setToolTip(tooltips['count_all'])
+        btn.clicked.connect(self.count_all)
+        hbox.addWidget(btn)
         btn = qtw.QPushButton('Di&ff all Files', self)
         btn.setToolTip(tooltips['diff_all'])
         btn.clicked.connect(self.diff_all)
@@ -357,6 +366,18 @@ class Gui(qtw.QWidget):
         command[:0] = ['gnome-terminal', '--profile', 'Code Editor Shell', '--', 'vim']
         self.just_run(command)
         self.refresh_frame()
+
+    def count_all(self):
+        filenames = self.filter_modules()
+        lines = get_locs_for_modules(filenames)
+        caption = 'Show loc-counts for all tracked modules'
+        DiffViewDialog(self, self.title, caption, '\n'.join(lines), (600, 400)).exec_()
+
+    def count_selected(self):
+        filenames = self.filter_tracked(self.get_selected_files())
+        lines = get_locs_for_modules(filenames)
+        caption = 'Show loc-counts for: ' + ', '.join(filenames)
+        DiffViewDialog(self, self.title, caption, '\n'.join(lines), (600, 400)).exec_()
 
     def diff_all(self):
         """show diff for all tracked files
@@ -521,6 +542,22 @@ class Gui(qtw.QWidget):
                     qtw.QMessageBox.information(self, self.title, name + ' not tracked')
             else:
                 filenames.append(name)
+        return filenames
+
+    def filter_modules(self, include_tests=False):
+        "return tracked Python modules, optionally excluding modules with unittests"
+        filenames = []
+        result_list, errors = self.run_and_capture(['git', 'ls-files'])
+        if errors:
+            qtw.QMessageBox.information(self, self.title, '\n'.join(errors))
+            return []
+        for name in result_list:
+            if os.path.splitext(name)[1] != '.py':
+                continue
+            parent = os.path.dirname(name)
+            if not include_tests and parent and 'test' in parent:
+                continue
+            filenames.append(name)
         return filenames
 
     def view_repo(self):
@@ -693,6 +730,72 @@ class Gui(qtw.QWidget):
         if result.stderr is not None:
             ret2 = [x for x in str(result.stderr, encoding='utf-8').split('\n') if x]
         return ret1, ret2
+
+
+def get_locs_for_modules(namelist):
+    "turn filenames into modulenames and count locs"
+    result = []
+    for name in namelist:
+        result.extend(['', f'lines of code per function / method for `{name}`', ''])
+        name = os.path.splitext(name)[0].replace('/', '.')
+        result.extend([f'{x}: {y} lines' for x, y in get_locs(name)])
+    return result
+
+
+def get_locs(module):
+    "get lines of code per function / method"
+    print(f'*** module {module} ***')
+    lineslist = []
+    moduleobj = importlib.import_module(module)
+    for name, subobj in inspect.getmembers(moduleobj):
+        print(name, subobj)
+        if inspect.isclass(subobj):
+            print('is class')
+            if subobj.__module__ != module:
+                continue
+            classname = name
+            for name2, subsubobj in inspect.getmembers(subobj):
+                print(name2, subsubobj)
+                if inspect.isfunction(subsubobj) or inspect.ismethod(subsubobj):
+                    print('is function in class')
+                    lines, text = get_locs_for_unit(name, subsubobj)
+                    lineslist.append((text or f'{classname}.{name2}', lines))
+        elif inspect.isfunction(subobj):
+            print('is function')
+            if subobj.__module__ != module:
+                continue
+            functionname = name
+            lines, text = get_locs_for_unit(name, subobj)
+            lineslist.append((text or functionname, lines))
+        # probleem: dit detecteert decorated functies niet. met onderstaande code
+        # else:
+        #     print(name, subobj)
+        # worden inv tasks bijvoorvebeeld getoond als
+        # dump_mongo <Task 'dump_mongo'>
+        # dump_pg <Task 'dump_pg'>
+        # list_mongodumps <Task 'list_mongodumps'>
+        # list_pgdumps <Task 'list_pgdumps'>
+        # repair_mongo <Task 'repair_mongo'>
+        # restart_mongo <Task 'restart_mongo'>
+        # restart_pg <Task 'restart_pg'>
+        # restore_mongo <Task 'restore_mongo'>
+        # restore_pg <Task 'restore_pg'>
+        # start_mongo <Task 'start_mongo'>
+        # start_pg <Task 'start_pg'>
+        # stop_mongo <Task 'stop_mongo'>
+        # stop_pg <Task 'stop_pg'>
+    return lineslist
+
+
+def get_locs_for_unit(name, unit):
+    "get the actual number of lines"
+    try:
+        lines = inspect.getsourcelines(unit)
+    except TypeError:
+        return 0, f'wrong type for getsourcelines - skipped: {name} {unit}'
+    except OSError as e:
+        return 0, f'{e} for {name} {unit}'
+    return len(lines[0]), ''
 
 
 def startapp(args):
