@@ -1,6 +1,7 @@
 import os
 import pytest
 import types
+from io import StringIO
 from invoke import MockContext
 import session as testee
 
@@ -306,8 +307,17 @@ def test_edit_old(monkeypatch, capsys):
     assert capsys.readouterr().out == 'pedit sessions_location/session_file\n'
 
 
+def test_get_input_from_user(monkeypatch):
+    test_input = StringIO('x\n')
+    monkeypatch.setattr('sys.stdin', test_input)
+    assert testee.get_input_from_user('prompt', 'y') == 'x'
+    test_input = StringIO('\n')
+    monkeypatch.setattr('sys.stdin', test_input)
+    assert testee.get_input_from_user('prompt', 'y') == 'y'
+
+
 def test_editconf(monkeypatch, capsys):
-    def mock_get_input(prompt):
+    def mock_get_input(prompt, response):
         print(f'called input(`{prompt}`)')
         return 'No'
     monkeypatch.setattr(MockContext, 'run', mock_run)
@@ -321,7 +331,7 @@ def test_editconf(monkeypatch, capsys):
     testee.editconf(c, 'projname')
     assert capsys.readouterr().out == ('called input(`no file .sessionrc found'
                                        ' - create one now (Y/n)?`)\n')
-    monkeypatch.setattr(testee, 'get_input_from_user', lambda x: 'Yes')
+    monkeypatch.setattr(testee, 'get_input_from_user', lambda x, y: 'Yes')
     testee.editconf(c, 'projname')
     assert capsys.readouterr().out == ('cp ~/bin/.sessionrc.template testproj/.sessionrc\n'
                                        'pedit testproj/.sessionrc\n')
@@ -331,7 +341,7 @@ def test_editconf(monkeypatch, capsys):
 
 
 def test_edittestconf(monkeypatch, capsys):
-    def mock_get_input(prompt):
+    def mock_get_input(prompt, response):
         print(f'called input(`{prompt}`)')
         return 'No'
     monkeypatch.setattr(MockContext, 'run', mock_run)
@@ -345,7 +355,7 @@ def test_edittestconf(monkeypatch, capsys):
     testee.edittestconf(c, 'projname')
     assert capsys.readouterr().out == ('called input(`no file .rurc found'
                                        ' - create one now (Y/n)?`)\n')
-    monkeypatch.setattr(testee, 'get_input_from_user', lambda x: 'Yes')
+    monkeypatch.setattr(testee, 'get_input_from_user', lambda x, y: 'Yes')
     testee.edittestconf(c, 'projname')
     assert capsys.readouterr().out == ('cp ~/bin/.rurc.template testproj/.rurc\n'
                                        'pedit testproj/.rurc\n')

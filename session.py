@@ -228,7 +228,7 @@ def editconf(c, name):
         return
     fname = os.path.join(path, '.sessionrc')
     if not os.path.exists(fname):
-        test = get_input_from_user('no file .sessionrc found - create one now (Y/n)?')
+        test = get_input_from_user('no file .sessionrc found - create one now (Y/n)?', 'y')
         if not test.lower().startswith('y'):
             return
         c.run(f'cp ~/bin/.sessionrc.template {fname}')
@@ -247,16 +247,19 @@ def edittestconf(c, name):
         return
     fname = os.path.join(path, '.rurc')
     if not os.path.exists(fname):
-        test = get_input_from_user('no file .rurc found - create one now (Y/n)?')
+        test = get_input_from_user('no file .rurc found - create one now (Y/n)?', 'y')
         if not test.lower().startswith('y'):
             return
         c.run(f'cp ~/bin/.rurc.template {fname}')
     c.run(f'pedit {fname}')
 
 
-def get_input_from_user(prompt):
+def get_input_from_user(prompt, default_answer):
     "wrapper around input function to facilitate unit testing"
-    return input(prompt)
+    response = input(prompt)
+    if not response:
+        response = default_answer
+    return response
 
 # @task
 # def list(c):
