@@ -278,7 +278,7 @@ class ScriptLib:
         target = path.readlink()
         if section not in self.data:
             self.data.add_section(section)
-        self.data.set(section, name, target)
+        self.data.set(section, name, str(target))
         return ''
 
     def add_script(self, name, section):
