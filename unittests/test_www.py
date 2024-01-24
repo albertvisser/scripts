@@ -1,19 +1,26 @@
+"""unittests for ./www.py
+"""
 import os
-import pytest
 import types
 from invoke import MockContext
 import www as testee
 
 
 def mock_run(self, *args):
+    """stub for invoke.Context.run
+    """
     print(*args)
 
 
 def run_in_dir(self, *args, **kwargs):
+    """stub for invoke.Context.run under "with invoke.Contect.cd"
+    """
     print(*args, 'in', self.cwd)
 
 
 def test_copy(monkeypatch, capsys):
+    """unittest for www.copy
+    """
     monkeypatch.setattr(testee, 'home_root', 'home')
     monkeypatch.setattr(testee, 'server_root', 'server')
     monkeypatch.setattr(MockContext, 'run', mock_run)
@@ -27,6 +34,8 @@ def test_copy(monkeypatch, capsys):
 
 
 def test_link(monkeypatch, capsys):
+    """unittest for www.link
+    """
     monkeypatch.setattr(testee, 'home_root', 'home')
     monkeypatch.setattr(testee, 'server_root', 'server')
     monkeypatch.setattr(os, 'readlink', lambda x: f'link to dest of {x}')
@@ -38,6 +47,8 @@ def test_link(monkeypatch, capsys):
 
 
 def test_edit(monkeypatch, capsys):
+    """unittest for www.edit
+    """
     monkeypatch.setattr(testee, 'home_root', 'home')
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
@@ -46,7 +57,11 @@ def test_edit(monkeypatch, capsys):
 
 
 def test_update_sites(monkeypatch, capsys):
+    """unittest for www.update_sites
+    """
     def mock_copy(c, *args):
+        """stub
+        """
         print('call copy with args', args)
     monkeypatch.setattr(testee, 'copy', mock_copy)
     monkeypatch.setattr(MockContext, 'run', run_in_dir)
@@ -57,6 +72,8 @@ def test_update_sites(monkeypatch, capsys):
 
 
 def test_list_wwwroot(monkeypatch, capsys):
+    """unittest for www.list_wwwroot
+    """
     monkeypatch.setattr(testee, 'server_root', 'server')
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
@@ -65,6 +82,8 @@ def test_list_wwwroot(monkeypatch, capsys):
 
 
 def test_list_apache(monkeypatch, capsys):
+    """unittest for www.list_apache
+    """
     monkeypatch.setattr(testee, 'apache_root', 'apache')
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
@@ -73,6 +92,8 @@ def test_list_apache(monkeypatch, capsys):
 
 
 def test_edit_apache(monkeypatch, capsys):
+    """unittest for www.edit_apache
+    """
     monkeypatch.setattr(testee, 'apache_root', 'apache')
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
@@ -83,14 +104,22 @@ def test_edit_apache(monkeypatch, capsys):
 
 
 def test_permits(monkeypatch, capsys):
+    """unittest for www.permits
+    """
     def mock_run_fail(c, *args):
+        """stub
+        """
         print(*args)
         return types.SimpleNamespace(failed=True)
     def mock_run_ok(c, *args):
+        """stub
+        """
         print(*args)
         return types.SimpleNamespace(failed=False)
     counter = 0
     def mock_listdir(*args):
+        """stub
+        """
         nonlocal counter
         counter += 1
         if counter < 2:
@@ -117,24 +146,39 @@ def test_permits(monkeypatch, capsys):
 
 
 def test_stage(monkeypatch, capsys, tmp_path):
+    """unittest for www.stage
+    """
     def mock_run(self, *args, **kwargs):
+        """stub
+        """
         print('called c.run with args', *args, kwargs)
         if args[0] == 'hg st':
             return types.SimpleNamespace(failed=True)
     def mock_run_2(self, *args, **kwargs):
+        """stub
+        """
         print('called c.run with args', *args, kwargs)
         if args[0] == 'hg st':
             return types.SimpleNamespace(failed=False, stdout='')
     def mock_run_3(self, *args, **kwargs):
+        """stub
+        """
         print('called c.run with args', *args, kwargs)
         if args[0] == 'hg st':
             return types.SimpleNamespace(failed=False, stdout='? somefile\n')
     def mock_run_4(self, *args, **kwargs):
+        """stub
+        """
         print('called c.run with args', *args, kwargs)
         if args[0] == 'hg st':
             return types.SimpleNamespace(failed=False, stdout='M file1\n? file2\n? file3\nM file4\n')
     class MockDateTime:
-        def today():
+        """stub
+        """
+        @classmethod
+        def today(cls):
+            """stub
+            """
             return types.SimpleNamespace(strftime=lambda *y: 'today')
     monkeypatch.setattr(testee.datetime, 'datetime', MockDateTime)
     mock_base = tmp_path / 'stagetest'
@@ -196,6 +240,8 @@ def test_stage(monkeypatch, capsys, tmp_path):
 
 
 def test_list_staged(monkeypatch, capsys, tmp_path):
+    """unittest for www.list_staged
+    """
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
     mock_base = tmp_path / 'list-staged'
@@ -212,6 +258,8 @@ def test_list_staged(monkeypatch, capsys, tmp_path):
 
 
 def test_list_staged_reflinks(monkeypatch, capsys, tmp_path):
+    """unittest for www.list_staged_reflinks
+    """
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
     mock_base = tmp_path / 'list-staged'
@@ -220,7 +268,7 @@ def test_list_staged_reflinks(monkeypatch, capsys, tmp_path):
     stagingloc.mkdir(parents=True)
     (stagingloc / 'index.html').touch()
     (stagingloc / 'pic1.png').touch()
-    (stagingloc / 'page2' ).mkdir()
+    (stagingloc / 'page2').mkdir()
     (stagingloc / 'page2' / 'index.html').touch()
     (stagingloc / 'page2' / 'doc1').mkdir()
     (stagingloc / 'page2' / 'doc1' / 'index.html').touch()
@@ -229,7 +277,7 @@ def test_list_staged_reflinks(monkeypatch, capsys, tmp_path):
     (stagingloc / 'page2' / 'doc2' / 'index.html').touch()
     (stagingloc / 'page2' / 'doc3').mkdir()
     (stagingloc / 'page2' / 'doc3' / 'index.html').touch()
-    (stagingloc / 'page3' ).mkdir()
+    (stagingloc / 'page3').mkdir()
     (stagingloc / 'page3' / 'pic3.png').touch()
     (stagingloc / 'page3' / 'index.html').touch()
     testee.list_staged(c, 'testsite')
@@ -254,6 +302,8 @@ def test_list_staged_reflinks(monkeypatch, capsys, tmp_path):
 
 
 def test_list_staged_reflinks_false(monkeypatch, capsys, tmp_path):
+    """unittest for www.list_staged_reflinks_false
+    """
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
     mock_base = tmp_path / 'list-staged'
@@ -264,7 +314,7 @@ def test_list_staged_reflinks_false(monkeypatch, capsys, tmp_path):
     (stagingloc / 'pic.png').touch()
     (stagingloc / 'page2.html').touch()
     (stagingloc / 'page3.html').touch()
-    (stagingloc / 'page2' ).mkdir()
+    (stagingloc / 'page2').mkdir()
     (stagingloc / 'page2' / 'doc1.html').touch()
     (stagingloc / 'page2' / 'pic2.png').touch()
     (stagingloc / 'page2' / 'doc2.html').touch()
@@ -278,8 +328,12 @@ def test_list_staged_reflinks_false(monkeypatch, capsys, tmp_path):
                                        '7 files staged\n')
 
 
-def test_has_seflinks_true(monkeypatch, capsys):
+def test_has_seflinks_true(monkeypatch):
+    """unittest for www.has_seflinks_true
+    """
     class MockDirEntry:
+        """stub
+        """
         def __init__(self, name):
             self.name = name
     # 1. geen files in staging root -> eigenlijk onbepaald
@@ -311,6 +365,8 @@ def test_has_seflinks_true(monkeypatch, capsys):
 
 
 def test_clear_staged(monkeypatch, capsys, tmp_path):
+    """unittest for www.clear_staged
+    """
     monkeypatch.setattr(MockContext, 'run', run_in_dir)
     c = MockContext()
     mock_base = tmp_path / 'list-staged'
@@ -326,6 +382,8 @@ def test_clear_staged(monkeypatch, capsys, tmp_path):
 
 
 def test_startapp(monkeypatch, capsys):
+    """unittest for www.startapp
+    """
     monkeypatch.setattr(testee, 'webapps', [])
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()

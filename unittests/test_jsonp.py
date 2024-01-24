@@ -1,8 +1,11 @@
+"""unittests for ./jsonp.py
+"""
 import os
-import pytest
 import jsonp
 
-def test_main_error(monkeypatch, capsys):
+def test_main_error(capsys):
+    """unittest for jsonp.main_error
+    """
     usagemessage = "usage: python(3) jsonp.py <filename>\n"
     jsonp.main([])
     assert capsys.readouterr().out == usagemessage
@@ -11,7 +14,9 @@ def test_main_error(monkeypatch, capsys):
     jsonp.main(['scriptname', 'filename', 'extra'])
     assert capsys.readouterr().out == usagemessage
 
-def test_main(monkeypatch, capsys, tmp_path):
+def test_main(tmp_path):
+    """unittest for jsonp.main
+    """
     filename = str(tmp_path / 'test_jsonp.json')
     outname = str(tmp_path / 'test_jsonp_pretty.json')
     with open(filename, 'w') as f:

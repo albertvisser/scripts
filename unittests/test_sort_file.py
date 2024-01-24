@@ -1,11 +1,16 @@
+"""unittests for ./sort_file.py
+"""
 import os
 import types
-import pytest
 import builtins
 import sort_file
 
 def test_main(monkeypatch, capsys):
+    """unittest for sort_file.main
+    """
     def mock_sort(*args):
+        """stub
+        """
         print('called sort() with args', args)
     monkeypatch.setattr(sort_file, 'sort', mock_sort)
     sort_file.main(types.SimpleNamespace(file='filename.ext', output='', column='5'))
@@ -24,7 +29,8 @@ def test_main(monkeypatch, capsys):
                                        'klaar, output in somefile_sorted\n')
 
 def test_sort(monkeypatch, capsys, tmp_path):
-    ""
+    """unittest for sort_file.sort
+    """
     workdir = tmp_path / 'sorttest'
     workdir.mkdir()
     source = str(workdir / 'test_sort')

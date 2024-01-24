@@ -1,3 +1,5 @@
+"""unittests for ./tasks.py
+"""
 import os
 import shutil
 import datetime
@@ -5,22 +7,32 @@ import pytest
 import types
 from invoke import MockContext
 import tasks
-FIXDATE = datetime.datetime(2020,1,1)
+FIXDATE = datetime.datetime(2020, 1, 1)
 
 
 def mock_run(self, *args):
+    """stub for invoke.Context.run
+    """
     print(*args)
 
 
 def run_in_dir(self, *args, **kwargs):
+    """stub for invoke.Context.run under "with invoke.Contect.cd"
+    """
     print(*args, 'in', self.cwd)
 
 
 def test_install_scite(monkeypatch, capsys, tmp_path):
+    """unittest for tasks.install_scite
+    """
     def mock_run_1(c, *args):
+        """stub for invoke.Context.run succeeding
+        """
         print(*args)
         return types.SimpleNamespace(failed=True)
     def mock_run_2(c, *args):
+        """stub for invoke.Context.run failing
+        """
         print(*args)
         return types.SimpleNamespace(failed=False)
     monkeypatch.setattr(tasks, 'GSCITELOC', str(tmp_path / 'scite{}_test'))
@@ -35,13 +47,12 @@ def test_install_scite(monkeypatch, capsys, tmp_path):
     monkeypatch.setattr(MockContext, 'run', mock_run_1)
     c = MockContext()
     tasks.install_scite(c, 'x')
-    assert capsys.readouterr().out == ('tar -zxf {0}\ntar -xf {0}\nsudo cp gscite/SciTE /usr/bin\n'
+    assert capsys.readouterr().out == (f'tar -zxf {fname}\ntar -xf {fname}\n'
+                                       'sudo cp gscite/SciTE /usr/bin\n'
                                        'sudo cp gscite/*.properties /etc/scite\n'
                                        'sudo cp gscite/*.html /usr/share/scite\n'
                                        'sudo cp gscite/*.png /usr/share/scite\n'
-                                       'sudo cp gscite/*.jpg /usr/share/scite\nrm gscite -r\n').format(
-                                               fname)
-
+                                       'sudo cp gscite/*.jpg /usr/share/scite\nrm gscite -r\n')
     with open(fname, 'w') as f:
         f.write('')
     monkeypatch.setattr(MockContext, 'run', mock_run_2)
@@ -55,13 +66,19 @@ def test_install_scite(monkeypatch, capsys, tmp_path):
 
 
 def test_build_scite(monkeypatch, capsys, tmp_path):
+    """unittest for tasks.build_scite
+    """
     def mock_run_1(c, *args):
+        """stub
+        """
         nonlocal counter
         print(*args, 'in', c.cwd)
         counter += 1
         return types.SimpleNamespace(failed=True, stdout=f'results from call {counter}',
                                      stderr=f'errors on call {counter}')
     def mock_run_2(c, *args):
+        """stub
+        """
         nonlocal counter
         print(*args, 'in', c.cwd)
         counter += 1
@@ -70,6 +87,8 @@ def test_build_scite(monkeypatch, capsys, tmp_path):
                                          stderr=f'errors on call {counter}')
         return types.SimpleNamespace(failed=False, stdout=f'results from call {counter}')
     def mock_run_3(c, *args):
+        """stub
+        """
         nonlocal counter
         print(*args, 'in', c.cwd)
         counter += 1
@@ -78,6 +97,8 @@ def test_build_scite(monkeypatch, capsys, tmp_path):
                                          stderr=f'errors on call {counter}')
         return types.SimpleNamespace(failed=False, stdout=f'results from call {counter}')
     def mock_run_4(c, *args):
+        """stub
+        """
         nonlocal counter
         print(*args, 'in', c.cwd)
         counter += 1
@@ -143,6 +164,8 @@ def test_build_scite(monkeypatch, capsys, tmp_path):
 
 
 def test_arcstuff(monkeypatch, capsys):
+    """unittest for tasks.arcstuff
+    """
     if os.path.exists('arcstuff.conf'):
         shutil.copyfile('arcstuff.conf', '/tmp/arcstuff.conf')
     with open('arcstuff.conf', 'w') as f:
@@ -181,8 +204,12 @@ def test_arcstuff(monkeypatch, capsys):
 
 
 def test_chmodrecursive(monkeypatch, capsys):
+    """unittest for tasks.chmodrecursive
+    """
     counter = 0
     def mock_listdir(*args):
+        """stub
+        """
         nonlocal counter
         counter += 1
         if counter > 1:
@@ -190,6 +217,8 @@ def test_chmodrecursive(monkeypatch, capsys):
             return []
         return ['file', 'name', '__pycache__', '.hg', 'link', 'dir', 'map']
     def mock_chmod(*args):
+        """stub
+        """
         if os.path.basename(args[0]) in ('file', 'dir'):
             print('ignoring PermissionError for', args[0])
             raise PermissionError
@@ -210,6 +239,10 @@ def test_chmodrecursive(monkeypatch, capsys):
 
 
 class MockDatetime:
+    """stub for datetime.DateTime
+    """
     @classmethod
     def today(cls):
+        """stub
+        """
         return FIXDATE

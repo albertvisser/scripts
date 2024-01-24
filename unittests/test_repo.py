@@ -1,3 +1,5 @@
+"""unittests for ./repo.py
+"""
 import os
 import pytest
 import types
@@ -6,37 +8,55 @@ import repo as testee
 
 
 def mock_run(self, *args):
+    """stub for invoke.Context.run
+    """
     print(*args)
 
 
 def run_in_dir(self, *args, **kwargs):
+    """stub for invoke.Context.run under "with invoke.Contect.cd"
+    """
     print(*args, 'in', self.cwd)
 
 
 class MockCheck(testee.Check):
+    """stub for repo.Check object
+    """
     def __init__(self, c, *args, **kwargs):
         print('call Check() with args', args, kwargs)
         super().__init__(c, *args, **kwargs)
     def run(self):
+        """stub
+        """
         print('call Check.run()')
 
 
 def mock_check_and_run(c, *args):
+    """stub
+    """
     print('call check_and_run_for_project() with args', args)
 
 
 def mock_check_ok(self):
+    """stub
+    """
     print('call Check.run()')
     return True
 
 
 def mock_check_nok(self):
+    """stub
+    """
     print('call Check.run()')
     return False
 
 
 def test_get_repofiles(monkeypatch, capsys):
+    """unittest for repo.get_repofiles
+    """
     def mock_run(self, *args, **kwargs):
+        """stub
+        """
         print(*args, 'in', self.cwd)
         return types.SimpleNamespace(stdout='file1\nfile2.py\nfile3.json\nfile4.py\n')
     monkeypatch.setattr(testee, 'get_project_dir', lambda x: 'path/to/repo')
@@ -54,10 +74,16 @@ def test_get_repofiles(monkeypatch, capsys):
 
 
 def test_get_branchname(monkeypatch, capsys):
+    """unittest for repo.get_branchname
+    """
     def mock_run(self, *args, **kwargs):
+        """stub
+        """
         print(*args, 'in', self.cwd)
         return types.SimpleNamespace(stdout='  master\n* current\n  another\n')
     def mock_run_2(self, *args, **kwargs):
+        """stub
+        """
         print(*args, 'in', self.cwd)
         return types.SimpleNamespace(stdout='* master\n  another\n')
     monkeypatch.setattr(MockContext, 'run', mock_run)
@@ -70,9 +96,12 @@ def test_get_branchname(monkeypatch, capsys):
     assert testobj.get_branchname('path/to/repo') == ''
     assert capsys.readouterr().out == 'git branch in path/to/repo\n'
 
-def test_check_init(monkeypatch, capsys):
+
+def test_check_init(monkeypatch):
+    """unittest for repo.check_init
+    """
     monkeypatch.setattr(testee, 'frozen_repos', ['do-not-process'])
-    monkeypatch.setattr(testee, 'all_repos', ['a' ,'b'])
+    monkeypatch.setattr(testee, 'all_repos', ['a', 'b'])
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
     with pytest.raises(ValueError) as exc:
@@ -97,14 +126,23 @@ def test_check_init(monkeypatch, capsys):
     assert not checker.is_gitrepo
     assert not checker.is_private
 
+
 def test_check_run(monkeypatch, capsys):
-    """eigenlijk test op de sturing binnen de run() methode
+    """unittest for repo.check_run
+
+    eigenlijk test op de sturing binnen de run() methode
     """
     def mock_changes(*args):
+        """stub
+        """
         return True, '', ''
     def mock_outgoing(*args):
+        """stub
+        """
         return True, '', ''
     def mock_push(*args):
+        """stub
+        """
         return [], ''
     monkeypatch.setattr(testee.Check, 'get_locations', lambda *x: ('pwd', 'root'))
     monkeypatch.setattr(testee.Check, 'register_uncommitted', lambda *x: (False, '', ''))
@@ -155,7 +193,9 @@ def test_check_run(monkeypatch, capsys):
                                        'for details see /tmp/repo_changes\n')
 
 
-def test_get_locations(monkeypatch, capsys):
+def test_get_locations(monkeypatch):
+    """unittest for repo.get_locations
+    """
     monkeypatch.setattr(testee, 'HOME', 'homedir')
     monkeypatch.setattr(testee, 'git_repos', ['name'])
     monkeypatch.setattr(testee, 'private_repos', {'name': 'same_or_other_name'})
@@ -183,10 +223,16 @@ def test_get_locations(monkeypatch, capsys):
 
 
 def test_register_changes(monkeypatch, capsys):
+    """unittest for repo.register_changes
+    """
     def mock_run(c, *args, **kwargs):
+        """stub
+        """
         print(*args)
         return types.SimpleNamespace(stdout='xxx')
     def mock_run_2(c, *args, **kwargs):
+        """stub
+        """
         print(*args)
         return types.SimpleNamespace(stdout='')
     monkeypatch.setattr(MockContext, 'run', mock_run)
@@ -216,12 +262,18 @@ def test_register_changes(monkeypatch, capsys):
     assert capsys.readouterr().out == 'git status -uno --short\n'
 
 
-def test_register_outgoing(monkeypatch, capsys, tmp_path):
+def test_register_outgoing(monkeypatch, capsys):
+    """unittest for repo.register_outgoing
+    """
     def mock_run(c, *args, **kwargs):
+        """stub
+        """
         print(*args)
         return types.SimpleNamespace(stdout='xxx', ok=True)
     counter = 0
     def mock_run_2(c, *args, **kwargs):
+        """stub
+        """
         nonlocal counter
         counter += 1
         print(*args)
@@ -285,10 +337,16 @@ def test_register_outgoing(monkeypatch, capsys, tmp_path):
 
 
 def test_execute_push(monkeypatch, capsys):
+    """unittest for repo.execute_push
+    """
     def mock_run(c, *args, **kwargs):
+        """stub
+        """
         print(*args)
         return types.SimpleNamespace(stdout='ready.', ok=True)
     def mock_run_2(c, *args, **kwargs):
+        """stub
+        """
         print(*args)
         return types.SimpleNamespace(stdout='ready.', ok=False)
     monkeypatch.setattr(MockContext, 'run', mock_run)
@@ -328,12 +386,16 @@ def test_execute_push(monkeypatch, capsys):
 
 
 def test_get_tipfilename():
+    """unittest for repo.get_tipfilename
+    """
     c = MockContext()
     testobj = testee.Check(c)
     assert testobj.get_tipfilename('root', 'name') == 'root/name_tip'
 
 
 def test_check_local(monkeypatch, capsys):
+    """unittest for repo.check_local
+    """
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
     monkeypatch.setattr(MockCheck, 'run', mock_check_nok)
@@ -351,6 +413,8 @@ def test_check_local(monkeypatch, capsys):
 
 
 def test_check_local_changes(monkeypatch, capsys):
+    """unittest for repo.check_local_changes
+    """
     monkeypatch.setattr(MockContext, 'run', run_in_dir)
     c = MockContext()
     testee.check_local_changes(c)
@@ -359,6 +423,8 @@ def test_check_local_changes(monkeypatch, capsys):
 
 
 def test_check_local_notes(monkeypatch, capsys):
+    """unittest for repo.check_local_notes
+    """
     monkeypatch.setattr(MockContext, 'run', run_in_dir)
     c = MockContext()
     testee.check_local_notes(c)
@@ -366,6 +432,8 @@ def test_check_local_notes(monkeypatch, capsys):
 
 
 def test_check_remote(monkeypatch, capsys):
+    """unittest for repo.check_remote
+    """
     monkeypatch.setattr(MockContext, 'run', run_in_dir)
     c = MockContext()
     monkeypatch.setattr(testee, 'Check', MockCheck)
@@ -375,6 +443,8 @@ def test_check_remote(monkeypatch, capsys):
 
 
 def test_push_local(monkeypatch, capsys):
+    """unittest for repo.push_local
+    """
     monkeypatch.setattr(MockContext, 'run', run_in_dir)
     c = MockContext()
     monkeypatch.setattr(testee, 'Check', MockCheck)
@@ -393,6 +463,8 @@ def test_push_local(monkeypatch, capsys):
 
 
 def test_push_remote(monkeypatch, capsys):
+    """unittest for repo.push_remote
+    """
     monkeypatch.setattr(MockContext, 'run', run_in_dir)
     c = MockContext()
     monkeypatch.setattr(testee, 'Check', MockCheck)
@@ -411,7 +483,11 @@ def test_push_remote(monkeypatch, capsys):
 
 
 def test_overview(monkeypatch, capsys):
+    """unittest for repo.overview
+    """
     def mock_repo_overzicht(c, *args):
+        """stub
+        """
         print('call overzicht met args', args)
         return 'output directory'
     # monkeypatch.setattr(repo.os.path, 'isdir', lambda x: False)
@@ -432,15 +508,25 @@ def test_overview(monkeypatch, capsys):
 
 
 def test_repo_overzicht(monkeypatch, capsys):
+    """unittest for repo.repo_overzicht
+    """
     def mock_repolist_hg(*args):
+        """stub
+        """
         print('called make_repolist_hg()')
         return {'.hg': 'outdict_hg'}
     def mock_repolist_git(*args):
+        """stub
+        """
         print('called make_repolist_git()')
         return {'.git': 'outdict_git'}
     def mock_repo_ovz(*args):
+        """stub
+        """
         print('called make_repo_ovz with args', args)
     def mock_repocsv(*args):
+        """stub
+        """
         print('called make_repocsv with args', args)
     monkeypatch.setattr(testee, 'make_repolist_hg', mock_repolist_hg)
     monkeypatch.setattr(testee, 'make_repolist_git', mock_repolist_git)
@@ -471,7 +557,11 @@ def test_repo_overzicht(monkeypatch, capsys):
 
 
 def test_make_repolist_hg(monkeypatch, capsys):
+    """unittest for repo.make_repolist_hg
+    """
     def mock_run(c, *args, **kwargs):
+        """stub
+        """
         print(*args, 'in', c.cwd)
         return types.SimpleNamespace(stdout=("changeset:   01:hash\n"
                                              "user:        author name\n"
@@ -496,7 +586,11 @@ def test_make_repolist_hg(monkeypatch, capsys):
 
 
 def test_make_repolist_git(monkeypatch, capsys):
+    """unittest for repo.make_repolist_git
+    """
     def mock_run(c, *args, **kwargs):
+        """stub
+        """
         print(*args, 'in', c.cwd)
         return types.SimpleNamespace(stdout=(
                 "d98e1b0; Sun Jul 24 12:57:55 2022 +0200; tooltips toegevoegd\n"
@@ -528,7 +622,9 @@ def test_make_repolist_git(monkeypatch, capsys):
     assert capsys.readouterr().out == 'git log --pretty="%h; %ad; %s" --stat in path/to/repo\n'
 
 
-def test_make_repo_ovz(monkeypatch, capsys, tmp_path):
+def test_make_repo_ovz(tmp_path):
+    """unittest for repo.make_repo_ovz
+    """
     filename = tmp_path / 'repo_ovz_outfile'
     testee.make_repo_ovz({'naam1': {'date': 'ddd', 'desc': ['xx', 'x'], 'files': ['file1', 'file2']},
                         'naam2': {'date': 'eee', 'desc': ['yy', 'y']}}, filename)
@@ -538,6 +634,8 @@ def test_make_repo_ovz(monkeypatch, capsys, tmp_path):
 
 
 def test_make_repocsv(monkeypatch, capsys, tmp_path):
+    """unittest for repo.make_repocsv
+    """
     monkeypatch.setattr(testee.csv, 'writer', MockWriter)
     filename = tmp_path / 'repo_ovz_outfile'
     if filename.exists():
@@ -556,15 +654,21 @@ def test_make_repocsv(monkeypatch, capsys, tmp_path):
             "call writer.writerow for data ['./file2', '', 'x']\n")
 
 
-def test_add2gitweb(monkeypatch, capsys, tmp_path):
+def test_add2gitweb(monkeypatch, capsys):
+    """unittest for repo.add2gitweb
+    """
     counter = 0
     def mock_exists(*args):
+        """stub
+        """
         nonlocal counter
         counter += 1
         if counter < 3:
             return True
         return False
     def mock_exists_2(*args):
+        """stub
+        """
         nonlocal counter
         counter += 1
         if counter in (1, 3):
@@ -572,18 +676,24 @@ def test_add2gitweb(monkeypatch, capsys, tmp_path):
         return False
     counter2 = 0
     def mock_read(*args):
+        """stub
+        """
         nonlocal counter2
         counter2 += 1
         if counter2 == 1:
             return "Unnamed project"
         return "description"
     def mock_read_2(*args):
+        """stub
+        """
         nonlocal counter2
         counter2 += 1
         if counter2 == 1:
             return "orig description"
         return "description"
     def mock_get_desc():
+        """stub
+        """
         print('called testee.get_repodesc')
         return 'repodesc'
     monkeypatch.setattr(testee, 'get_repodesc', mock_get_desc)
@@ -619,11 +729,14 @@ def test_add2gitweb(monkeypatch, capsys, tmp_path):
     assert capsys.readouterr().out == (
             f'echo "orig description" > {testee.GITLOC}/name/.git/description\n')
 
-def _test_get_repodesc(monkeypatch, capsys):  # mohgelijk te onbenullig en lastig om te testen
-    ...
+def _test_get_repodesc(monkeypatch, capsys):  # mogelijk te onbenullig en lastig om te testen
+    """unittest for repo.get_repodesc
+    """
 
 
 def test_check_and_run(monkeypatch, capsys):
+    """unittest for repo.check_and_run
+    """
     monkeypatch.setattr(MockContext, 'run', run_in_dir)
     c = MockContext()
     monkeypatch.setattr(testee, 'get_project_dir', lambda x: '')
@@ -640,6 +753,8 @@ def test_check_and_run(monkeypatch, capsys):
 
 
 def test_dtree(monkeypatch, capsys):
+    """unittest for repo.dtree
+    """
     monkeypatch.setattr(testee, 'check_and_run_for_project', mock_check_and_run)
     c = MockContext()
     testee.dtree(c)
@@ -651,6 +766,8 @@ def test_dtree(monkeypatch, capsys):
 
 
 def test_qgit(monkeypatch, capsys):
+    """unittest for repo.qgit
+    """
     monkeypatch.setattr(testee, 'check_and_run_for_project', mock_check_and_run)
     c = MockContext()
     testee.qgit(c)
@@ -660,6 +777,8 @@ def test_qgit(monkeypatch, capsys):
 
 
 def test_mee_bezig(monkeypatch, capsys):
+    """unittest for repo.mee_bezig
+    """
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
     testee.mee_bezig(c)
@@ -667,6 +786,8 @@ def test_mee_bezig(monkeypatch, capsys):
 
 
 def test_preadme(monkeypatch, capsys):
+    """unittest for repo.preadme
+    """
     monkeypatch.setattr(testee, 'check_and_run_for_project', mock_check_and_run)
     c = MockContext()
     testee.preadme(c)
@@ -678,6 +799,8 @@ def test_preadme(monkeypatch, capsys):
 
 
 def test_prshell(monkeypatch, capsys):
+    """unittest for repo.prshell
+    """
     monkeypatch.setattr(testee, 'check_and_run_for_project', mock_check_and_run)
     c = MockContext()
     testee.prshell(c)
@@ -689,7 +812,11 @@ def test_prshell(monkeypatch, capsys):
 
 
 def test_rebuild_filenamelist(monkeypatch, capsys, tmp_path):
+    """unittest for repo.rebuild_filenamelist
+    """
     def mock_get_repofiles(*args):
+        """stub
+        """
         print(f'called get_repofiles() for `{args[1]}`')
         return 'path_to_repo', ['file2', 'test_file1', 'file1', 'test_file2']
     monkeypatch.setattr(testee, 'FILELIST', str(tmp_path / 'filelist'))
@@ -716,7 +843,11 @@ def test_rebuild_filenamelist(monkeypatch, capsys, tmp_path):
 
 
 def test_search_p(monkeypatch, capsys):
+    """unittest for repo.search_p
+    """
     def mock_search(c, *args):
+        """stub
+        """
         print('called search with args', args)
     monkeypatch.setattr(testee, 'search', mock_search)
     monkeypatch.setattr(MockContext, 'run', mock_run)
@@ -728,7 +859,11 @@ def test_search_p(monkeypatch, capsys):
 
 
 def test_search_t(monkeypatch, capsys):
+    """unittest for repo.search_t
+    """
     def mock_search(c, *args):
+        """stub
+        """
         print('called search with args', args)
     monkeypatch.setattr(testee, 'search', mock_search)
     monkeypatch.setattr(MockContext, 'run', mock_run)
@@ -740,7 +875,11 @@ def test_search_t(monkeypatch, capsys):
 
 
 def test_search_all(monkeypatch, capsys):
+    """unittest for repo.search_all
+    """
     def mock_search(c, *args):
+        """stub
+        """
         print('called search with args', args)
     monkeypatch.setattr(testee, 'search', mock_search)
     monkeypatch.setattr(MockContext, 'run', mock_run)
@@ -752,7 +891,11 @@ def test_search_all(monkeypatch, capsys):
 
 
 def test_search(monkeypatch, capsys, tmp_path):
+    """unittest for repo.search
+    """
     def mock_rebuild(*args):
+        """stub
+        """
         print('called rebuild_filenamelist')
     tmpfilelist = tmp_path / 'filelist'
     monkeypatch.setattr(testee, 'FILELIST', str(tmpfilelist))
@@ -786,6 +929,8 @@ def test_search(monkeypatch, capsys, tmp_path):
 
 
 def test_runtests(monkeypatch, capsys):
+    """unittest for repo.runtests
+    """
     monkeypatch.setattr(testee, 'check_and_run_for_project', mock_check_and_run)
     c = MockContext()
     with pytest.raises(TypeError) as exc:
@@ -800,7 +945,11 @@ def test_runtests(monkeypatch, capsys):
 
 
 class MockWriter:
+    """stub for csv.Writer object
+    """
     def __init__(self, filename):
         print('create writer to file', filename)
     def writerow(self, data):
+        """stub
+        """
         print('call writer.writerow for data', data)

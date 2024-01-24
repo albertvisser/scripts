@@ -1,11 +1,16 @@
-import pytest
+"""unittests for ./list2scite.py
+"""
 import list2scite
 
 def test_main(monkeypatch, capsys, tmp_path):
-    """geen test nodig op leeg file of file bestaat niet,
+    """unittest for list2scite.main
+
+    geen test nodig op leeg file of file bestaat niet,
     want als deze wordt aangeroepen hebben we per definitie een file met namen
     """
     def mock_run(*args, **kwargs):
+        """stub
+        """
         print('call subprocess.run() with args', args, kwargs)
     monkeypatch.setattr(list2scite.subprocess, 'run', mock_run)
     fname = tmp_path / 'test_list2scite'

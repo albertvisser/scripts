@@ -1,8 +1,11 @@
-import pytest
+"""unittests for ./settings.py
+"""
 import settings
 
 
 def test_get_project_root(monkeypatch):
+    """unittest for settings.get_project_root
+    """
     monkeypatch.setattr(settings, 'private_repos', {'name': 'private_name'})
     monkeypatch.setattr(settings, 'git_repos', ['git-repo'])
     monkeypatch.setattr(settings, 'sf_repos', ['sf-repo'])
@@ -31,7 +34,11 @@ def test_get_project_root(monkeypatch):
 
 
 def test_get_project_dir(monkeypatch):
+    """unittest for settings.get_project_dir
+    """
     def mock_get_root(name):
+        """stub for settings.get_project_root
+        """
         return 'path/to'
     monkeypatch.setattr(settings, 'get_project_root', mock_get_root)
     monkeypatch.setattr(settings, 'private_repos', {'name': 'private_name'})
@@ -41,5 +48,3 @@ def test_get_project_dir(monkeypatch):
     monkeypatch.setattr(settings.os.path, 'exists', lambda x: False)
     assert settings.get_project_dir('project') == ''
     assert settings.get_project_dir('name') == ''
-
-

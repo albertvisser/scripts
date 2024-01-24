@@ -1,5 +1,6 @@
+"""unittests for ./session.py
+"""
 import os
-import pytest
 import types
 from io import StringIO
 from invoke import MockContext
@@ -7,27 +8,39 @@ import session as testee
 
 
 def mock_run(self, *args):
+    """stub for invoke.Context.run
+    """
     print(*args)
 
 
 def run_in_dir(self, *args, **kwargs):
+    """stub for invoke.Context.run under "with invoke.Contect.cd"
+    """
     print(*args, 'in', self.cwd)
 
 
 class MockParser(dict):
+    """stub for configparser.ConfigParser object
+    """
     def read(self, *args):
+        """stub
+        """
         print('called ConfigParser.read() with args', *args)
         self['paths'] = {'default': 'path/to/push_to'}
 
 
 def test_get_project_name(monkeypatch, capsys):
+    """unittest for session.get_project_name
+    """
     monkeypatch.setattr(testee, 'DEVEL', 'devpath')
     monkeypatch.setattr(testee.configparser, 'ConfigParser', MockParser)
     assert testee.get_project_name('111') == 'push_to'
     assert capsys.readouterr().out == 'called ConfigParser.read() with args devpath/_111/.hg/hgrc\n'
 
 
-def test_get_regfile_name(monkeypatch, capsys):
+def test_get_regfile_name(monkeypatch):
+    """unittest for session.get_regfile_name
+    """
     monkeypatch.setattr(testee, 'get_project_dir', lambda x: '')
     assert testee.get_regfile_name('name') == ''
     monkeypatch.setattr(testee, 'get_project_dir', lambda x: 'project')
@@ -35,10 +48,16 @@ def test_get_regfile_name(monkeypatch, capsys):
 
 
 def test_newproject(monkeypatch, capsys):
-    def mock_copytree(*args):
-        print('call copytree for `{}` to `{}`'.format(*args))
-    def mock_rename(*args):
-        print('call rename of `{}` to `{}`'.format(*args))
+    """unittest for session.newproject
+    """
+    def mock_copytree(source, target):
+        """stub
+        """
+        print(f'call copytree for `{source}` to `{target}`')
+    def mock_rename(source, target):
+        """stub
+        """
+        print(f'call rename of `{source}` to `{target}`')
     monkeypatch.setattr(testee.os.path, 'exists', lambda x: True)
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
@@ -55,6 +74,8 @@ def test_newproject(monkeypatch, capsys):
 
 
 def test_start_old(monkeypatch, capsys):
+    """unittest for session.start_old
+    """
     monkeypatch.setattr(testee, 'SESSIONS', 'sessions_location')
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
@@ -63,29 +84,51 @@ def test_start_old(monkeypatch, capsys):
 
 
 def test_start(monkeypatch, capsys, tmp_path):
+    """unittest for session.start
+    """
     def mock_run(*args, **kwargs):
+        """stub
+        """
         print(*args, kwargs)
         return types.SimpleNamespace(pid=12345)
     class MockParser(dict):
+        """stub
+        """
         def read(self, *args):
+            """stub
+            """
             print('called ConfigParser.read() with args', *args)
             self['env'] = []
             self['options'] = []
         def sections(self):
+            """stub
+            """
             return []
     class MockParser2(dict):
+        """stub
+        """
         def read(self, *args):
+            """stub
+            """
             print('called ConfigParser.read() with args', *args)
             self['env'] = {'var': 'value'}
             self['options'] = {'term': 'y', 'jansen': 'y', 'prfind': True}
         def sections(self):
+            """stub
+            """
             return True
     class MockParser3(dict):
+        """stub
+        """
         def read(self, *args):
+            """stub
+            """
             print('called ConfigParser.read() with args', *args)
             self['env'] = {}
             self['options'] = {'predit': 'y', 'dtree': 'y', 'prfind': 'y', 'check-repo': 'y'}
         def sections(self):
+            """stub
+            """
             return True
     # monkeypatch.setattr(MockContext, 'run', mock_run)
     monkeypatch.setattr(testee.subprocess, 'Popen', mock_run)
@@ -111,7 +154,7 @@ def test_start(monkeypatch, capsys, tmp_path):
                                        f" {{'cwd': 'project', 'env': {newenv}}}\n")
     monkeypatch.setattr(testee.configparser, 'ConfigParser', MockParser3)
     testee.start(c, 'project_name')
-    assert capsys.readouterr().out =='you already started a session for this project\n'
+    assert capsys.readouterr().out == 'you already started a session for this project\n'
     os.remove(f'{testee.sessionfile_root}/project_name-session-pids-start-at-12345')
     testee.start(c, 'project_name')
     with open(f'{testee.sessionfile_root}/project_name-session-pids-start-at-12345') as f:
@@ -125,6 +168,8 @@ def test_start(monkeypatch, capsys, tmp_path):
 
 
 def test_get_info(monkeypatch, capsys, tmp_path):
+    """unittest for session.get_info
+    """
     mock_data = [types.SimpleNamespace(pid=1, info={'ppid': 0, 'name': 'x', 'exe': 'xx',
                                                     'cmdline': ['a', 'aa']}),
                  types.SimpleNamespace(pid=12345, info={'ppid': 1, 'name': 'y', 'exe': 'yy',
@@ -132,6 +177,8 @@ def test_get_info(monkeypatch, capsys, tmp_path):
                  types.SimpleNamespace(pid=12346, info={'ppid': 1, 'name': 'z', 'exe': 'zz',
                                                         'cmdline': ['c', 'cc']})]
     def mock_iter(*args):
+        """stub
+        """
         print('called psutil.proc_info with args', args)
         return mock_data
     monkeypatch.setattr(testee, 'sessionfile_root', str(tmp_path))
@@ -168,41 +215,66 @@ def test_get_info(monkeypatch, capsys, tmp_path):
                                        " (['name', 'ppid', 'exe', 'cmdline'],)\n")
 
 
-def test_end(monkeypatch, capsys, tmp_path):
+def test_end(monkeypatch, capsys):
+    """unittest for session.end
+    """
     class MockProcess:
+        """stub
+        """
         def __init__(self, pid, name, ppid):
             self.pid = pid
             self.info = {'ppid': ppid, 'name': name}
         def terminate(self):
+            """stub
+            """
             print('called process.terminate')
         def kill(self):
+            """stub
+            """
             print('called process.kill')
     def mock_get_pids(*args):
+        """stub
+        """
         print('called get_start_end_pids with args', args)
         return 1000, 1010
     mock_procs = []
     def mock_iter(*args):
+        """stub
+        """
         print('called psutil.proc_info with args', args)
         return mock_procs
     def mock_check_kill(*args):
+        """stub
+        """
         print('called check_process with args', args)
         return False, True, False
     def mock_check_invalid(*args):
+        """stub
+        """
         print('called check_process with args', args)
         return True, True, False
     def mock_term(*args):
+        """stub
+        """
         print('called process.terminate with args', args)
     def mock_kill(*args):
+        """stub
+        """
         print('called process.kill with args', args)
     def mock_wait(procs, timeout):
+        """stub
+        """
         print(f'called psutil.wait_procs with args {procs}, {timeout}')
         return ([], procs)  # [procs[0]])
     def mock_glob(pattern, root_dir=''):
+        """stub
+        """
         if root_dir:
             return ['project_name-session-pids-start-at-1001']
-        else:
-            return ['filename']
+        return ['filename']
     def mock_unlink(name):
+        """stub
+        """
         print(f'called os.unlink with arg `{name}`')
     monkeypatch.setattr(testee.psutil, 'process_iter', mock_iter)
     monkeypatch.setattr(testee.psutil, 'wait_procs', mock_wait)
@@ -253,7 +325,9 @@ def test_end(monkeypatch, capsys, tmp_path):
                                        "called os.unlink with arg `filename`\n")
 
 
-def test_get_start_end_pids(monkeypatch, capsys):
+def test_get_start_end_pids():
+    """unittest for session.get_start_end_pids
+    """
     assert testee.get_start_end_pids(['project-session-pids-start-at-10000'], 'project') == (10000, 0)
     assert testee.get_start_end_pids(['project-session-pids-start-at-10000'], 'praject') == (-1, 0)
     assert testee.get_start_end_pids(['first-session-pids-start-at-10000',
@@ -276,7 +350,9 @@ def test_get_start_end_pids(monkeypatch, capsys):
                                       'next-session-pids-start-at-12000'], 'none') == (-1, 0)
 
 
-def test_check_process(monkeypatch, capsys):
+def test_check_process():
+    """unittest for session.check_process
+    """
     testproc = types.SimpleNamespace(info={'name': 'x'})
     assert testee.check_process(testproc, True) == (False, False, True)
     testproc = types.SimpleNamespace(info={'name': 'x'})
@@ -300,6 +376,8 @@ def test_check_process(monkeypatch, capsys):
 
 
 def test_edit_old(monkeypatch, capsys):
+    """unittest for session.edit_old
+    """
     monkeypatch.setattr(testee, 'SESSIONS', 'sessions_location')
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
@@ -308,6 +386,8 @@ def test_edit_old(monkeypatch, capsys):
 
 
 def test_get_input_from_user(monkeypatch):
+    """unittest for session.get_input_from_user
+    """
     test_input = StringIO('x\n')
     monkeypatch.setattr('sys.stdin', test_input)
     assert testee.get_input_from_user('prompt', 'y') == 'x'
@@ -317,7 +397,11 @@ def test_get_input_from_user(monkeypatch):
 
 
 def test_editconf(monkeypatch, capsys):
+    """unittest for session.editconf
+    """
     def mock_get_input(prompt, response):
+        """stub
+        """
         print(f'called input(`{prompt}`)')
         return 'No'
     monkeypatch.setattr(MockContext, 'run', mock_run)
@@ -341,7 +425,11 @@ def test_editconf(monkeypatch, capsys):
 
 
 def test_edittestconf(monkeypatch, capsys):
+    """unittest for session.edittestconf
+    """
     def mock_get_input(prompt, response):
+        """stub
+        """
         print(f'called input(`{prompt}`)')
         return 'No'
     monkeypatch.setattr(MockContext, 'run', mock_run)
@@ -365,6 +453,8 @@ def test_edittestconf(monkeypatch, capsys):
 
 
 def _test_list(monkeypatch, capsys):
+    """unittest for session.list
+    """
     monkeypatch.setattr(testee.os, 'listdir', lambda x: ['name1', 'name2'])
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
@@ -373,11 +463,15 @@ def _test_list(monkeypatch, capsys):
 
 
 def _test_newticket(monkeypatch, capsys):
+    """unittest for session.newticket
+    """
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
 
 
 def _test_tickets(monkeypatch, capsys, tmp_path):
+    """unittest for session.tickets
+    """
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
     monkeypatch.setattr(testee, 'get_regfile_name', lambda x: '')
@@ -396,10 +490,16 @@ def _test_tickets(monkeypatch, capsys, tmp_path):
 
 
 def _test_prep(monkeypatch, capsys):
+    """unittest for session.prep
+    """
     def mock_get_name(*args):
+        """stub
+        """
         print('called get_project_name() with args', *args)
         return 'project_name'
     def mock_get_dir(*args):
+        """stub
+        """
         print('called get_project_dir() with args', *args)
         return 'project_dir'
     monkeypatch.setattr(testee, 'get_project_name', mock_get_name)
@@ -408,16 +508,22 @@ def _test_prep(monkeypatch, capsys):
     monkeypatch.setattr(MockContext, 'run', run_in_dir)
     c = MockContext()
     testee.prep(c, '111')
-    assert capsys.readouterr().out == ( 'called get_project_name() with args 111\n'
-                                        'called get_project_dir() with args project_name\n'
-                                        'hg incoming -v devpath/_111 in project_dir\n')
+    assert capsys.readouterr().out == ('called get_project_name() with args 111\n'
+                                       'called get_project_dir() with args project_name\n'
+                                       'hg incoming -v devpath/_111 in project_dir\n')
 
 
 def _test_pull(monkeypatch, capsys):
+    """unittest for session.pull
+    """
     def mock_get_name(*args):
+        """stub
+        """
         print('called get_project_name() with args', *args)
         return 'project_name'
     def mock_get_dir(*args):
+        """stub
+        """
         print('called get_project_dir() with args', *args)
         return 'project_dir'
     monkeypatch.setattr(testee, 'get_project_name', mock_get_name)
@@ -426,17 +532,23 @@ def _test_pull(monkeypatch, capsys):
     monkeypatch.setattr(MockContext, 'run', run_in_dir)
     c = MockContext()
     testee.pull(c, '111')
-    assert capsys.readouterr().out == ( 'called get_project_name() with args 111\n'
-                                        'called get_project_dir() with args project_name\n'
-                                        'hg pull devpath/_111 in project_dir\n'
-                                        'hg up in project_dir\n')
+    assert capsys.readouterr().out == ('called get_project_name() with args 111\n'
+                                       'called get_project_dir() with args project_name\n'
+                                       'hg pull devpath/_111 in project_dir\n'
+                                       'hg up in project_dir\n')
 
 
 def _test_cleanup(monkeypatch, capsys, tmp_path):
-    def mock_remove(*args):
-        print('call remove of `{}`'.format(*args))
-    def mock_rmtree(*args):
-        print('call rmtree of `{}`'.format(*args))
+    """unittest for session.cleanup
+    """
+    def mock_remove(path):
+        """stub
+        """
+        print(f'call remove of `{path}`')
+    def mock_rmtree(path):
+        """stub
+        """
+        print(f'call rmtree of `{path}`')
     monkeypatch.setattr(testee, 'get_project_name', lambda x: 'projname')
     monkeypatch.setattr(testee.os, 'remove', mock_remove)
     monkeypatch.setattr(testee.shutil, 'rmtree', mock_rmtree)

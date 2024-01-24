@@ -1,8 +1,11 @@
-import pytest
+"""unittests for ./xmlp.py
+"""
 import xmlp
 
 def test_main_wrng_args(capsys):
-    """main krijgt sys.argv binnen, dat is een list van namen die altijd begint met de naam
+    """unittest for xmlp.main_wrng_args
+
+    main krijgt sys.argv binnen, dat is een list van namen die altijd begint met de naam
     van het script zelfi. Andere gegevenstypen testen is dus niet zo nuttig
     """
     xmlp.main(['xmlp.py'])
@@ -11,8 +14,9 @@ def test_main_wrng_args(capsys):
     assert capsys.readouterr().out == 'usage: python(3) xmlp.py <filename>\n'
 
 
-def test_main(capsys, tmp_path):
-    ""
+def test_main(tmp_path):
+    """unittest for xmlp.main
+    """
     fname = tmp_path / 'test_xmlp.xml'
     target = tmp_path / 'test_xmlp_pretty.xml'
     with fname.open('w') as f:

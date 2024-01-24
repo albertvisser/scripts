@@ -1,3 +1,5 @@
+"""construe expected output for gui test functions (mostly in bin/check_repo.py)
+"""
 import pytest
 
 check_text = """\
@@ -295,5 +297,4 @@ def expected_output():
             'maingui': main_gui,
             'refresh_frame': refresh,
             'get_repofiles': getrepofiles,
-            'populate_frames':  populate
-            }
+            'populate_frames': populate}

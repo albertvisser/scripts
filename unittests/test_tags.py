@@ -1,21 +1,32 @@
-import pytest
+"""unittests for ./tags.py
+"""
 import types
 from invoke import MockContext
 import tags
 
 
 def mock_run(self, *args):
+    """stub for invoke.Context.run
+    """
     print(*args)
 
 
 def run_in_dir(self, *args, **kwargs):
+    """stub for invoke.Context.run under "with invoke.Contect.cd"
+    """
     print(*args, 'in', self.cwd)
 
 
 def test_list_repofiles(monkeypatch, capsys):
+    """unittest for tags.list_repofiles
+    """
     def mock_get_repofiles(c, *args):
+        """stub
+        """
         return 'path', ['file1', 'file2']
     def mock_run(self, *args, **kwargs):
+        """stub
+        """
         print(*args, 'in', self.cwd)
         return types.SimpleNamespace(stdout='file.py\nname.py\njust_a_name\n')
     monkeypatch.setattr(tags, 'all_repos', 'name_in_all_repos')
@@ -39,6 +50,8 @@ def test_list_repofiles(monkeypatch, capsys):
 
 
 def test_build(monkeypatch, capsys):
+    """unittest for tags.build
+    """
     monkeypatch.setattr(tags, 'all_repos', ['name'])
     monkeypatch.setattr(tags, 'list_repofiles', lambda x, y: (y, ['file', 'name']))
     monkeypatch.setattr(MockContext, 'run', run_in_dir)
@@ -50,7 +63,11 @@ def test_build(monkeypatch, capsys):
 
 
 def test_check_changes(monkeypatch, capsys):
+    """unittest for tags.check_changes
+    """
     def mock_stat(*args):
+        """stub
+        """
         nonlocal counter
         counter += 1
         print('call os.stat for', *args)
@@ -58,6 +75,8 @@ def test_check_changes(monkeypatch, capsys):
             return types.SimpleNamespace(st_mtime=1)
         return types.SimpleNamespace(st_mtime=1)
     def mock_stat_2(*args):
+        """stub
+        """
         nonlocal counter
         counter += 1
         print('call os.stat for', *args)
@@ -65,6 +84,8 @@ def test_check_changes(monkeypatch, capsys):
             return types.SimpleNamespace(st_mtime=1)
         return types.SimpleNamespace(st_mtime=2)
     def mock_stat_f(*args):
+        """stub
+        """
         raise FileNotFoundError
     monkeypatch.setattr(tags.os, 'stat', mock_stat_f)
     counter = 0
@@ -83,6 +104,8 @@ def test_check_changes(monkeypatch, capsys):
 
 
 def test_check(monkeypatch, capsys):
+    """unittest for tags.check
+    """
     monkeypatch.setattr(tags, 'all_repos', ['name'])
     monkeypatch.setattr(tags, 'list_repofiles', lambda x, y: (y, ['file', 'name']))
     monkeypatch.setattr(tags, 'check_changes', lambda x, y: True)
@@ -95,6 +118,8 @@ def test_check(monkeypatch, capsys):
 
 
 def test_update(monkeypatch, capsys):
+    """unittest for tags.update
+    """
     monkeypatch.setattr(tags, 'all_repos', ['name'])
     monkeypatch.setattr(tags, 'list_repofiles', lambda x, y: (y, ['file', 'name']))
     monkeypatch.setattr(tags, 'check_changes', lambda x, y: True)

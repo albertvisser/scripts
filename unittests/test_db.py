@@ -1,21 +1,30 @@
-import pytest
+"""unittests for ./db.py
+"""
 import datetime
 from invoke import MockContext
 import db
 
-FIXDATE = datetime.datetime(2020,1,1)
+FIXDATE = datetime.datetime(2020, 1, 1)
 
 def mock_run(self, *args):
+    """stub for invoke.Context.run
+    """
     print(*args)
 
 
 class MockDatetime:
+    """stub for datetime.DateTime
+    """
     @classmethod
     def today(cls):
+        """stub
+        """
         return FIXDATE
 
 
 def test_start_mongo(monkeypatch, capsys):
+    """unittest for db.start_mongo
+    """
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
     db.start_mongo(c)
@@ -23,6 +32,8 @@ def test_start_mongo(monkeypatch, capsys):
 
 
 def test_stop_mongo(monkeypatch, capsys):
+    """unittest for db.stop_mongo
+    """
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
     db.stop_mongo(c)
@@ -30,6 +41,8 @@ def test_stop_mongo(monkeypatch, capsys):
 
 
 def test_restart_mongo(monkeypatch, capsys):
+    """unittest for db.restart_mongo
+    """
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
     db.restart_mongo(c)
@@ -37,6 +50,8 @@ def test_restart_mongo(monkeypatch, capsys):
 
 
 def test_repair_mongo(monkeypatch, capsys):
+    """unittest for db.repair_mongo
+    """
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
     db.repair_mongo(c)
@@ -46,7 +61,11 @@ def test_repair_mongo(monkeypatch, capsys):
 
 
 def test_dump_mongo(monkeypatch, capsys):
+    """unittest for db.dump_mongo
+    """
     def mock_mkdir(self, *args, **kwargs):
+        """stub
+        """
         print('called mkdir with args', args, kwargs)
     monkeypatch.setattr(db.pathlib.Path, 'mkdir', mock_mkdir)
     monkeypatch.setattr(db.datetime, 'datetime', MockDatetime)
@@ -63,6 +82,8 @@ def test_dump_mongo(monkeypatch, capsys):
 
 
 def test_list_mongodumps(monkeypatch, capsys):
+    """unittest for db.list_mongodumps
+    """
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
     db.list_mongodumps(c)
@@ -70,6 +91,8 @@ def test_list_mongodumps(monkeypatch, capsys):
 
 
 def test_restore_mongo(monkeypatch, capsys):
+    """unittest for db.restore_mongo
+    """
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
     db.restore_mongo(c, 'name')
@@ -79,6 +102,8 @@ def test_restore_mongo(monkeypatch, capsys):
 
 
 def test_start_pg(monkeypatch, capsys):
+    """unittest for db.start_pg
+    """
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
     db.start_pg(c)
@@ -86,6 +111,8 @@ def test_start_pg(monkeypatch, capsys):
 
 
 def test_stop_pg(monkeypatch, capsys):
+    """unittest for db.stop_pg
+    """
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
     db.stop_pg(c)
@@ -93,6 +120,8 @@ def test_stop_pg(monkeypatch, capsys):
 
 
 def test_restart_pg(monkeypatch, capsys):
+    """unittest for db.restart_pg
+    """
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
     db.restart_pg(c)
@@ -100,7 +129,11 @@ def test_restart_pg(monkeypatch, capsys):
 
 
 def test_dump_pg(monkeypatch, capsys):
+    """unittest for db.dump_pg
+    """
     def mock_mkdir(self, *args, **kwargs):
+        """stub
+        """
         print('called mkdir with args', args, kwargs)
     monkeypatch.setattr(db.pathlib.Path, 'mkdir', mock_mkdir)
     monkeypatch.setattr(db.datetime, 'datetime', MockDatetime)
@@ -118,6 +151,8 @@ def test_dump_pg(monkeypatch, capsys):
 
 
 def test_list_pgdumps(monkeypatch, capsys):
+    """unittest for db.list_pgdumps
+    """
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
     db.list_pgdumps(c)
@@ -125,6 +160,8 @@ def test_list_pgdumps(monkeypatch, capsys):
 
 
 def test_restore_pg(monkeypatch, capsys):
+    """unittest for db.restore_pg
+    """
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
     db.restore_pg(c, 'name')

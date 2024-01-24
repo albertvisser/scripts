@@ -1,17 +1,25 @@
+"""unittests for ./lang.py
+"""
 import pytest
 from invoke import MockContext
 import lang
 
 
 def mock_run(self, *args):
+    """stub for invoke.Context.run
+    """
     print(*args)
 
 
 def run_in_dir(self, *args, **kwargs):
+    """stub for invoke.Context.run under "with invoke.Contect.cd"
+    """
     print(*args, 'in', self.cwd)
 
 
 def test_get_base_dir(monkeypatch, capsys):
+    """unittest for lang.get_base_dir
+    """
     monkeypatch.setattr(lang, 'get_project_dir', lambda x: f'project_dir for {x}')
     monkeypatch.setattr(lang.os, 'getcwd', lambda: 'path/to/here')
     assert lang.get_base_dir('.') == 'project_dir for here'
@@ -19,10 +27,16 @@ def test_get_base_dir(monkeypatch, capsys):
 
 
 def test_init(monkeypatch, capsys):
+    """unittest for lang.init
+    """
     def mock_mkdir(path):
+        """stub
+        """
         print(f'called os.path.mkdir with arg `{path}`')
     counter = 0
     def mock_exists(path):
+        """stub
+        """
         nonlocal counter
         counter += 1
         if counter > 1:
@@ -58,7 +72,9 @@ def test_init(monkeypatch, capsys):
                                        'no language support present for language type `nl`\n')
 
 
-def test_uses_gettext(monkeypatch, capsys, tmp_path):
+def test_uses_gettext(tmp_path):
+    """unittest for lang.uses_gettext
+    """
     fname = str(tmp_path / 'use_gettext_test')
     with pytest.raises(FileNotFoundError):
         lang.uses_gettext(fname)
@@ -74,6 +90,8 @@ def test_uses_gettext(monkeypatch, capsys, tmp_path):
 
 
 def test_gettext(monkeypatch, capsys):
+    """unittest for lang.gettext
+    """
     monkeypatch.setattr(lang, 'get_base_dir', lambda x: '')
     monkeypatch.setattr(MockContext, 'run', run_in_dir)
     c = MockContext()
@@ -104,6 +122,8 @@ def test_gettext(monkeypatch, capsys):
 
 
 def test_merge(monkeypatch, capsys):
+    """unittest for lang.merge
+    """
     monkeypatch.setattr(lang, 'get_base_dir', lambda x: '')
     monkeypatch.setattr(MockContext, 'run', run_in_dir)
     c = MockContext()
@@ -119,6 +139,8 @@ def test_merge(monkeypatch, capsys):
 
 
 def test_poedit(monkeypatch, capsys):
+    """unittest for lang.poedit
+    """
     monkeypatch.setattr(lang, 'get_base_dir', lambda x: '')
     monkeypatch.setattr(MockContext, 'run', run_in_dir)
     c = MockContext()
@@ -134,6 +156,8 @@ def test_poedit(monkeypatch, capsys):
 
 
 def test_place(monkeypatch, capsys):
+    """unittest for lang.place
+    """
     monkeypatch.setattr(lang, 'get_base_dir', lambda x: '')
     monkeypatch.setattr(MockContext, 'run', run_in_dir)
     c = MockContext()
