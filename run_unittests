@@ -11,24 +11,39 @@ import subprocess
 # import shutil
 import configparser
 
+args = sys.argv[1:]
+stopfirst = True if '-x' in args else False
+if stopfirst:
+    args.pop(args.index('-x'))
+
+project = ''
+if '-p' in args:
+    which = args.index('-p')
+    args.pop(which)
+    project = args.pop(which)
+    if project in ('scripts', 'bin'):
+        project_path = '~/bin'
+    elif project in ('server-stuff', 'nginx-config'):
+        project_path = '~/nginx-config'
+    elif project == 'lintergui':
+        project_path = '~/projects/mylinter'
+    else:
+        project_path = f'~/projects/{project}'
+    os.chdir(os.path.expanduser(project_path))
+
 if not os.path.exists('.rurc'):
-    sys.exit('No configuration file (.rurc) found')
+    sys.exit("No configuration file (.rurc) found,"
+             " either go into a project's directory or specify one using -p")
 conf = configparser.ConfigParser(allow_no_value=True)
 conf.read('.rurc')
 testdir = list(dict(conf['testdir']).keys())[0]
 tests = dict(conf['testscripts'])
 modules = dict(conf['testees'])
 
-usage =f'usage: ./unittests [ARG] - where arg is a value from {list(tests)}'
-
-args = sys.argv
 do, do_s = '', []
-stopfirst = '-x' if '-x' in args else ''
-if stopfirst:
-    args.pop(args.index('-x'))
-if len(args) == 2:
-    do_s = args[1].split(',')
-elif len(args) == 1:
+if args:
+    do_s = args[0].split(',')
+else:
     do = 'all'
 ok = False
 for parm in tests:
@@ -39,5 +54,9 @@ for parm in tests:
         else:
             command = ['covtest', os.path.join(testdir, tests[parm]), modules[parm]]
         subprocess.run(command, check=False)
+
 if not ok:
-    print(usage)
+    if not project:
+        project = os.path.basename(os.getcwd())
+    print(f'usage: ./unittests [-p PROJ] [ARG] - where for PROJ {project}'
+          f' ARG is a value from {list(tests)}')
