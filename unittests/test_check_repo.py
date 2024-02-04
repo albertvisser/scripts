@@ -339,6 +339,7 @@ class TestCheckTextDialog:
             'called LineEdit.text\n'
             'called dialog.accept()\n')
 
+
 class TestDiffViewDialog:
     """unittests for check_repo.DiffViewDialog
     """
@@ -378,6 +379,7 @@ class TestDiffViewDialog:
         monkeypatchen
         kan misschien door het opzetten van de tekst in een aparte routine te doen maar waarom zou ik
         """
+
 
 class TestFriendlyReminder:
     """unittests for check_repo.FriendlyReminder
@@ -917,23 +919,23 @@ class TestGui:
         monkeypatch.setattr(mockqtw.MockDialog, 'exec_', lambda *x: testee.qtw.QDialog.Rejected)
         monkeypatch.setattr(testee, 'FriendlyReminder', mockqtw.MockDialog)
         testobj.commit_all()
-        assert capsys.readouterr().out == 'called Dialog.__init__ with args () {}\n'
+        assert capsys.readouterr().out == f'called Dialog.__init__ with args {testobj} () {{}}\n'
         monkeypatch.setattr(mockqtw.MockDialog, 'exec_', lambda *x: testee.qtw.QDialog.Accepted)
         monkeypatch.setattr(testee, 'FriendlyReminder', mockqtw.MockDialog)
         testobj.commit_all()
-        assert capsys.readouterr().out == ('called Dialog.__init__ with args () {}\n'
+        assert capsys.readouterr().out == (f'called Dialog.__init__ with args {testobj} () {{}}\n'
                                            "run_and_report with args:"
                                            " ['git', 'commit', '-a', '-m', 'commit_message']\n"
                                            'called Gui.refresh_frame()\n')
         testobj.repotype = 'hg'
         testobj.commit_all()
-        assert capsys.readouterr().out == ('called Dialog.__init__ with args () {}\n'
+        assert capsys.readouterr().out == (f'called Dialog.__init__ with args {testobj} () {{}}\n'
                                            "run_and_report with args:"
                                            " ['hg', 'commit', '-m', 'commit_message']\n"
                                            'called Gui.refresh_frame()\n')
         monkeypatch.setattr(testee.qtw.QInputDialog, 'getText', mock_gettext_nok)
         testobj.commit_all()
-        assert capsys.readouterr().out == 'called Dialog.__init__ with args () {}\n'
+        assert capsys.readouterr().out == f'called Dialog.__init__ with args {testobj} () {{}}\n'
 
     def test_commit_selected(self, monkeypatch, capsys, testobj):
         """unittest for Gui.commit_selected
@@ -1009,13 +1011,13 @@ class TestGui:
         monkeypatch.setattr(testee.Gui, 'get_selected_files', mock_get_selected)
         testobj.commit_selected()
         assert capsys.readouterr().out == ('call get_selected_filenames()\n'
-                                           'called Dialog.__init__ with args () {}\n')
+                                           f'called Dialog.__init__ with args {testobj} () {{}}\n')
 
         monkeypatch.setattr(mockqtw.MockDialog, 'exec_', lambda *x: testee.qtw.QDialog.Accepted)
         # monkeypatch.setattr(testee.Gui, 'get_selected_files', mock_get_selected)
         testobj.commit_selected()
         assert capsys.readouterr().out == ('call get_selected_filenames()\n'
-                                           'called Dialog.__init__ with args () {}\n'
+                                           f'called Dialog.__init__ with args {testobj} () {{}}\n'
                                            'call filter_tracked()\n'
                                            "run_and_report with args:"
                                            " ['git', 'add', 'file1', 'file2.py', 'test_file3.py']\n"
@@ -1027,7 +1029,7 @@ class TestGui:
         testobj.repotype = 'hg'
         testobj.commit_selected()
         assert capsys.readouterr().out == ('call get_selected_filenames()\n'
-                                           'called Dialog.__init__ with args () {}\n'
+                                           f'called Dialog.__init__ with args {testobj} () {{}}\n'
                                            'call filter_tracked()\n'
                                            "run_and_report with args: ['hg', 'commit', 'file1',"
                                            " 'file2.py', 'test_file3.py', '-m', 'commit_message']\n"
@@ -1036,7 +1038,7 @@ class TestGui:
         monkeypatch.setattr(testee.qtw.QInputDialog, 'getText', mock_gettext_nok)
         testobj.commit_selected()
         assert capsys.readouterr().out == ('call get_selected_filenames()\n'
-                                           'called Dialog.__init__ with args () {}\n'
+                                           f'called Dialog.__init__ with args {testobj} () {{}}\n'
                                            'call filter_tracked()\n')
 
     def test_amend_commit(self, monkeypatch, capsys, testobj):
@@ -1556,6 +1558,7 @@ class TestGui:
         monkeypatch.setattr(testee.qtw, 'QAction', mockqtw.MockAction)
         assert isinstance(testobj.setup_stashmenu(), mockqtw.MockMenu)
         assert capsys.readouterr().out == (
+                "called Menu.__init__ with args ()\n"
                 f"called Action.__init__ with args ('&New Stash', {testobj})\n"
                 f'called Signal.connect with args ({testobj.stash_push},)\n'
                 'called Menu.addAction\n'
