@@ -41,7 +41,7 @@ tests = dict(conf['testscripts'])
 modules = dict(conf['testees'])
 
 do, do_s = '', []
-if args:
+if args and args[0] != 'all':
     do_s = args[0].split(',')
 else:
     do = 'all'

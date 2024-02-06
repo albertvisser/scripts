@@ -580,3 +580,35 @@ def search(c, find='', rebuild=False, mode='both'):
 def runtests(c, name, test=''):
     "run (all or selected) registered unittests for a given project"
     check_and_run_for_project(c, name, 'run_unittests ' + test)
+
+
+@task(help={'name': 'repository name'})
+def find_failing_tests(c, name=''):
+    """execute unittests and report the failing ones for one or more given repositories
+
+    if none is given, do for all known projects
+    """
+    if name:
+        names = name.split(',')
+    else:
+        names = all_repos
+    for project in names:
+        if project not in frozen_repos:
+            print(f'=== running tests for {project}')
+            c.run(f"run-unittests -p {project} all | grep ^FAILED", warn=True)
+
+
+@task(help={'name': 'repository name'})
+def find_test_stats(c, name=''):
+    """execute unittests and show the coverage for one or more given repositories
+
+    if none is given, do for all known projects
+    """
+    if name:
+        names = name.split(',')
+    else:
+        names = all_repos
+    for project in names:
+        if project not in frozen_repos:
+            print(f'=== running tests for {project}')
+            c.run(f"run-unittests -p {project} all | grep -A 2 ^Name", warn=True)
