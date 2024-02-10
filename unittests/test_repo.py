@@ -7,10 +7,13 @@ from invoke import MockContext
 import repo as testee
 
 
-def mock_run(self, *args):
+def mock_run(self, *args, **kwargs):
     """stub for invoke.Context.run
     """
-    print(*args)
+    if args and not kwargs:
+        print(*args)
+    else:
+        print('called run with args', args, kwargs)
 
 
 def run_in_dir(self, *args, **kwargs):
@@ -729,6 +732,7 @@ def test_add2gitweb(monkeypatch, capsys):
     assert capsys.readouterr().out == (
             f'echo "orig description" > {testee.GITLOC}/name/.git/description\n')
 
+
 def _test_get_repodesc(monkeypatch, capsys):  # mogelijk te onbenullig en lastig om te testen
     """unittest for repo.get_repodesc
     """
@@ -763,6 +767,19 @@ def test_dtree(monkeypatch, capsys):
     testee.dtree(c, 'name')
     assert capsys.readouterr().out == ("call check_and_run_for_project() with args ('name',"
                                        " '~/projects/doctree/ensure-qt projdocs.trd')\n")
+
+
+def test_rreadme(monkeypatch, capsys):
+    """unittest for repo.rreadme
+    """
+    monkeypatch.setattr(testee, 'check_and_run_for_project', mock_check_and_run)
+    c = MockContext()
+    testee.rreadme(c)
+    assert capsys.readouterr().out == ("call check_and_run_for_project() with args ('',"
+                                       " 'rstview readme.rst')\n")
+    testee.rreadme(c, 'name')
+    assert capsys.readouterr().out == ("call check_and_run_for_project() with args ('name',"
+                                       " 'rstview readme.rst')\n")
 
 
 def test_qgit(monkeypatch, capsys):
@@ -942,6 +959,52 @@ def test_runtests(monkeypatch, capsys):
     testee.runtests(c, 'name', 'test')
     assert capsys.readouterr().out == ("call check_and_run_for_project() with args ("
                                        "'name', 'run_unittests test')\n")
+
+
+def test_find_failing_tests(monkeypatch, capsys):
+    """unittest for repo.find_failing_tests
+    """
+    testee.all_repos = ['xxx', 'yyy', 'zzz']
+    testee.frozen_repos = ['yyy']
+    monkeypatch.setattr(MockContext, 'run', mock_run)
+    c = MockContext()
+    testee.find_failing_tests(c)
+    assert capsys.readouterr().out == (
+            "=== running tests for xxx\n"
+            "called run with args ('run-unittests -p xxx all | grep ^FAILED',) {'warn': True}\n"
+            "=== running tests for zzz\n"
+            "called run with args ('run-unittests -p zzz all | grep ^FAILED',) {'warn': True}\n")
+    testee.find_failing_tests(c, 'xxx')
+    assert capsys.readouterr().out == (
+            "=== running tests for xxx\n"
+            "called run with args ('run-unittests -p xxx all | grep ^FAILED',) {'warn': True}\n")
+    testee.find_failing_tests(c, 'xxx,yyy')
+    assert capsys.readouterr().out == (
+            "=== running tests for xxx\n"
+            "called run with args ('run-unittests -p xxx all | grep ^FAILED',) {'warn': True}\n")
+
+
+def test_find_test_stats(monkeypatch, capsys):
+    """unittest for repo.find_test_stats
+    """
+    testee.all_repos = ['xxx', 'yyy', 'zzz']
+    testee.frozen_repos = ['yyy']
+    monkeypatch.setattr(MockContext, 'run', mock_run)
+    c = MockContext()
+    testee.find_test_stats(c)
+    assert capsys.readouterr().out == (
+            "=== running tests for xxx\n"
+            "called run with args ('run-unittests -p xxx all | grep -A 2 ^Name',) {'warn': True}\n"
+            "=== running tests for zzz\n"
+            "called run with args ('run-unittests -p zzz all | grep -A 2 ^Name',) {'warn': True}\n")
+    testee.find_test_stats(c, 'xxx')
+    assert capsys.readouterr().out == (
+            "=== running tests for xxx\n"
+            "called run with args ('run-unittests -p xxx all | grep -A 2 ^Name',) {'warn': True}\n")
+    testee.find_test_stats(c, 'xxx,yyy')
+    assert capsys.readouterr().out == (
+            "=== running tests for xxx\n"
+            "called run with args ('run-unittests -p xxx all | grep -A 2 ^Name',) {'warn': True}\n")
 
 
 class MockWriter:
