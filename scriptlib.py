@@ -83,7 +83,7 @@ def update(c, name):
 
 @task(help={'name': ('name of the script or symlink to add to the ignore file'
                      ' - use "all" to check the entire library')})
-def ignore(c, name):
+def check_ignore(c, name):
     "werk .gitignore bij met de scripts die in scriptlib staan"
     lib = ScriptLib()
     ignore_file = lib.basepath / '.gitignore'
