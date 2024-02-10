@@ -506,6 +506,12 @@ def dtree(c, name=''):
 
 
 @task(help={'name': 'repository name'})
+def rreadme(c, name=''):
+    "Show readme.rst for a given repository"
+    check_and_run_for_project(c, name, 'rstview readme.rst')
+
+
+@task(help={'name': 'repository name'})
 def qgit(c, name=''):
     "Open Git gui after changing to repository"
     check_and_run_for_project(c, name, 'qgit')
