@@ -103,6 +103,7 @@ def check_ignore(c, name):
         else:
             print('already present in .gitignore')
     for name in not_present:
+        print(f'added `{name}` to .gitignore')
         ignores.append(name)
     if not_present:
         shutil.copyfile(str(ignore_file), str(ignore_file) + '~')

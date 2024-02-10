@@ -226,8 +226,8 @@ def test_update_all(monkeypatch, capsys):
                                        'geen verschillen gevonden\n')
 
 
-def test_ignore(monkeypatch, capsys):
-    """unittest for scriptlib.ignore
+def test_check_ignore(monkeypatch, capsys):
+    """unittest for scriptlib.check_ignore
     """
     def mock_read(*args):
         """stub
@@ -247,27 +247,25 @@ def test_ignore(monkeypatch, capsys):
     monkeypatch.setattr(testee.pathlib.Path, 'write_text', mock_write)
     monkeypatch.setattr(testee, 'ScriptLib', MockLib)
     c = MockContext()
-    testee.ignore(c, 'test')
-    assert capsys.readouterr().out == ('called ScriptLib.__init__\n'
-                                       "called path.read_text with args"
-                                       " (PosixPath('x/.gitignore'),)\n"
-                                       'called ScriptLib.get_all_names with args {}\n'
-                                       'not in library\n')
-    testee.ignore(c, 'dick')
-    assert capsys.readouterr().out == ('called ScriptLib.__init__\n'
-                                       "called path.read_text with args"
-                                       " (PosixPath('x/.gitignore'),)\n"
-                                       'called ScriptLib.get_all_names with args {}\n'
-                                       'called shutil.copyfile with args'
-                                       " ('x/.gitignore', 'x/.gitignore~')\n"
-                                       "called path.write_text with args"
-                                       " (PosixPath('x/.gitignore'), 'harry\\nsally\\ndick')\n")
-    testee.ignore(c, 'harry')
-    assert capsys.readouterr().out == ('called ScriptLib.__init__\n'
-                                       "called path.read_text with args"
-                                       " (PosixPath('x/.gitignore'),)\n"
-                                       'called ScriptLib.get_all_names with args {}\n'
-                                       'already present in .gitignore\n')
+    testee.check_ignore(c, 'test')
+    assert capsys.readouterr().out == (
+            'called ScriptLib.__init__\n'
+            "called path.read_text with args (PosixPath('x/.gitignore'),)\n"
+            'called ScriptLib.get_all_names with args {}\n' 'not in library\n')
+    testee.check_ignore(c, 'dick')
+    assert capsys.readouterr().out == (
+            'called ScriptLib.__init__\n'
+            "called path.read_text with args (PosixPath('x/.gitignore'),)\n"
+            'called ScriptLib.get_all_names with args {}\n'
+            "added `dick` to .gitignore\n"
+            "called shutil.copyfile with args ('x/.gitignore', 'x/.gitignore~')\n"
+            "called path.write_text with args (PosixPath('x/.gitignore'), 'harry\\nsally\\ndick')\n")
+    testee.check_ignore(c, 'harry')
+    assert capsys.readouterr().out == (
+            'called ScriptLib.__init__\n'
+            "called path.read_text with args (PosixPath('x/.gitignore'),)\n"
+            'called ScriptLib.get_all_names with args {}\n'
+            'already present in .gitignore\n')
 
 
 def test_ignore_all(monkeypatch, capsys):
@@ -291,17 +289,16 @@ def test_ignore_all(monkeypatch, capsys):
     monkeypatch.setattr(testee.pathlib.Path, 'write_text', mock_write)
     monkeypatch.setattr(testee, 'ScriptLib', MockLib)
     c = MockContext()
-    testee.ignore(c, 'all')
-    assert capsys.readouterr().out == ('called ScriptLib.__init__\n'
-                                       "called path.read_text with args"
-                                       " (PosixPath('x/.gitignore'),)\n"
-                                       "called ScriptLib.get_all_names with args"
-                                       " {'skip_inactive': True}\n"
-                                       'called shutil.copyfile with args'
-                                       " ('x/.gitignore', 'x/.gitignore~')\n"
-                                       "called path.write_text with args"
-                                       " (PosixPath('x/.gitignore'),"
-                                       " 'harry\\nsally\\ntom\\ndick')\n")
+    testee.check_ignore(c, 'all')
+    assert capsys.readouterr().out == (
+            'called ScriptLib.__init__\n'
+            "called path.read_text with args (PosixPath('x/.gitignore'),)\n"
+            "called ScriptLib.get_all_names with args {'skip_inactive': True}\n"
+            "added `tom` to .gitignore\n"
+            "added `dick` to .gitignore\n"
+            "called shutil.copyfile with args ('x/.gitignore', 'x/.gitignore~')\n"
+            "called path.write_text with args (PosixPath('x/.gitignore'),"
+            " 'harry\\nsally\\ntom\\ndick')\n")
 
 
 def test_disable(monkeypatch, capsys):
