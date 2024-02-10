@@ -22,14 +22,14 @@ but in the form of a script that generates these symplink and invocation.
     execute ``invoke`` tasks for this directory (through ``tasks.py``). The "fab" part of the name
     stems from the former use of ``fabric``.
 
-**build-bin-scripts**
+**build-bin-scripts / build_bin_scripts.py**
 
     a script to build additional short scripts by making symlinks and echoing commands into files.
     see below for details.
 
-**check-repo**
+**check-repo / check-repo.py**
 
-    (symlink to **check-repo.py**, formerly check_local)
+    (formerly check_local)
     while a script by this name was replaced with a function in the fabfile, 
     my creativity failed me in choosing a name for a somewhat similar but visual tool 
     that makes it possible to start several basic repo management tasks from a gui
@@ -37,7 +37,7 @@ but in the form of a script that generates these symplink and invocation.
 
 **covtest**
 
-    script to launch unittests and analyse testcoverage (using pytest and coverage.py)
+    script to launch unittests and analyse testcoverage (using pytest and coverage.py). Used by *run-unittests*.
 
 **db.py**
 
@@ -47,7 +47,9 @@ but in the form of a script that generates these symplink and invocation.
 
 **dtree**
 
-    starts up doctree for repo-related documentation (through a binfab command)
+    starts up *treedocs* for repo-related documentation (through a binfab command)
+    Intended to be used within a project directory, it's also possible to supply the project name
+    as a parameter. 
 
 **fabsrv**
 
@@ -60,24 +62,21 @@ but in the form of a script that generates these symplink and invocation.
 
 **lang.py**
 
-    a couple of `invoke` functions to help with the internalization of source files
+    a couple of `invoke` functions to help with the internalization of Python source files
 
-**list2scite**
+**list2scite / list2scite.py**
 
-    (symlink to **list2scite.py**, the testable version)
     a script to take a file with filenames (created by e.g. Double Commander)
     and expand it into a command to start SciTE with all these files open
 
-**list2vi**
+**list2vi / list2vi.py**
 
-    (symlink to **list2vi.py**, the testable version) 
     the same for VI in a terminal
 
 **mee-bezig**
 
-    calls *a-propos* on a file where I can leave notes on what I'm working on. 
-    Intended to be used within a project directory, it's also possible to supply the project name
-    as a parameter. 
+    starts op *treedocs* with a file in my projects directory where I keep all kinds of notes 
+    about my collection of projects as a whole 
 
 **morefromdos.py**
 
@@ -87,6 +86,7 @@ but in the form of a script that generates these symplink and invocation.
     Without an extension specified, works on Python source files (extension .py).
 
 **pedit**
+
     shortcut for starting up vi in a terminal using the 'Code Editor Shell' profile (100x54,
     green on black) at different positions of the screen dependent on a startup parameter, 
     making it possible to edit programs side-by-side
@@ -94,7 +94,7 @@ but in the form of a script that generates these symplink and invocation.
 **predit**
 
     executing *binfab session-start <project-name>* starts a terminal session for that project
-    and sets up an environment variable $files for use with this command to start editing
+    and sets up an environment variable $files (and others) for use with this command to start editing
     the specified (source) files
 
 **prfind**
@@ -105,9 +105,8 @@ but in the form of a script that generates these symplink and invocation.
 
     this file.
 
-**rename-files**
+**rename-files / rename_files.py**
 
-    (symlink to **rename_files.py**, the testable version)
     like list2vi/list2scite, apply some action on the selected files and/or directories: 
     take the first word and put it at the end to improve sortability.
 
@@ -116,9 +115,10 @@ but in the form of a script that generates these symplink and invocation.
     `invoke` functions for managing source repositories, like the replaced check- and push-scripts 
     mentioned below (at the end of this file)
 
-**runtests**
+**run-unittests / run_unittests.py**
 
-    script to start all unittests in the unittests directory by letting pytest discover them
+    script to run unittests ifor a project, either for all the modules or for a specified one.
+    uses a config file (.rurc) to figure out the combination of tester - testee
 
 **runwithlog**
 
@@ -133,6 +133,11 @@ but in the form of a script that generates these symplink and invocation.
 
     Configuration values for the fabfile (and the tasks files) in this directory,
     mostly for the mercurial repo stuff.
+
+**setup-nginx**
+
+    script to setup my server environment, to be used when installing a new system. 
+    It's a work in progress, updating whenever I have to actually use it.
 
 **sort_file.py**
 
@@ -160,6 +165,10 @@ but in the form of a script that generates these symplink and invocation.
 
     a function to set up a Python source tree in a standardized way (really?)
 
+**tedit**
+
+    like `pedit`, but with a white background. One might say p is for programs and t is for text
+    
 **unittests/**
 
     the scripts in this directory contain the unit tests for the invoke scripts and check-repo.py
@@ -179,6 +188,7 @@ Requirements
 - a Linux/Unix based OS (although the Python scripts should be cross-platform)
 - Python
 - Invoke where applicable
+- PyQt(5) for check-repo
 - Git and/or Mercurial (for the check and push scripts)
 
 
@@ -252,12 +262,8 @@ This script creates the following symlinks and short starter scripts for my own 
     starts up Doctree's predecessor. No arguments.
 **nt2ext**
     show and/or reorganize contents of NoteTree documents
-**pfind-all**
-    search in all tracked python files
-**pfind-prog**
-    search in all tracked python program modules
-**pfind-test**
-    search in all tracked python test modules
+**pfind**
+    start one of the "search in all repos" commands depending on first argument (-a/-p/-t)
 **probreg**
     starts up my 'probreg' application. Optional arguments: either the name of an
     XML file or 'sql' optionally followed by a project name. Without arguments:
@@ -319,9 +325,15 @@ It also creates starters for various other programs:
     starts pedit at a position next to where it would be using peditr           
 **peditr**
     starts pedit on the right side of the screen instead of in the middle
-**pfind**
+**pfind-all**
     shortcut for a `binfab` command that starts up *filefindr* to search in all my Python software 
     projects
+**pfind-prog**
+    shortcut for a `binfab` command that starts up *filefindr* to search in all my Python software 
+    projects' program modules
+**pfind-test**
+    shortcut for a `binfab` command that starts up *filefindr* to search in all my Python software 
+    projects unittest modules
 **preadme**
     edit readme file in a given repo
 **prshell**
@@ -330,8 +342,16 @@ It also creates starters for various other programs:
     syntax check the specified python file(s) (using py_compile)
 **qtdemo**
     starts up the Qt5 demo program
+**readme**
+    `binfab` command to view the ven HTML rendering of a project's readme file
 **reaper**
     starts linux version of reaper
+**repotestfail**
+    shortcut for `binfab repo.find-failing-tests` to show only the failing unittests for a given repo.
+    If no repo given, do all. 
+**repoteststats**
+    shortcut for `binfab repo.find-failing-tests` to show unittest coverage for a given repo.
+    If no repo given, do all. 
 **repocheck**
     shortcut for `binfab repo.check-local`, to check for changes in local repos
 **repolog**
@@ -342,6 +362,8 @@ It also creates starters for various other programs:
     starts a game
 **start-gaming**
     starts Steam on workspace 3
+**start-gaming-native**
+    starts Steam on workspace 3 using native package
 **start-mc**
     (if installed) start Midnight Commander in a larger than default terminal
 **start-servers**
@@ -377,6 +399,8 @@ It also creates starters for various other programs:
     takes two filenames and starts vi practically full screen to edit the files side-by-side
 **wing**
     (if installed) starts up WING editor which I sometimes use for GUI debugging
+**wstart**
+    launch ghostwriter in fourth workspace
 **wxdemo**
     starter for the wxPython demo program
 
