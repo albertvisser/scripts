@@ -984,6 +984,29 @@ def test_find_failing_tests(monkeypatch, capsys):
             "called run with args ('run-unittests -p xxx all | grep ^FAILED',) {'warn': True}\n")
 
 
+def test_find_test_errors(monkeypatch, capsys):
+    """unittest for repo.find_test_errors
+    """
+    testee.all_repos = ['xxx', 'yyy', 'zzz']
+    testee.frozen_repos = ['yyy']
+    monkeypatch.setattr(MockContext, 'run', mock_run)
+    c = MockContext()
+    testee.find_test_errors(c)
+    assert capsys.readouterr().out == (
+            "=== running tests for xxx\n"
+            "called run with args ('run-unittests -p xxx all | grep -B 2 ^ERROR',) {'warn': True}\n"
+            "=== running tests for zzz\n"
+            "called run with args ('run-unittests -p zzz all | grep -B 2 ^ERROR',) {'warn': True}\n")
+    testee.find_test_errors(c, 'xxx')
+    assert capsys.readouterr().out == (
+            "=== running tests for xxx\n"
+            "called run with args ('run-unittests -p xxx all | grep -B 2 ^ERROR',) {'warn': True}\n")
+    testee.find_test_errors(c, 'xxx,yyy')
+    assert capsys.readouterr().out == (
+            "=== running tests for xxx\n"
+            "called run with args ('run-unittests -p xxx all | grep -B 2 ^ERROR',) {'warn': True}\n")
+
+
 def test_find_test_stats(monkeypatch, capsys):
     """unittest for repo.find_test_stats
     """

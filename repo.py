@@ -605,6 +605,22 @@ def find_failing_tests(c, name=''):
 
 
 @task(help={'name': 'repository name'})
+def find_test_errors(c, name=''):
+    """execute unittests and reprt the tests that have errors
+
+    if none is given, do for all known projects
+    """
+    if name:
+        names = name.split(',')
+    else:
+        names = all_repos
+    for project in names:
+        if project not in frozen_repos:
+            print(f'=== running tests for {project}')
+            c.run(f"run-unittests -p {project} all | grep -B 2 ^ERROR", warn=True)
+
+
+@task(help={'name': 'repository name'})
 def find_test_stats(c, name=''):
     """execute unittests and show the coverage for one or more given repositories
 
