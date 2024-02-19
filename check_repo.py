@@ -1,10 +1,11 @@
 #! /usr/bin/env python3
-"""examine uncommitted changes in source repository
+"""examine uncommitted changes in source repository and more
 """
 import os
 import sys
 import pathlib
 import importlib
+import invoke
 import inspect
 import argparse
 import subprocess
@@ -62,6 +63,8 @@ class DiffViewDialog(qtw.QDialog):
     """
     def __init__(self, parent, title='', caption='', data='', size=(600, 400)):
         "create a window with a scintilla text widget and an ok button"
+        showlocs = caption.startswith('Show loc-counts')
+        self.data = data
         self._parent = parent
         super().__init__(parent)
         self.setWindowTitle(title)
@@ -79,10 +82,15 @@ class DiffViewDialog(qtw.QDialog):
         hbox.addWidget(self.text)
         vbox.addLayout(hbox)
         hbox = qtw.QHBoxLayout()
-        ok_button = qtw.QPushButton('&Ok', self)
+        if showlocs:
+            export_button = qtw.QPushButton('&Copy', self)
+            export_button.clicked.connect(self.export)
+        ok_button = qtw.QPushButton('&Done', self)
         ok_button.clicked.connect(self.close)
         ok_button.setDefault(True)
         hbox.addStretch()
+        if showlocs:
+            hbox.addWidget(export_button)
         hbox.addWidget(ok_button)
         hbox.addStretch()
         vbox.addLayout(hbox)
@@ -123,6 +131,35 @@ class DiffViewDialog(qtw.QDialog):
         lexer = sci.QsciLexerDiff()
         lexer.setDefaultFont(font)
         self.text.setLexer(lexer)
+
+    def export(self):
+        "transform output and copy to clipboard"
+        def firstlinenum(x):
+            if '-' in x[0]:
+                return int(x[0].split('-')[0])
+            return int(x[0])
+        locsdict = {}
+        for line in self.data.split('\n'):
+            line = line.strip()
+            if line.startswith('lines of code'):
+                filename = line.split('`')[1]
+                locsdict[filename] = []
+                # print(locsdict)
+            elif line and ': ' in line:
+                name, rest = line.split(': ', 1)
+                count, linenums = rest.split(' lines ')
+                locsdict[filename].append((linenums[1:-1], name, count))
+        outlist = []
+        for name, data in locsdict.items():
+            if not data:
+                continue
+            if outlist:
+                outlist.append('====')
+            outlist.append(f'module: `{name}`')
+            # outlist.extend([f'{x:4}-{y:4} {z} ({a})' for x, y, z, a in sorted(locsdict[name])])
+            outlist.extend([f'{f"{x}":9} {y} ({z})' for x, y, z in sorted(data, key=firstlinenum)])
+        clp = qtw.QApplication.clipboard()
+        clp.setText('\n'.join(outlist))
 
 
 class FriendlyReminder(qtw.QDialog):
@@ -249,7 +286,7 @@ class Gui(qtw.QWidget):
         btn.setToolTip(tooltips['edit'])
         btn.clicked.connect(self.edit_selected)
         vbox2.addWidget(btn)
-        btn = qtw.QPushButton('Count L&ines', self)
+        btn = qtw.QPushButton('Count &# Lines', self)
         btn.setToolTip(tooltips['count'])
         btn.clicked.connect(self.count_selected)
         vbox2.addWidget(btn)
@@ -368,16 +405,22 @@ class Gui(qtw.QWidget):
         self.refresh_frame()
 
     def count_all(self):
+        """show lines of code for all tracked files
+        """
         filenames = self.filter_modules()
-        lines = get_locs_for_modules(filenames)
-        caption = 'Show loc-counts for all tracked modules'
-        DiffViewDialog(self, self.title, caption, '\n'.join(lines), (600, 400)).exec_()
+        if filenames:
+            lines = get_locs_for_modules(filenames, self.path)
+            caption = 'Show loc-counts for all tracked modules'
+            DiffViewDialog(self, self.title, caption, '\n'.join(lines), (600, 400)).exec_()
 
     def count_selected(self):
+        """show lines of code for selected files
+        """
         filenames = self.filter_tracked(self.get_selected_files())
-        lines = get_locs_for_modules(filenames)
-        caption = 'Show loc-counts for: ' + ', '.join(filenames)
-        DiffViewDialog(self, self.title, caption, '\n'.join(lines), (600, 400)).exec_()
+        if filenames:
+            lines = get_locs_for_modules(filenames, self.path)
+            caption = 'Show loc-counts for: ' + ', '.join(filenames)
+            DiffViewDialog(self, self.title, caption, '\n'.join(lines), (600, 400)).exec_()
 
     def diff_all(self):
         """show diff for all tracked files
@@ -466,9 +509,9 @@ class Gui(qtw.QWidget):
         # filenames = self.filter_tracked(self.get_selected_files())
         filelist = self.get_selected_files()
         to_commit = [pathlib.Path(x[1]) for x in filelist]
-        if ([y for y in to_commit if y.suffix == '.py' and not y.name.startswith('test_')] and
-            FriendlyReminder(self).exec_() == qtw.QDialog.Rejected):
-                return
+        if ([y for y in to_commit if y.suffix == '.py' and not y.name.startswith('test_')]
+                and FriendlyReminder(self).exec_() == qtw.QDialog.Rejected):
+            return
         filenames = self.filter_tracked(filelist)
         if filenames:
             message, ok = qtw.QInputDialog.getText(self, self.title, 'Enter a commit message:')
@@ -732,58 +775,75 @@ class Gui(qtw.QWidget):
         return ret1, ret2
 
 
-def get_locs_for_modules(namelist):
+def get_locs_for_modules(namelist, path):
     "turn filenames into modulenames and count locs"
     result = []
     for name in namelist:
         result.extend(['', f'lines of code per function / method for `{name}`', ''])
         name = os.path.splitext(name)[0].replace('/', '.')
-        result.extend([f'{x}: {y} lines' for x, y in get_locs(name)])
+        # result.extend([f'{x}: {y} lines' for x, y in get_locs(name, path)])
+        for x, y, z in get_locs(name, path):
+            if y:
+                where = f'{z}' if y == 1 else f'{z}-{z + y - 1}'
+                result.append(f'{x}: {y} lines ({where})')
+            else:
+                result.append(x)
     return result
 
 
-def get_locs(module):
+def get_locs(module, path):
     "get lines of code per function / method"
-    print(f'*** module {module} ***')
+    sys.path.append(str(path))
+    # print(f'*** module {module} ***')
     lineslist = []
     moduleobj = importlib.import_module(module)
     for name, subobj in inspect.getmembers(moduleobj):
-        print(name, subobj)
-        if inspect.isclass(subobj):
-            print('is class')
+        if isinstance(subobj, invoke.tasks.Task):
+            lines, start, text = get_locs_for_unit(name, subobj)
+            docstr = subobj.__doc__
+            if docstr:
+                doclen = len(docstr.split('\n'))
+                start += doclen
+                lines -= doclen
+            lineslist.append((text or f'{name} (invoke task)', lines, start + 1))
+        elif inspect.isclass(subobj):
+            # print('is class')
             if subobj.__module__ != module:
+                # lineslist.append((f'{name} is not defined in this module', 0, 0))
                 continue
             classname = name
             for name2, subsubobj in inspect.getmembers(subobj):
-                print(name2, subsubobj)
+                # print(name2, subsubobj)
                 if inspect.isfunction(subsubobj) or inspect.ismethod(subsubobj):
-                    print('is function in class')
-                    lines, text = get_locs_for_unit(name, subsubobj)
-                    lineslist.append((text or f'{classname}.{name2}', lines))
+                    # print('is function in class')
+                    lines, start, text = get_locs_for_unit(name, subsubobj)
+                    docstr = subsubobj.__doc__
+                    if docstr:
+                        doclen = len(docstr.split('\n'))
+                        start += doclen
+                        lines -= doclen
+                    lineslist.append((text or f'{classname}.{name2}', lines, start))
+                # elif inspect.isfunction(subsubobj):
+                #     lineslist.append((f'{classname}.{name2} is not a function', 0, 0))
+                # else:
+                #     lineslist.append((f'{classname}.{name2} is not a method', 0, 0))
         elif inspect.isfunction(subobj):
-            print('is function')
+            # print('is function')
             if subobj.__module__ != module:
+                # lineslist.append((f'{name} is not defined in this module', 0, 0))
                 continue
             functionname = name
-            lines, text = get_locs_for_unit(name, subobj)
-            lineslist.append((text or functionname, lines))
-        # probleem: dit detecteert decorated functies niet. met onderstaande code
+            lines, start, text = get_locs_for_unit(name, subobj)
+            docstr = subobj.__doc__
+            if docstr:
+                doclen = len(docstr.split('\n'))
+                start += doclen
+                lines -= doclen
+            lineslist.append((text or functionname, lines, start))
         # else:
-        #     print(name, subobj)
-        # worden inv tasks bijvoorvebeeld getoond als
-        # dump_mongo <Task 'dump_mongo'>
-        # dump_pg <Task 'dump_pg'>
-        # list_mongodumps <Task 'list_mongodumps'>
-        # list_pgdumps <Task 'list_pgdumps'>
-        # repair_mongo <Task 'repair_mongo'>
-        # restart_mongo <Task 'restart_mongo'>
-        # restart_pg <Task 'restart_pg'>
-        # restore_mongo <Task 'restore_mongo'>
-        # restore_pg <Task 'restore_pg'>
-        # start_mongo <Task 'start_mongo'>
-        # start_pg <Task 'start_pg'>
-        # stop_mongo <Task 'stop_mongo'>
-        # stop_pg <Task 'stop_pg'>
+        #     lineslist.append((f'{name} is a {type(subobj)}', 0, 0))
+        # voor wxPython modules gaat dit mogelijk ook nog niet helemaal jofel
+    sys.path.pop()
     return lineslist
 
 
@@ -792,10 +852,16 @@ def get_locs_for_unit(name, unit):
     try:
         lines = inspect.getsourcelines(unit)
     except TypeError:
-        return 0, f'wrong type for getsourcelines - skipped: {name} {unit}'
+        return 0, 0, f'wrong type for getsourcelines - skipped: {name} {unit}'
     except OSError as e:
-        return 0, f'{e} for {name} {unit}'
-    return len(lines[0]), ''
+        return 0, 0, f'{e} for {name} {unit}'
+    # with open('/tmp/test_get_locs', 'a') as f:
+    #     # print(lines[0], file=f)  # lineslist.extend(code)
+    #     for ix, line in enumerate(lines[0]):
+    #         f.write(f'{lines[1] + ix:4} {line}')
+    count = len(lines[0]) - 1  # exclude declaration
+    start = lines[1] + 1       # exclude declaration
+    return count, start, ''
 
 
 def startapp(args):

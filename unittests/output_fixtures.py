@@ -31,13 +31,13 @@ called HBox.addStretch
 called VBox.addLayout with arg of type <class 'mockgui.mockqtwidgets.MockHBoxLayout'>
 called dialog.setLayout()
 """
-diff_view = """\
+diffview_start = """\
 called dialog.__init()__ with args ()
 called dialog.setWindowTitle() with args ('title',)
 called dialog.resize()
 called VBox.__init__
 called HBox.__init__
-called Label.__init__ with args ('caption', {testobj})
+called Label.__init__ with args ('{caption}', {testobj})
 called HBox.addWidget with arg of type <class 'mockgui.mockqtwidgets.MockLabel'>
 called VBox.addLayout with arg of type <class 'mockgui.mockqtwidgets.MockHBoxLayout'>
 called HBox.__init__
@@ -62,15 +62,26 @@ called Editor.setCaretLineBackgroundColor
 called Lexer.__init__()
 called Editor.setDefaultFont
 called Editor.setLexer
-called Editor.setText with arg ``
+called Editor.setText with arg `{testobj.data}`
 called Editor.setReadOnly with value `True`
 called HBox.addWidget with arg of type <class 'mockgui.mockqtwidgets.MockEditorWidget'>
 called VBox.addLayout with arg of type <class 'mockgui.mockqtwidgets.MockHBoxLayout'>
 called HBox.__init__
-called PushButton.__init__ with args ('&Ok', {testobj}) {{}}
+"""
+dv_copy1 = """\
+called PushButton.__init__ with args ('&Copy', {testobj}) {{}}
+called Signal.connect with args ({testobj.export},)
+"""
+diffview_middle = """\
+called PushButton.__init__ with args ('&Done', {testobj}) {{}}
 called Signal.connect with args ({testobj.close},)
 called PushButton.setDefault with arg `True`
 called HBox.addStretch
+"""
+dv_copy2 = """\
+called HBox.addWidget with arg of type <class 'mockgui.mockqtwidgets.MockPushButton'>
+"""
+diffview_end = """\
 called HBox.addWidget with arg of type <class 'mockgui.mockqtwidgets.MockPushButton'>
 called HBox.addStretch
 called VBox.addLayout with arg of type <class 'mockgui.mockqtwidgets.MockHBoxLayout'>
@@ -177,7 +188,7 @@ called PushButton.__init__ with args ('&Edit', {testobj}) {{}}
 called PushButton.setToolTip with arg `{edit}`
 called Signal.connect with args ({testobj.edit_selected},)
 called VBox.addWidget with arg of type <class 'mockgui.mockqtwidgets.MockPushButton'>
-called PushButton.__init__ with args ('Count L&ines', {testobj}) {{}}
+called PushButton.__init__ with args ('Count &# Lines', {testobj}) {{}}
 called PushButton.setToolTip with arg `{count}`
 called Signal.connect with args ({testobj.count_selected},)
 called VBox.addWidget with arg of type <class 'mockgui.mockqtwidgets.MockPushButton'>
@@ -293,7 +304,8 @@ called Gui.update_branches()
 @pytest.fixture
 def expected_output():
     return {'checktextdialog': check_text,
-            'diffviewdialog': diff_view,
+            'diffviewdialog': diffview_start + diffview_middle + diffview_end,
+            'diffviewdialog2': diffview_start + dv_copy1 + diffview_middle + dv_copy2 + diffview_end,
             'friendlyreminder': friendly_reminder,
             'maingui': main_gui,
             'refresh_frame': refresh,

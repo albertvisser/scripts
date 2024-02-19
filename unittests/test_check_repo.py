@@ -236,24 +236,48 @@ def test_startapp(monkeypatch, capsys, tmp_path):
 def test_get_locs_for_modules(monkeypatch, capsys):
     """unittest for check_repo.get_locs_for_modules
     """
-    def mock_get(name):
+    def mock_get(*args):
         """stub
         """
-        print(f'called get_locs with arg `{name}`')
-        return ('fun', 15), ('cls.meth', 12)
+        print('called get_locs with args', args)
+        return ('fun', 15, 2), ('cls.meth', 12, 20), ('oops', 0, 0)
     monkeypatch.setattr(testee, 'get_locs', mock_get)
-    assert testee.get_locs_for_modules(['name1.py', 'path/name2']) == [
+    assert testee.get_locs_for_modules(['name1.py', 'path/name2'], 'a path') == [
             '', 'lines of code per function / method for `name1.py`', '',
-            'fun: 15 lines', 'cls.meth: 12 lines',
+            'fun: 15 lines (2-16)', 'cls.meth: 12 lines (20-31)', 'oops',
             '', 'lines of code per function / method for `path/name2`', '',
-            'fun: 15 lines', 'cls.meth: 12 lines']
-    assert capsys.readouterr().out == ('called get_locs with arg `name1`\n'
-                                       'called get_locs with arg `path.name2`\n')
+            'fun: 15 lines (2-16)', 'cls.meth: 12 lines (20-31)', 'oops']
+    assert capsys.readouterr().out == ("called get_locs with args ('name1', 'a path')\n"
+                                       "called get_locs with args ('path.name2', 'a path')\n")
 
 
 def test_get_locs():
     """unittest for check_repo.get_locs
     """
+    tempfile = pathlib.Path('test_get_locs.py')
+    doc1 = '\t\"\"\"doc\"\"\"\n'
+    doc2 = '\t\"\"\"doc\n\t\"\"\"\n'
+    doc3 = '\t\t\"\"\"doc\n\t\t\"\"\"\n'
+    tempfile.write_text(
+            "import configparser\nfrom os.path import split\nfrom invoke import task\n\n\n"
+            "from datetime import datetime\n"
+            "def function(arg):\n\tprint('something')\n\treturn arg\n\n\n"
+            "@task(help={'arg': 'argument'})\ndef command(c, arg):\n\tprint('something')\n"
+            "\treturn arg\n\n\nclass MyClass:\n\tnomethods = True\n\n\n"
+            "class AnotherClass:\n\tdef method(self):\n\t\tprint('something')\n\t\treturn arg\n"
+            f"\n\ndef function2(arg):\n{doc1}\tprint('something')\n\treturn arg\n\n\n"
+            f"@task(help={{'arg': 'argument'}})\ndef command2(c, arg):\n{doc2}\tprint('something')\n"
+            f"\treturn arg\n\n\nclass MyClass2:\n{doc1}\tnomethods = True\n\n\n"
+            f"class AnotherClass2:\n{doc1}\n\tdef method(self):\n{doc3}\t\tprint('something')\n"
+            "\t\treturn arg\n"
+            )
+    assert testee.get_locs('test_get_locs', '') == [('AnotherClass.method', 2, 24),
+                                                    ('AnotherClass2.method', 2, 53),
+                                                    ('command (invoke task)', 3, 14),
+                                                    ('command2 (invoke task)', 3, 38),
+                                                    ('function', 2, 8),
+                                                    ('function2', 2, 30)]
+    tempfile.unlink()
 
 
 def test_get_locs_for_unit_err_1(monkeypatch):
@@ -264,7 +288,7 @@ def test_get_locs_for_unit_err_1(monkeypatch):
         """
         raise TypeError
     monkeypatch.setattr(testee.inspect, 'getsourcelines', mock_get)
-    assert testee.get_locs_for_unit('x', 'y') == (0, 'wrong type for getsourcelines'
+    assert testee.get_locs_for_unit('x', 'y') == (0, 0, 'wrong type for getsourcelines'
                                                   ' - skipped: x y')
 
 
@@ -276,7 +300,7 @@ def test_get_locs_for_unit_err_2(monkeypatch):
         """
         raise OSError('this')
     monkeypatch.setattr(testee.inspect, 'getsourcelines', mock_get)
-    assert testee.get_locs_for_unit('x', 'y') == (0, 'this for x y')
+    assert testee.get_locs_for_unit('x', 'y') == (0, 0, 'this for x y')
 
 
 def test_get_locs_for_unit(monkeypatch):
@@ -285,9 +309,9 @@ def test_get_locs_for_unit(monkeypatch):
     def mock_get(arg):
         """stub
         """
-        return ['line1', 'x', 'y', 'z', 'last line'], 'whatever'
+        return ['line1', 'x', 'y', 'z', 'last line'], 2
     monkeypatch.setattr(testee.inspect, 'getsourcelines', mock_get)
-    assert testee.get_locs_for_unit('x', 'y') == (5, '')
+    assert testee.get_locs_for_unit('x', 'y') == (4, 3, '')
 
 
 class TestCheckTextDialog:
@@ -369,8 +393,16 @@ class TestDiffViewDialog:
         monkeypatch.setattr(testee.gui, 'QFontMetrics', mockqtw.MockFontMetrics)
         monkeypatch.setattr(testee.qtw, 'QPushButton', mockqtw.MockPushButton)
         monkeypatch.setattr(testee.qtw, 'QAction', mockqtw.MockAction)
-        testobj = testee.DiffViewDialog('parent', 'title', 'caption')
-        assert capsys.readouterr().out == expected_output['diffviewdialog'].format(testobj=testobj)
+        caption = 'caption'
+        testobj = testee.DiffViewDialog('parent', 'title', caption)
+        assert testobj.data == ''
+        assert capsys.readouterr().out == expected_output['diffviewdialog'].format(testobj=testobj,
+                                                                                   caption=caption)
+        caption = 'Show loc-counts caption'
+        testobj = testee.DiffViewDialog('parent', 'title', caption, 'data')
+        assert testobj.data == 'data'
+        assert capsys.readouterr().out == expected_output['diffviewdialog2'].format(testobj=testobj,
+                                                                                    caption=caption)
 
     def _test_setup_text(self, monkeypatch, capsys):
         """stub
@@ -379,6 +411,34 @@ class TestDiffViewDialog:
         monkeypatchen
         kan misschien door het opzetten van de tekst in een aparte routine te doen maar waarom zou ik
         """
+
+    def test_export(self, monkeypatch, capsys):
+        class MockClipBoard:
+            """stub
+            """
+            def setText(self, text):
+                print(f"called QClipBoard.setText with arg '{text}'")
+        def mock_clipboard():
+            # print('called QApplication.clipboard')
+            return MockClipBoard()
+        monkeypatch.setattr(testee.DiffViewDialog, '__init__', mock_dialog_init)
+        monkeypatch.setattr(testee.qtw.QApplication, 'clipboard', mock_clipboard)
+        testobj = testee.DiffViewDialog('parent', 'title', 'caption')
+        testobj.data = ('lines of code for `module`\n\n'
+                        'method: 1 lines (2)  \nfunction: 10 lines (5-14)\n\n'
+                        'lines of code for `other/module`\n\n'
+                        'nothing found\n\n'
+                        'lines of code for `third/module.py`\n\n'
+                        'method: 1 lines (2)  \nfunction: 10 lines (5-14)\n\n')
+        testobj.export()
+        assert capsys.readouterr().out == (
+                "called dialog.__init()__ with args ('title', 'caption')\n"
+                "called QClipBoard.setText with arg 'module: `module`\n"
+                "2         method (1)\n"
+                "5-14      function (10)\n"
+                "====\nmodule: `third/module.py`\n"
+                "2         method (1)\n"
+                "5-14      function (10)'\n")
 
 
 class TestFriendlyReminder:
@@ -624,10 +684,15 @@ class TestGui:
             """
             print('called Gui.filter_modules')
             return ['all', 'tracked', 'modules']
-        def mock_get(arg):
+        def mock_filter_none():
             """stub
             """
-            print(f'called get_locs_for_modules with arg `{arg}`')
+            print('called Gui.filter_modules')
+            return []
+        def mock_get(*args):
+            """stub
+            """
+            print('called get_locs_for_modules with args', args)
             return ['loc-count-line1', 'loc-count-line2']
         class MockDiffView:
             """stub
@@ -646,11 +711,15 @@ class TestGui:
         testobj.count_all()
         assert capsys.readouterr().out == (
                 'called Gui.filter_modules\n'
-                "called get_locs_for_modules with arg `['all', 'tracked', 'modules']`\n"
+                "called get_locs_for_modules with args (['all', 'tracked', 'modules'],"
+                " PosixPath('base'))\n"
                 "called DiffViewDialog with args ('Uncommitted changes for `base`',"
                 " 'Show loc-counts for all tracked modules', 'loc-count-line1\\nloc-count-line2',"
                 " (600, 400))\n"
                 'exec dialog\n')
+        monkeypatch.setattr(testobj, 'filter_modules', mock_filter_none)
+        testobj.count_all()
+        assert capsys.readouterr().out == 'called Gui.filter_modules\n'
 
     def test_count_selected(self, monkeypatch, capsys, testobj):
         """unittest for Gui.count_selected
@@ -665,10 +734,15 @@ class TestGui:
             """
             print('called Gui.filter_tracked')
             return list(*args)
-        def mock_get(arg):
+        def mock_filter_none(*args):
             """stub
             """
-            print(f'called get_locs_for_modules with arg `{arg}`')
+            print('called Gui.filter_tracked')
+            return []
+        def mock_get(*args):
+            """stub
+            """
+            print('called get_locs_for_modules with args', args)
             return ['loc-count-line1', 'loc-count-line2']
         class MockDiffView:
             """stub
@@ -689,11 +763,15 @@ class TestGui:
         assert capsys.readouterr().out == (
                 'called get_selected_filenames\n'
                 'called Gui.filter_tracked\n'
-                "called get_locs_for_modules with arg `['file1', 'file2']`\n"
+                "called get_locs_for_modules with args (['file1', 'file2'], PosixPath('base'))\n"
                 "called DiffViewDialog with args ('Uncommitted changes for `base`',"
                 " 'Show loc-counts for: file1, file2', 'loc-count-line1\\nloc-count-line2',"
                 " (600, 400))\n"
                 'exec dialog\n')
+        monkeypatch.setattr(testobj, 'filter_tracked', mock_filter_none)
+        testobj.count_selected()
+        assert capsys.readouterr().out == ('called get_selected_filenames\n'
+                                           'called Gui.filter_tracked\n')
 
     def test_diff_all(self, monkeypatch, capsys, testobj):
         """unittest for Gui.diff_all
