@@ -794,7 +794,6 @@ def get_locs_for_modules(namelist, path):
 def get_locs(module, path):
     "get lines of code per function / method"
     sys.path.append(str(path))
-    # print(f'*** module {module} ***')
     lineslist = []
     moduleobj = importlib.import_module(module)
     for name, subobj in inspect.getmembers(moduleobj):
@@ -807,15 +806,11 @@ def get_locs(module, path):
                 lines -= doclen
             lineslist.append((text or f'{name} (invoke task)', lines, start + 1))
         elif inspect.isclass(subobj):
-            # print('is class')
             if subobj.__module__ != module:
-                # lineslist.append((f'{name} is not defined in this module', 0, 0))
                 continue
             classname = name
             for name2, subsubobj in inspect.getmembers(subobj):
-                # print(name2, subsubobj)
                 if inspect.isfunction(subsubobj) or inspect.ismethod(subsubobj):
-                    # print('is function in class')
                     lines, start, text = get_locs_for_unit(name, subsubobj)
                     docstr = subsubobj.__doc__
                     if docstr:
@@ -823,14 +818,8 @@ def get_locs(module, path):
                         start += doclen
                         lines -= doclen
                     lineslist.append((text or f'{classname}.{name2}', lines, start))
-                # elif inspect.isfunction(subsubobj):
-                #     lineslist.append((f'{classname}.{name2} is not a function', 0, 0))
-                # else:
-                #     lineslist.append((f'{classname}.{name2} is not a method', 0, 0))
         elif inspect.isfunction(subobj):
-            # print('is function')
             if subobj.__module__ != module:
-                # lineslist.append((f'{name} is not defined in this module', 0, 0))
                 continue
             functionname = name
             lines, start, text = get_locs_for_unit(name, subobj)
@@ -840,8 +829,6 @@ def get_locs(module, path):
                 start += doclen
                 lines -= doclen
             lineslist.append((text or functionname, lines, start))
-        # else:
-        #     lineslist.append((f'{name} is a {type(subobj)}', 0, 0))
         # voor wxPython modules gaat dit mogelijk ook nog niet helemaal jofel
     sys.path.pop()
     return lineslist
