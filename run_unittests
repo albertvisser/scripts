@@ -10,8 +10,18 @@ import os
 import subprocess
 # import shutil
 import configparser
+usage = """\
+usage: python run_unittests.py [ -p PROJECT ] [ -x ] [ NAMES | all ]
+    NAMES is a comma-delimited list of names as used in .rurc
+    use all (literal) to run all tests in all modules
+    use nonexistant name to get a list of available names
+    use -p to run from a project directory you're not in
+    use -x to stop at the first failing test"""
 
 args = sys.argv[1:]
+if args and args[0] in ('-h', '--help'):
+    sys.exit(usage)
+
 stopfirst = True if '-x' in args else False
 if stopfirst:
     args.pop(args.index('-x'))
@@ -25,8 +35,6 @@ if '-p' in args:
         project_path = '~/bin'
     elif project in ('server-stuff', 'nginx-config'):
         project_path = '~/nginx-config'
-    elif project == 'lintergui':
-        project_path = '~/projects/mylinter'
     else:
         project_path = f'~/projects/{project}'
     os.chdir(os.path.expanduser(project_path))
