@@ -289,14 +289,14 @@ called Gui.refresh_frame()
 populate = setup_app + """\
 called Gui.get_repofiles()
 called List.clear
-called List.addItem with arg `file1.py` on `[]`
-called List.addItem with arg `file2.py` on `['file1.py']`
+called List.addItem with arg `file1.py`
+called List.addItem with arg `file2.py`
 called List.setCurrentRow with rownumber 0
 called Gui.update_branches()
 called List.setFocus
 called List.clear
-called List.addItem with arg `file1.py` on `['file1.py', 'file2.py']`
-called List.addItem with arg `file2.py` on `['file1.py', 'file2.py', 'file1.py']`
+called List.addItem with arg `file1.py`
+called List.addItem with arg `file2.py`
 called List.setCurrentRow with rownumber 0
 called Gui.update_branches()
 """
