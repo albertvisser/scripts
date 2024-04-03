@@ -87,7 +87,7 @@ but in the form of a script that generates these symplink and invocation.
 
 **pedit**
 
-    shortcut for starting up vi in a terminal using the 'Code Editor Shell' profile (100x54,
+    shortcut for starting up vi(m) in a terminal using the 'Code Editor Shell' profile (100x54,
     green on black) at different positions of the screen dependent on a startup parameter, 
     making it possible to edit programs side-by-side
 
@@ -388,15 +388,15 @@ It also creates starters for various other programs:
 **vi-get-runtime**
     Get the current VI(M) version. Used by my Hotkeys plugin(s) for VI
 **viref**
-    starts vi showing vi documentation
+    starts vi(m) showing quick reference
 **vless**
-    starts vi in a mode that is supposed to resemble the `less` program
+    starts vi(m) in a mode that is supposed to resemble the `less` program
 **vstable**
     start Vivaldi browser (stable version) on workspace 1
 **vstart**
     start Vivaldi (snapshot) browser on workspace 1
 **widevi**
-    takes two filenames and starts vi practically full screen to edit the files side-by-side
+    takes two filenames and starts vi(m) practically full screen to edit the files side-by-side
 **wing**
     (if installed) starts up WING editor which I sometimes use for GUI debugging
 **wstart**
