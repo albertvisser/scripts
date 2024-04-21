@@ -606,7 +606,7 @@ def find_failing_tests(c, name=''):
 
 @task(help={'name': 'repository name'})
 def find_test_errors(c, name=''):
-    """execute unittests and reprt the tests that have errors
+    """execute unittests and report the tests that have errors
 
     if none is given, do for all known projects
     """
@@ -634,3 +634,16 @@ def find_test_stats(c, name=''):
         if project not in frozen_repos:
             print(f'=== running tests for {project}')
             c.run(f"run-unittests -p {project} all | grep -A 2 ^Name", warn=True)
+
+@task(help={'name': 'repository name'})
+def list_branches(c, name=''):
+    """list branches for project(s)"""
+    if name:
+        names = name.split(',')
+    else:
+        names = all_repos
+    for project in names:
+        if project not in frozen_repos:
+            with c.cd(get_project_dir(project)):
+                print(f'branches for project {project}')
+                c.run('git branch')

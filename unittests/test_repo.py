@@ -10,16 +10,13 @@ import repo as testee
 def mock_run(self, *args, **kwargs):
     """stub for invoke.Context.run
     """
-    if args and not kwargs:
-        print(*args)
-    else:
-        print('called run with args', args, kwargs)
+    print('called run with args', args, kwargs)
 
 
 def run_in_dir(self, *args, **kwargs):
     """stub for invoke.Context.run under "with invoke.Contect.cd"
     """
-    print(*args, 'in', self.cwd)
+    print('called run with args', args, kwargs, 'in', self.cwd)
 
 
 class MockCheck(testee.Check):
@@ -421,8 +418,8 @@ def test_check_local_changes(monkeypatch, capsys):
     monkeypatch.setattr(MockContext, 'run', run_in_dir)
     c = MockContext()
     testee.check_local_changes(c)
-    assert capsys.readouterr().out == ('gnome-terminal --geometry=100x40 -- '
-                                       'view /tmp/repo_local_changes in ~/projects\n')
+    assert capsys.readouterr().out == ("called run with args ('gnome-terminal --geometry=100x40 -- "
+                                       "view /tmp/repo_local_changes',) {} in ~/projects\n")
 
 
 def test_check_local_notes(monkeypatch, capsys):
@@ -431,7 +428,8 @@ def test_check_local_notes(monkeypatch, capsys):
     monkeypatch.setattr(MockContext, 'run', run_in_dir)
     c = MockContext()
     testee.check_local_notes(c)
-    assert capsys.readouterr().out == 'treedocs projects.trd in ~/projects\n'
+    assert capsys.readouterr().out == (
+            "called run with args ('treedocs projects.trd',) {} in ~/projects\n")
 
 
 def test_check_remote(monkeypatch, capsys):
@@ -705,32 +703,37 @@ def test_add2gitweb(monkeypatch, capsys):
     monkeypatch.setattr(testee.pathlib.Path, 'exists', lambda *x: False)
     testee.add2gitweb(c, 'name')
     assert capsys.readouterr().out == (
-            f'touch {testee.GITLOC}/name/.git/git-daemon-export-ok\n'
-            'called testee.get_repodesc\n'
-            f'echo "repodesc" > {testee.GITLOC}/name/.git/description\n')
+        f"called run with args ('touch {testee.GITLOC}/name/.git/git-daemon-export-ok',) {{}}\n"
+        'called testee.get_repodesc\n'
+        f'called run with args (\'echo "repodesc" > {testee.GITLOC}/name/.git/description\',) {{}}\n')
     testee.add2gitweb(c, 'name', frozen=True)
     assert capsys.readouterr().out == (
-            f'touch {testee.GITLOC}/.frozen/name/.git/git-daemon-export-ok\n'
-            'called testee.get_repodesc\n'
-            f'echo "repodesc" > {testee.GITLOC}/.frozen/name/.git/description\n')
+        f"called run with args ('touch {testee.GITLOC}/.frozen/name/.git/git-daemon-export-ok',)"
+        " {}\n"
+        'called testee.get_repodesc\n'
+        f'called run with args (\'echo "repodesc" > {testee.GITLOC}/.frozen/name/.git/description\',)'
+        ' {}\n')
     monkeypatch.setattr(testee.pathlib.Path, 'exists', lambda *x: True)
     monkeypatch.setattr(testee.pathlib.Path, 'read_text', mock_read)
     testee.add2gitweb(c, 'name')
     assert capsys.readouterr().out == (
-            f'echo "description" > {testee.GITLOC}/name/.git/description\n')
+        f'called run with args (\'echo "description" > {testee.GITLOC}/name/.git/description\',)'
+        ' {}\n')
     counter2 = 0
     monkeypatch.setattr(testee.pathlib.Path, 'exists', mock_exists)
     monkeypatch.setattr(testee.pathlib.Path, 'read_text', mock_read)
     testee.add2gitweb(c, 'name')
     assert capsys.readouterr().out == (
-            'called testee.get_repodesc\n'
-            f'echo "repodesc" > {testee.GITLOC}/name/.git/description\n')
+        'called testee.get_repodesc\n'
+        f'called run with args (\'echo "repodesc" > {testee.GITLOC}/name/.git/description\',)'
+        ' {}\n')
     counter = counter2 = 0
     monkeypatch.setattr(testee.pathlib.Path, 'exists', mock_exists_2)
     monkeypatch.setattr(testee.pathlib.Path, 'read_text', mock_read_2)
     testee.add2gitweb(c, 'name')
     assert capsys.readouterr().out == (
-            f'echo "orig description" > {testee.GITLOC}/name/.git/description\n')
+        f'called run with args (\'echo "orig description" > {testee.GITLOC}/name/.git/description\',)'
+        ' {}\n')
 
 
 def _test_get_repodesc(monkeypatch, capsys):  # mogelijk te onbenullig en lastig om te testen
@@ -750,10 +753,11 @@ def test_check_and_run(monkeypatch, capsys):
     assert capsys.readouterr().out == 'name is not a known project\n'
     monkeypatch.setattr(testee, 'get_project_dir', lambda x: 'path/to/repo')
     testee.check_and_run_for_project(c, 'repo', 'command-string')
-    assert capsys.readouterr().out == 'command-string in path/to/repo\n'
+    assert capsys.readouterr().out == "called run with args ('command-string',) {} in path/to/repo\n"
     monkeypatch.setattr(testee, 'get_project_dir', lambda x: os.getcwd())
     testee.check_and_run_for_project(c, '', 'command-string')
-    assert capsys.readouterr().out == 'command-string in /home/albert/bin\n'
+    assert capsys.readouterr().out == (
+            "called run with args ('command-string',) {} in /home/albert/bin\n")
 
 
 def test_dtree(monkeypatch, capsys):
@@ -799,7 +803,8 @@ def test_mee_bezig(monkeypatch, capsys):
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
     testee.mee_bezig(c)
-    assert capsys.readouterr().out == 'treedocs ~/projects/projects.trd\n'
+    assert capsys.readouterr().out == (
+            "called run with args ('treedocs ~/projects/projects.trd',) {}\n")
 
 
 def test_preadme(monkeypatch, capsys):
@@ -920,29 +925,37 @@ def test_search(monkeypatch, capsys, tmp_path):
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
     testee.search(c)
-    assert capsys.readouterr().out == ('called rebuild_filenamelist\n'
-                                       f'afrift -m multi {tmpfilelist}-both -e py -P\n')
+    assert capsys.readouterr().out == (
+            'called rebuild_filenamelist\n'
+            f"called run with args ('afrift -m multi {tmpfilelist}-both -e py -P',) {{}}\n")
     testee.search(c, rebuild=True)
-    assert capsys.readouterr().out == ('called rebuild_filenamelist\n'
-                                       f'afrift -m multi {tmpfilelist}-both -e py -P\n')
+    assert capsys.readouterr().out == (
+            'called rebuild_filenamelist\n'
+            f"called run with args ('afrift -m multi {tmpfilelist}-both -e py -P',) {{}}\n")
     testee.search(c, 'name', mode='test')
-    assert capsys.readouterr().out == ('called rebuild_filenamelist\n'
-                                       f'afrift -m multi {tmpfilelist}-test -e py -PN -s name\n')
+    assert capsys.readouterr().out == (
+            'called rebuild_filenamelist\n'
+            f"called run with args ('afrift -m multi {tmpfilelist}-test -e py -PN -s name',) {{}}\n")
     testee.search(c, 'name', rebuild=True, mode='prog')
-    assert capsys.readouterr().out == ('called rebuild_filenamelist\n'
-                                       f'afrift -m multi {tmpfilelist}-prog -e py -PN -s name\n')
+    assert capsys.readouterr().out == (
+            'called rebuild_filenamelist\n'
+            f"called run with args ('afrift -m multi {tmpfilelist}-prog -e py -PN -s name',) {{}}\n")
     with open(f'{testee.FILELIST}-both', 'w') as f:
         f.write('')
     testee.search(c)
-    assert capsys.readouterr().out == f'afrift -m multi {tmpfilelist}-both -e py -P\n'
+    assert capsys.readouterr().out == (
+            f"called run with args ('afrift -m multi {tmpfilelist}-both -e py -P',) {{}}\n")
     testee.search(c, rebuild=True)
-    assert capsys.readouterr().out == ('called rebuild_filenamelist\n'
-                                       f'afrift -m multi {tmpfilelist}-both -e py -P\n')
+    assert capsys.readouterr().out == (
+            'called rebuild_filenamelist\n'
+            f"called run with args ('afrift -m multi {tmpfilelist}-both -e py -P',) {{}}\n")
     testee.search(c, 'name')
-    assert capsys.readouterr().out == f'afrift -m multi {tmpfilelist}-both -e py -PN -s name\n'
+    assert capsys.readouterr().out == (
+            f"called run with args ('afrift -m multi {tmpfilelist}-both -e py -PN -s name',) {{}}\n")
     testee.search(c, 'name', rebuild=True)
-    assert capsys.readouterr().out == ('called rebuild_filenamelist\n'
-                                       f'afrift -m multi {tmpfilelist}-both -e py -PN -s name\n')
+    assert capsys.readouterr().out == (
+            'called rebuild_filenamelist\n'
+            f"called run with args ('afrift -m multi {tmpfilelist}-both -e py -PN -s name',) {{}}\n")
 
 
 def test_runtests(monkeypatch, capsys):
@@ -1028,6 +1041,37 @@ def test_find_test_stats(monkeypatch, capsys):
     assert capsys.readouterr().out == (
             "=== running tests for xxx\n"
             "called run with args ('run-unittests -p xxx all | grep -A 2 ^Name',) {'warn': True}\n")
+
+
+def test_list_branches(monkeypatch, capsys):
+    """unittest for repo.find_failing_tests
+    """
+    def mock_get(arg):
+        print(f'called get_project_dir with arg {arg}')
+        return arg
+    testee.all_repos = ['xxx', 'yyy', 'zzz']
+    testee.frozen_repos = ['yyy']
+    monkeypatch.setattr(MockContext, 'run', run_in_dir)
+    monkeypatch.setattr(testee, 'get_project_dir', mock_get)
+    c = MockContext()
+    testee.list_branches(c)
+    assert capsys.readouterr().out == (
+            "called get_project_dir with arg xxx\n"
+            "branches for project xxx\n"
+            "called run with args ('git branch',) {} in xxx\n"
+            "called get_project_dir with arg zzz\n"
+            "branches for project zzz\n"
+            "called run with args ('git branch',) {} in zzz\n")
+    testee.list_branches(c, 'xxx')
+    assert capsys.readouterr().out == (
+            "called get_project_dir with arg xxx\n"
+            "branches for project xxx\n"
+            "called run with args ('git branch',) {} in xxx\n")
+    testee.list_branches(c, 'xxx,yyy')
+    assert capsys.readouterr().out == (
+            "called get_project_dir with arg xxx\n"
+            "branches for project xxx\n"
+            "called run with args ('git branch',) {} in xxx\n")
 
 
 class MockWriter:
