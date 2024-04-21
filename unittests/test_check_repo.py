@@ -393,6 +393,7 @@ class TestDiffViewDialog:
         monkeypatch.setattr(testee.gui, 'QFontMetrics', mockqtw.MockFontMetrics)
         monkeypatch.setattr(testee.qtw, 'QPushButton', mockqtw.MockPushButton)
         monkeypatch.setattr(testee.qtw, 'QAction', mockqtw.MockAction)
+        monkeypatch.setattr(testee.gui, 'QColor', mockqtw.MockColor)
         caption = 'caption'
         testobj = testee.DiffViewDialog('parent', 'title', caption)
         assert testobj.data == ''

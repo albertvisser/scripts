@@ -43,27 +43,27 @@ called VBox.addLayout with arg of type <class 'mockgui.mockqtwidgets.MockHBoxLay
 called HBox.__init__
 called Editor.__init__ with args ({testobj},)
 called Font.__init__
-called Editor.setFamily
-called Editor.setFixedPitch
-called Editor.setPointSize
+called Font.setFamily
+called Font.setFixedPitch
+called Font.setPointSize
 called Editor.setFont
 called Editor.setMarginsFont
 called Fontmetrics.__init__()
 called Editor.setMarginsFont
 called Editor.width()
-called Editor.setMarginWidth
-called Editor.setMarginLineNumbers
-called Editor.setMarginsBackgroundColor
-called Editor.setBraceMatching
-called Editor.setAutoIndent
-called Editor.setFolding
-called Editor.setCaretLineVisible
-called Editor.setCaretLineBackgroundColor
+called Editor.setMarginWidth with args (0, None)
+called Editor.setMarginLineNumbers with args (0, True)
+called Editor.setMarginsBackgroundColor with arg 'color #cccccc'
+called Editor.setBraceMatching with arg `2`
+called Editor.setAutoIndent with arg `True`
+called Editor.setFolding with arg `3`
+called Editor.setCaretLineVisible with arg `True`
+called Editor.setCaretLineBackgroundColor with arg 'color #ffe4e4'
 called Lexer.__init__()
 called Editor.setDefaultFont
 called Editor.setLexer
 called Editor.setText with arg `{testobj.data}`
-called Editor.setReadOnly with value `True`
+called Editor.setReadOnly with arg `True`
 called HBox.addWidget with arg of type <class 'mockgui.mockqtwidgets.MockEditorWidget'>
 called VBox.addLayout with arg of type <class 'mockgui.mockqtwidgets.MockHBoxLayout'>
 called HBox.__init__
