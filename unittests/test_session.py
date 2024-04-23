@@ -246,21 +246,13 @@ def test_end(monkeypatch, capsys):
     def mock_check_kill(*args):
         """stub
         """
-        print('called check_process with args', args)
+        print('called check_kill with args', args)
         return False, True, False
     def mock_check_invalid(*args):
         """stub
         """
-        print('called check_process with args', args)
+        print('called check_invalid with args', args)
         return True, True, False
-    def mock_term(*args):
-        """stub
-        """
-        print('called process.terminate with args', args)
-    def mock_kill(*args):
-        """stub
-        """
-        print('called process.kill with args', args)
     def mock_wait(procs, timeout):
         """stub
         """
@@ -276,6 +268,12 @@ def test_end(monkeypatch, capsys):
         """stub
         """
         print(f'called os.unlink with arg `{name}`')
+    def mock_select(*args):
+        print('called select_name_for_session with args', args)
+        return ''
+    def mock_select_2(*args):
+        print('called select_name_for_session with args', args)
+        return 'project_name'
     monkeypatch.setattr(testee.psutil, 'process_iter', mock_iter)
     monkeypatch.setattr(testee.psutil, 'wait_procs', mock_wait)
     monkeypatch.setattr(testee, 'get_start_end_pids', mock_get_pids)
@@ -283,8 +281,16 @@ def test_end(monkeypatch, capsys):
     monkeypatch.setattr(testee.glob, 'glob', lambda *x, **y: ['xx-session-pids-start-at-12345'])
     monkeypatch.setattr(testee.os, 'unlink', mock_unlink)
     c = MockContext()
-    testee.end(c, 'project_name')
-    assert capsys.readouterr().out == 'No session found for this project\n'
+    monkeypatch.setattr(testee, 'select_name_for_session', mock_select)
+    testee.end(c)
+    assert capsys.readouterr().out == (f'called select_name_for_session with args ({c},'
+                                       " ['xx-session-pids-start-at-12345'])\n")
+
+    monkeypatch.setattr(testee, 'select_name_for_session', mock_select_2)
+    testee.end(c)
+    assert capsys.readouterr().out == (f'called select_name_for_session with args ({c},'
+                                       " ['xx-session-pids-start-at-12345'])\n"
+                                       'No session found for this project\n')
 
     monkeypatch.setattr(testee.glob, 'glob', mock_glob)
     mock_procs = [types.SimpleNamespace(pid=1, info={'ppid': 0, 'name': 'systemd'}),
@@ -309,7 +315,7 @@ def test_end(monkeypatch, capsys):
     testee.end(c, 'project_name')
     assert capsys.readouterr().out == ("called psutil.proc_info with args"
                                        " (['name', 'ppid', 'exe', 'cmdline'],)\n"
-                                       "called check_process with args (namespace(pid=1018,"
+                                       "called check_invalid with args (namespace(pid=1018,"
                                        " info={'ppid': 1, 'name': 'x'}), False)\n"
                                        "No processes to terminate\n")
 
@@ -318,11 +324,28 @@ def test_end(monkeypatch, capsys):
     testee.end(c, 'project_name')
     assert capsys.readouterr().out == ("called psutil.proc_info with args"
                                        " (['name', 'ppid', 'exe', 'cmdline'],)\n"
-                                       f"called check_process with args ({mock_procs[1]}, False)\n"
+                                       f"called check_kill with args ({mock_procs[1]}, False)\n"
                                        "called process.terminate\n"
                                        f"called psutil.wait_procs with args [{mock_procs[1]}], 3\n"
                                        "called process.kill\n"
                                        "called os.unlink with arg `filename`\n")
+
+
+def test_select_name_for_session(monkeypatch, capsys):
+    """unittest for session.test_select_name_for_session
+    """
+    def mock_run(self, *args, **kwargs):
+        print('called contect.run with args', args, kwargs)
+        return types.SimpleNamespace(stdout='result')
+    monkeypatch.setattr(MockContext, 'run', mock_run)
+    c = MockContext()
+    assert testee.select_name_for_session(c, ['xxx-yyy']) == 'xxx'
+    assert capsys.readouterr().out == ""
+    assert testee.select_name_for_session(c, ['xxx-aaa', 'yyy-bbb']) == 'result'
+    assert capsys.readouterr().out == ('called contect.run with args (\'zenity --list'
+                                       ' --title="Choose which session to terminate"'
+                                       ' --column="Session name" xxx yyy\',)'
+                                       ' {\'warn\': True, \'hide\': True}\n')
 
 
 def test_get_start_end_pids():

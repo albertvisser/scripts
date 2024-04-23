@@ -114,11 +114,15 @@ def get_info(c, name):
 
 
 @task(help={'name': 'project name'})
-def end(c, name):
+def end(c, name=''):
     """end the processes belonging to this session
     """
     # check if a session is active
     paths = glob.glob('*-session-pids-start-at-*', root_dir=sessionfile_root)
+    if not name:
+        name = select_name_for_session(c, paths)
+        if not name:
+            return
     nope = True
     for line in paths:
         if line.startswith(name):
@@ -157,6 +161,17 @@ def end(c, name):
     # remove the session file
     for file in glob.glob(f'{sessionfile_root}/{name}-session-*'):
         os.unlink(file)
+
+
+def select_name_for_session(c, names):
+    """send dialog to select from available session names and get selected name
+    """
+    paths = [x.split('-', 1)[0] for x in names]
+    if len(paths) == 1:
+        return paths[0]
+    result = c.run('zenity --list --title="Choose which session to terminate"'
+                   ' --column="Session name" ' + ' '.join(paths), warn=True, hide=True)
+    return result.stdout
 
 
 def get_start_end_pids(paths, name):
