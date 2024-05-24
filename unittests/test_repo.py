@@ -927,35 +927,35 @@ def test_search(monkeypatch, capsys, tmp_path):
     testee.search(c)
     assert capsys.readouterr().out == (
             'called rebuild_filenamelist\n'
-            f"called run with args ('afrift -m multi {tmpfilelist}-both -e py -P',) {{}}\n")
+            f"called run with args ('afrift -l {tmpfilelist}-both -e py -P',) {{}}\n")
     testee.search(c, rebuild=True)
     assert capsys.readouterr().out == (
             'called rebuild_filenamelist\n'
-            f"called run with args ('afrift -m multi {tmpfilelist}-both -e py -P',) {{}}\n")
+            f"called run with args ('afrift -l {tmpfilelist}-both -e py -P',) {{}}\n")
     testee.search(c, 'name', mode='test')
     assert capsys.readouterr().out == (
             'called rebuild_filenamelist\n'
-            f"called run with args ('afrift -m multi {tmpfilelist}-test -e py -PN -s name',) {{}}\n")
+            f"called run with args ('afrift -l {tmpfilelist}-test -e py -PN -s name',) {{}}\n")
     testee.search(c, 'name', rebuild=True, mode='prog')
     assert capsys.readouterr().out == (
             'called rebuild_filenamelist\n'
-            f"called run with args ('afrift -m multi {tmpfilelist}-prog -e py -PN -s name',) {{}}\n")
+            f"called run with args ('afrift -l {tmpfilelist}-prog -e py -PN -s name',) {{}}\n")
     with open(f'{testee.FILELIST}-both', 'w') as f:
         f.write('')
     testee.search(c)
     assert capsys.readouterr().out == (
-            f"called run with args ('afrift -m multi {tmpfilelist}-both -e py -P',) {{}}\n")
+            f"called run with args ('afrift -l {tmpfilelist}-both -e py -P',) {{}}\n")
     testee.search(c, rebuild=True)
     assert capsys.readouterr().out == (
             'called rebuild_filenamelist\n'
-            f"called run with args ('afrift -m multi {tmpfilelist}-both -e py -P',) {{}}\n")
+            f"called run with args ('afrift -l {tmpfilelist}-both -e py -P',) {{}}\n")
     testee.search(c, 'name')
     assert capsys.readouterr().out == (
-            f"called run with args ('afrift -m multi {tmpfilelist}-both -e py -PN -s name',) {{}}\n")
+            f"called run with args ('afrift -l {tmpfilelist}-both -e py -PN -s name',) {{}}\n")
     testee.search(c, 'name', rebuild=True)
     assert capsys.readouterr().out == (
             'called rebuild_filenamelist\n'
-            f"called run with args ('afrift -m multi {tmpfilelist}-both -e py -PN -s name',) {{}}\n")
+            f"called run with args ('afrift -l {tmpfilelist}-both -e py -PN -s name',) {{}}\n")
 
 
 def test_runtests(monkeypatch, capsys):

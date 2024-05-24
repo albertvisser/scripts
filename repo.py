@@ -549,7 +549,7 @@ def rebuild_filenamelist(c, mode):
         elif mode == 'prog':
             files = [x for x in files if not os.path.basename(x).startswith('test_')]
         all_files.extend([os.path.join(path, x) for x in files])
-    with open(f'{FILELIST }-{mode}', 'w') as out:
+    with open(f'{FILELIST}-{mode}', 'w') as out:
         for line in sorted(all_files):
             print(line, file=out)
 
@@ -576,7 +576,7 @@ def search(c, find='', rebuild=False, mode='both'):
     "search in (all) tracked python files in all repos"
     if not os.path.exists(f'{FILELIST}-{mode}') or rebuild:
         rebuild_filenamelist(c, mode)
-    command = f'afrift -m multi {FILELIST}-{mode} -e py -P'
+    command = f'afrift -l {FILELIST}-{mode} -e py -P'
     if find:
         command += 'N -s ' + find
     c.run(command)
@@ -634,6 +634,7 @@ def find_test_stats(c, name=''):
         if project not in frozen_repos:
             print(f'=== running tests for {project}')
             c.run(f"run-unittests -p {project} all | grep -A 2 ^Name", warn=True)
+
 
 @task(help={'name': 'repository name'})
 def list_branches(c, name=''):
