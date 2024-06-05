@@ -82,8 +82,9 @@ def update(c, name):
 
 
 @task(help={'name': ('name of the script or symlink to add to the ignore file'
-                     ' - use "all" to check the entire library')})
-def check_ignore(c, name):
+                     ' - use "all" to check the entire library'),
+            'list_only': "don't update the ignore file"})
+def check_ignore(c, name, list_only=False):
     "werk .gitignore bij met de scripts die in scriptlib staan"
     lib = ScriptLib()
     ignore_file = lib.basepath / '.gitignore'
@@ -103,11 +104,14 @@ def check_ignore(c, name):
         else:
             print('already present in .gitignore')
     for name in not_present:
-        print(f'added `{name}` to .gitignore')
+        print(f'`{name}` will be added to .gitignore')
         ignores.append(name)
+    if list_only:
+        return
     if not_present:
         shutil.copyfile(str(ignore_file), str(ignore_file) + '~')
         ignore_file.write_text('\n'.join(ignores))
+        print("entries are added")
 
 
 @task(help={'name': 'name of the script or symlink to disable'})
