@@ -1,4 +1,4 @@
-"""tooltips for check_repo collected in a separate file so that the can be edited independent of the
+"""tooltips for check_repo collected in a separate file so that they can be edited independent of the
 main program
 """
 tooltips = {'branch': 'enter or select a branch name',
