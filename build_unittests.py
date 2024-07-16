@@ -83,7 +83,7 @@ class Main:
             f'\n\ndef _test_{function_name}(monkeypatch, capsys):\n',
             f'    """unittest for {self.testee}.{function_name}\n    """\n',
             f'    assert testee.{sig} == "expected_result"\n',
-            '     assert capsys.readouterr().out == ("")\n'])
+            '    assert capsys.readouterr().out == ("")\n'])
 
     def add_lines_for_class(self, line):
         "write class header for unittests"
