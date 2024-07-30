@@ -252,14 +252,21 @@ def test_check_ignore(monkeypatch, capsys):
             'called ScriptLib.__init__\n'
             "called path.read_text with args (PosixPath('x/.gitignore'),)\n"
             'called ScriptLib.get_all_names with args {}\n' 'not in library\n')
+    testee.check_ignore(c, 'dick', list_only=True)
+    assert capsys.readouterr().out == (
+            'called ScriptLib.__init__\n'
+            "called path.read_text with args (PosixPath('x/.gitignore'),)\n"
+            'called ScriptLib.get_all_names with args {}\n'
+            "`dick` will be added to .gitignore\n")
     testee.check_ignore(c, 'dick')
     assert capsys.readouterr().out == (
             'called ScriptLib.__init__\n'
             "called path.read_text with args (PosixPath('x/.gitignore'),)\n"
             'called ScriptLib.get_all_names with args {}\n'
-            "added `dick` to .gitignore\n"
+            "`dick` will be added to .gitignore\n"
             "called shutil.copyfile with args ('x/.gitignore', 'x/.gitignore~')\n"
-            "called path.write_text with args (PosixPath('x/.gitignore'), 'harry\\nsally\\ndick')\n")
+            "called path.write_text with args (PosixPath('x/.gitignore'), 'harry\\nsally\\ndick')\n"
+            "entries are added\n")
     testee.check_ignore(c, 'harry')
     assert capsys.readouterr().out == (
             'called ScriptLib.__init__\n'
@@ -294,11 +301,12 @@ def test_ignore_all(monkeypatch, capsys):
             'called ScriptLib.__init__\n'
             "called path.read_text with args (PosixPath('x/.gitignore'),)\n"
             "called ScriptLib.get_all_names with args {'skip_inactive': True}\n"
-            "added `tom` to .gitignore\n"
-            "added `dick` to .gitignore\n"
+            "`tom` will be added to .gitignore\n"
+            "`dick` will be added to .gitignore\n"
             "called shutil.copyfile with args ('x/.gitignore', 'x/.gitignore~')\n"
             "called path.write_text with args (PosixPath('x/.gitignore'),"
-            " 'harry\\nsally\\ntom\\ndick')\n")
+            " 'harry\\nsally\\ntom\\ndick')\n"
+            "entries are added\n")
 
 
 def test_disable(monkeypatch, capsys):
