@@ -165,6 +165,16 @@ def test_start(monkeypatch, capsys, tmp_path):
                                        f"['dtree'] {{'cwd': 'project', 'env': {newenv}}}\n"
                                        f"['prfind'] {{'cwd': 'project', 'env': {newenv}}}\n"
                                        f"['check-repo'] {{'cwd': 'project', 'env': {newenv}}}\n")
+    os.remove(f'{testee.sessionfile_root}/project_name-session-pids-start-at-12345')
+    testee.start(c, 'project_name', True)
+    with open(f'{testee.sessionfile_root}/project_name-session-pids-start-at-12345') as f:
+        data = f.read()
+    assert data == '12345\n12345\n12345\n12345'
+    assert capsys.readouterr().out == ('called ConfigParser.read() with args project/.sessionrc\n'
+                                       f"['predit-l'] {{'cwd': 'project', 'env': {newenv}}}\n"
+                                       f"['dtree'] {{'cwd': 'project', 'env': {newenv}}}\n"
+                                       f"['prfind'] {{'cwd': 'project', 'env': {newenv}}}\n"
+                                       f"['check-repo'] {{'cwd': 'project', 'env': {newenv}}}\n")
 
 
 def test_get_info(monkeypatch, capsys, tmp_path):
@@ -473,125 +483,3 @@ def test_edittestconf(monkeypatch, capsys):
     monkeypatch.setattr(testee.os.path, 'exists', lambda x: True)
     testee.edittestconf(c, 'projname')
     assert capsys.readouterr().out == 'pedit testproj/.rurc\n'
-
-
-def _test_list(monkeypatch, capsys):
-    """unittest for session.list
-    """
-    monkeypatch.setattr(testee.os, 'listdir', lambda x: ['name1', 'name2'])
-    monkeypatch.setattr(MockContext, 'run', mock_run)
-    c = MockContext()
-    testee.list(c)
-    assert capsys.readouterr().out == 'available sessions:\n    name1\n    name2\n'
-
-
-def _test_newticket(monkeypatch, capsys):
-    """unittest for session.newticket
-    """
-    monkeypatch.setattr(MockContext, 'run', mock_run)
-    c = MockContext()
-
-
-def _test_tickets(monkeypatch, capsys, tmp_path):
-    """unittest for session.tickets
-    """
-    monkeypatch.setattr(MockContext, 'run', mock_run)
-    c = MockContext()
-    monkeypatch.setattr(testee, 'get_regfile_name', lambda x: '')
-    testee.tickets(c, 'project')
-    assert capsys.readouterr().out == 'wrong project name\n'
-    regfile = tmp_path / 'regfile_test'
-    monkeypatch.setattr(testee, 'get_regfile_name', lambda x: str(regfile))
-    monkeypatch.setattr(testee.os.path, 'exists', lambda x: False)
-    testee.tickets(c, 'project')
-    assert capsys.readouterr().out == "tickets I'm working on: none\n"
-    monkeypatch.setattr(testee.os.path, 'exists', lambda x: True)
-    with regfile.open('w') as f:
-        f.write("1\n2\n3")
-    testee.tickets(c, 'project')
-    assert capsys.readouterr().out == "tickets I'm working on: 1, 2, 3\n"
-
-
-def _test_prep(monkeypatch, capsys):
-    """unittest for session.prep
-    """
-    def mock_get_name(*args):
-        """stub
-        """
-        print('called get_project_name() with args', *args)
-        return 'project_name'
-    def mock_get_dir(*args):
-        """stub
-        """
-        print('called get_project_dir() with args', *args)
-        return 'project_dir'
-    monkeypatch.setattr(testee, 'get_project_name', mock_get_name)
-    monkeypatch.setattr(testee, 'get_project_dir', mock_get_dir)
-    monkeypatch.setattr(testee, 'DEVEL', 'devpath')
-    monkeypatch.setattr(MockContext, 'run', run_in_dir)
-    c = MockContext()
-    testee.prep(c, '111')
-    assert capsys.readouterr().out == ('called get_project_name() with args 111\n'
-                                       'called get_project_dir() with args project_name\n'
-                                       'hg incoming -v devpath/_111 in project_dir\n')
-
-
-def _test_pull(monkeypatch, capsys):
-    """unittest for session.pull
-    """
-    def mock_get_name(*args):
-        """stub
-        """
-        print('called get_project_name() with args', *args)
-        return 'project_name'
-    def mock_get_dir(*args):
-        """stub
-        """
-        print('called get_project_dir() with args', *args)
-        return 'project_dir'
-    monkeypatch.setattr(testee, 'get_project_name', mock_get_name)
-    monkeypatch.setattr(testee, 'get_project_dir', mock_get_dir)
-    monkeypatch.setattr(testee, 'DEVEL', 'devpath')
-    monkeypatch.setattr(MockContext, 'run', run_in_dir)
-    c = MockContext()
-    testee.pull(c, '111')
-    assert capsys.readouterr().out == ('called get_project_name() with args 111\n'
-                                       'called get_project_dir() with args project_name\n'
-                                       'hg pull devpath/_111 in project_dir\n'
-                                       'hg up in project_dir\n')
-
-
-def _test_cleanup(monkeypatch, capsys, tmp_path):
-    """unittest for session.cleanup
-    """
-    def mock_remove(path):
-        """stub
-        """
-        print(f'call remove of `{path}`')
-    def mock_rmtree(path):
-        """stub
-        """
-        print(f'call rmtree of `{path}`')
-    monkeypatch.setattr(testee, 'get_project_name', lambda x: 'projname')
-    monkeypatch.setattr(testee.os, 'remove', mock_remove)
-    monkeypatch.setattr(testee.shutil, 'rmtree', mock_rmtree)
-    regfile = tmp_path / 'session.test_regfile'
-    monkeypatch.setattr(testee, 'get_regfile_name', lambda x: str(regfile))
-    regfile.write_text('testname1\nprojname\ntestname2\n')
-    c = MockContext()
-    testee.cleanup(c, 'projname')
-    assert capsys.readouterr().out == ('call remove of `/home/albert/bin/.sessions/projname`\n'
-                                       'call rmtree of `/home/albert/devel/_projname`\n')
-    data = regfile.read_text()
-    assert data == 'testname1\ntestname2\n'
-    regfile.write_text('projname\n')
-    testee.cleanup(c, 'projname')
-    assert capsys.readouterr().out == ('call remove of `/home/albert/bin/.sessions/projname`\n'
-                                       'call rmtree of `/home/albert/devel/_projname`\n'
-                                       f'call remove of `{regfile}`\n')
-    regfile.write_text('testname1\ntestname2\n')
-    testee.cleanup(c, 'projname')
-    assert capsys.readouterr().out == ('call remove of `/home/albert/bin/.sessions/projname`\n'
-                                       'call rmtree of `/home/albert/devel/_projname`\n')
-    data = regfile.read_text()
-    assert data == 'testname1\ntestname2\n'

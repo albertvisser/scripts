@@ -7,10 +7,10 @@ import psutil
 import configparser
 import subprocess  # voor die ene die niet met invoke lukt
 from invoke import task
+# from repo import check_and_run_for_project
+from settings import PROJECTS_BASE, get_project_dir  # , private_repos
 SESSIONS = 'not used anymore'
 DEVEL = 'not used anymore'
-from settings import PROJECTS_BASE, get_project_dir  # , private_repos
-# from repo import check_and_run_for_project
 sessionfile_root = '/tmp'
 # session_pids_name = 'session_pids_start_at'
 # session_info_name = 'session_info'
@@ -56,7 +56,7 @@ def start_old(c, name):
 
 
 @task(help={'name': 'project name'})
-def start(c, name):
+def start(c, name, light_background=False):
     """start a programming session for a given repo using various tools
 
     expects a .sessionrc file in the project directory
@@ -70,6 +70,8 @@ def start(c, name):
     runcommands = {'term': ['gnome-terminal', '--geometry=132x43+4+40'],
                    'check-repo': ['check-repo'],
                    'predit': ['predit'], 'dtree': ['dtree'], 'prfind': ['prfind']}
+    if light_background:
+        runcommands['predit'] = ['predit-l']
     path = get_project_dir(name)
     if not path:
         print('could not determine project location')
