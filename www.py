@@ -138,10 +138,21 @@ def stage(c, sitename, new_only=False, filename='', list_only=False):
             os.makedirs(os.path.dirname(dest), exist_ok=True)
         with c.cd(root):
             result = c.run(f'cp {item} .staging/{item}')
-    print(f'{len(files)} files staged')
 
     # commit de gestagede files zodat ze niet nog een keer geselecteerd worden
+
     with c.cd(root):
+        stage_message = f"staged on {datetime.datetime.today().strftime('%d-%m-%Y %H:%M')}"
+        result = c.run('zenity --entry --title="Stage" --text="Enter commit message"'
+                       f' --entry-text="{stage_message}"', hide=True, warn=True)
+        new_message = result.stdout.strip()
+        if not new_message:
+            for item in files:
+                dest = os.path.join(root, '.staging', item)
+                os.remove(dest)
+            print('Afgebroken')
+            return
+        message = new_message or stage_message  # message mag niet leeg zijn
         cfiles = ''
         if filename:
             c.run(f'hg add {filename}')
@@ -149,9 +160,9 @@ def stage(c, sitename, new_only=False, filename='', list_only=False):
             c.run(f'hg add {" ".join(newfiles)}')
         else:
             cfiles = " ".join(files)
-        now = datetime.datetime.today().strftime('%d-%m-%Y %H:%M')
         # c.run(f'hg ci -m "staged on {now}"')
-        c.run(f'hg ci {cfiles} -m "staged on {now}"')
+        c.run(f'hg ci {cfiles} -m "{message}"')
+    print(f'{len(files)} files staged')
 
 
 @task(help={'sitename': 'name of site as used in rst2html config',
@@ -183,12 +194,12 @@ def list_staged(c, sitename, full=False):
                                 filelist.append(os.path.join(item.name, subitem.name, entry.name))
                             subdircount += 1
                 elif subitem.is_file:
-                    if full or (has_seflinks_true(sitename) and
-                                os.path.splitext(subitem.name)[1] == '.html'):
+                    if full or (has_seflinks_true(sitename)
+                                and os.path.splitext(subitem.name)[1] == '.html'):
                         filelist.append(os.path.join(item.name, subitem.name))
                     subdircount += 1
             if subdircount and not full:
-                 subdirlist.append(f'{subdircount} files in {item.name}/')
+                subdirlist.append(f'{subdircount} files in {item.name}/')
             stagecount += subdircount
         elif item.is_file():
             filelist.append(item.name)
@@ -226,8 +237,6 @@ def clear_staged(c, sitename):
         return
     with c.cd(root):
         c.run('rm -r .staging')
-
-
 
 
 @task(help={'name': 'name of webapp to start'})
