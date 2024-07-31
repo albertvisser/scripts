@@ -11,7 +11,7 @@ import argparse
 import subprocess
 import PyQt5.QtWidgets as qtw
 import PyQt5.QtGui as gui
-## import PyQt5.QtCore as core
+# import PyQt5.QtCore as core
 import PyQt5.Qsci as sci  # scintilla
 import settings
 from check_repo_tooltips import tooltips
@@ -799,11 +799,12 @@ def get_locs(module, path):
     for name, subobj in inspect.getmembers(moduleobj):
         if isinstance(subobj, invoke.tasks.Task):
             lines, start, text = get_locs_for_unit(name, subobj)
-            docstr = subobj.__doc__
-            if docstr:
-                doclen = len(docstr.split('\n'))
-                start += doclen
-                lines -= doclen
+            if not text:
+                docstr = subobj.__doc__
+                if docstr:
+                    doclen = len(docstr.split('\n'))
+                    start += doclen
+                    lines -= doclen
             lineslist.append((text or f'{name} (invoke task)', lines, start + 1))
         elif inspect.isclass(subobj):
             if subobj.__module__ != module:
@@ -811,23 +812,29 @@ def get_locs(module, path):
             classname = name
             for name2, subsubobj in inspect.getmembers(subobj):
                 if inspect.isfunction(subsubobj) or inspect.ismethod(subsubobj):
+                    if subsubobj.__module__ != module:
+                        continue
+                    if not subsubobj.__qualname__.startswith(classname):
+                        continue
                     lines, start, text = get_locs_for_unit(name, subsubobj)
-                    docstr = subsubobj.__doc__
-                    if docstr:
-                        doclen = len(docstr.split('\n'))
-                        start += doclen
-                        lines -= doclen
+                    if not text:
+                        docstr = subsubobj.__doc__
+                        if docstr:
+                            doclen = len(docstr.split('\n'))
+                            start += doclen
+                            lines -= doclen
                     lineslist.append((text or f'{classname}.{name2}', lines, start))
         elif inspect.isfunction(subobj):
             if subobj.__module__ != module:
                 continue
             functionname = name
             lines, start, text = get_locs_for_unit(name, subobj)
-            docstr = subobj.__doc__
-            if docstr:
-                doclen = len(docstr.split('\n'))
-                start += doclen
-                lines -= doclen
+            if not text:
+                docstr = subobj.__doc__
+                if docstr:
+                    doclen = len(docstr.split('\n'))
+                    start += doclen
+                    lines -= doclen
             lineslist.append((text or functionname, lines, start))
         # voor wxPython modules gaat dit mogelijk ook nog niet helemaal jofel
     sys.path.pop()

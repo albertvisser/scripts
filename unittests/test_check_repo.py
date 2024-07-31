@@ -258,26 +258,29 @@ def test_get_locs():
     doc1 = '\t\"\"\"doc\"\"\"\n'
     doc2 = '\t\"\"\"doc\n\t\"\"\"\n'
     doc3 = '\t\t\"\"\"doc\n\t\t\"\"\"\n'
+    if tempfile.exists():
+        tempfile.unlink()
     tempfile.write_text(
-            "import configparser\nfrom os.path import split\nfrom invoke import task\n\n\n"
-            "from datetime import datetime\n"
+            "from os.path import split\nfrom invoke import task\n"
+            "from datetime import datetime\nimport wx\n\n"
             "def function(arg):\n\tprint('something')\n\treturn arg\n\n\n"
             "@task(help={'arg': 'argument'})\ndef command(c, arg):\n\tprint('something')\n"
-            "\treturn arg\n\n\nclass MyClass:\n\tnomethods = True\n\n\n"
+            "\treturn arg\n\n\n"
+            "class MyClass:\n\tnomethods = True\n\n\n"
             "class AnotherClass:\n\tdef method(self):\n\t\tprint('something')\n\t\treturn arg\n"
             f"\n\ndef function2(arg):\n{doc1}\tprint('something')\n\treturn arg\n\n\n"
             f"@task(help={{'arg': 'argument'}})\ndef command2(c, arg):\n{doc2}\tprint('something')\n"
-            f"\treturn arg\n\n\nclass MyClass2:\n{doc1}\tnomethods = True\n\n\n"
-            f"class AnotherClass2:\n{doc1}\n\tdef method(self):\n{doc3}\t\tprint('something')\n"
-            "\t\treturn arg\n"
-            )
-    assert testee.get_locs('test_get_locs', '') == [('AnotherClass.method', 2, 24),
-                                                    ('AnotherClass2.method', 2, 53),
-                                                    ('command (invoke task)', 3, 14),
-                                                    ('command2 (invoke task)', 3, 38),
-                                                    ('function', 2, 8),
-                                                    ('function2', 2, 30)]
-    tempfile.unlink()
+            "\treturn arg\n\n\n"
+            f"class MyClass2:\n{doc1}\tnomethods = True\n\n\n"
+            f"class AnotherClass2(AnotherClass):\n{doc1}\n\tdef method2(self):\n{doc3}"
+            "\t\tprint('something')\n\t\treturn arg\n"
+            "\n\nclass MyEditor(wx.TextCtrl):\n    pass\n")
+    assert testee.get_locs('test_get_locs', '') == [('AnotherClass.method', 2, 23),
+                                                    ('AnotherClass2.method2', 2, 52),
+                                                    ('command (invoke task)', 3, 13),
+                                                    ('command2 (invoke task)', 3, 37),
+                                                    ('function', 2, 7),
+                                                    ('function2', 2, 29)]
 
 
 def test_get_locs_for_unit_err_1(monkeypatch):
@@ -1832,11 +1835,11 @@ class TestGui:
             """
             print('run_and_capture with args:', *args)
             return ['  branch', '* blarp'], []
-        def mock_run_err(self, *args):
-            """stub
-            """
-            print('run_and_capture with args:', *args)
-            return [], ['error']
+        # def mock_run_err(self, *args):
+        #     """stub
+        #     """
+        #     print('run_and_capture with args:', *args)
+        #     return [], ['error']
         monkeypatch.setattr(testee.Gui, 'run_and_capture', mock_run)
         assert testobj.find_current_branch() == 'current'
         assert capsys.readouterr().out == "run_and_capture with args: ['git', 'branch']\n"
