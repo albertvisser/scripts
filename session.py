@@ -181,7 +181,7 @@ def get_start_end_pids(paths, name):
     splitpaths = [x.split('-session-pids-start-at-') for x in paths]
     from_pid = -1
     to_pid = 0
-    for project, pid in sorted(splitpaths, key=lambda x: x[1]):
+    for project, pid in sorted(splitpaths, key=lambda x: int(x[1])):
         if to_pid == -1:
             to_pid = int(pid)
             break
@@ -220,18 +220,6 @@ def check_process(proc, found_bash):
             found_bash = True
             kill = True
     return invalid, kill, found_bash
-
-
-# @task(help={'name': 'name of session file'})
-def edit_old(c, name):
-    """define the tools to start a programming session with
-
-    expects a session script of the same name in .sessions (subdirectory for now)
-    each line contains a command to be executed
-    """
-    fname = os.path.join(SESSIONS, name)
-    # c.run('scite {}'.format(fname))
-    c.run(f'pedit {fname}')
 
 
 @task(help={'name': 'project name'})
