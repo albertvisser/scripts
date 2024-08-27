@@ -241,80 +241,14 @@ def test_get_locs_for_modules(monkeypatch, capsys):
         """
         print('called get_locs with args', args)
         return ('fun', 15, 2), ('cls.meth', 12, 20), ('oops', 0, 0)
-    monkeypatch.setattr(testee, 'get_locs', mock_get)
+    monkeypatch.setattr(testee.count_locs, 'get_locs', mock_get)
     assert testee.get_locs_for_modules(['name1.py', 'path/name2'], 'a path') == [
-            '', 'lines of code per function / method for `name1.py`', '',
+            '', 'Lines of code per function / method for `name1.py`', '',
             'fun: 15 lines (2-16)', 'cls.meth: 12 lines (20-31)', 'oops',
-            '', 'lines of code per function / method for `path/name2`', '',
+            '', 'Lines of code per function / method for `path/name2`', '',
             'fun: 15 lines (2-16)', 'cls.meth: 12 lines (20-31)', 'oops']
     assert capsys.readouterr().out == ("called get_locs with args ('name1', 'a path')\n"
                                        "called get_locs with args ('path.name2', 'a path')\n")
-
-
-def test_get_locs():
-    """unittest for check_repo.get_locs
-    """
-    tempfile = pathlib.Path('test_get_locs.py')
-    doc1 = '\t\"\"\"doc\"\"\"\n'
-    doc2 = '\t\"\"\"doc\n\t\"\"\"\n'
-    doc3 = '\t\t\"\"\"doc\n\t\t\"\"\"\n'
-    if tempfile.exists():
-        tempfile.unlink()
-    tempfile.write_text(
-            "from os.path import split\nfrom invoke import task\n"
-            "from datetime import datetime\nimport wx\n\n"
-            "def function(arg):\n\tprint('something')\n\treturn arg\n\n\n"
-            "@task(help={'arg': 'argument'})\ndef command(c, arg):\n\tprint('something')\n"
-            "\treturn arg\n\n\n"
-            "class MyClass:\n\tnomethods = True\n\n\n"
-            "class AnotherClass:\n\tdef method(self):\n\t\tprint('something')\n\t\treturn arg\n"
-            f"\n\ndef function2(arg):\n{doc1}\tprint('something')\n\treturn arg\n\n\n"
-            f"@task(help={{'arg': 'argument'}})\ndef command2(c, arg):\n{doc2}\tprint('something')\n"
-            "\treturn arg\n\n\n"
-            f"class MyClass2:\n{doc1}\tnomethods = True\n\n\n"
-            f"class AnotherClass2(AnotherClass):\n{doc1}\n\tdef method2(self):\n{doc3}"
-            "\t\tprint('something')\n\t\treturn arg\n"
-            "\n\nclass MyEditor(wx.TextCtrl):\n    pass\n")
-    assert testee.get_locs('test_get_locs', '') == [('AnotherClass.method', 2, 23),
-                                                    ('AnotherClass2.method2', 2, 52),
-                                                    ('command (invoke task)', 3, 13),
-                                                    ('command2 (invoke task)', 3, 37),
-                                                    ('function', 2, 7),
-                                                    ('function2', 2, 29)]
-
-
-def test_get_locs_for_unit_err_1(monkeypatch):
-    """unittest for check_repo.get_locs_for_unit geeft TypeError
-    """
-    def mock_get(arg):
-        """stub
-        """
-        raise TypeError
-    monkeypatch.setattr(testee.inspect, 'getsourcelines', mock_get)
-    assert testee.get_locs_for_unit('x', 'y') == (0, 0, 'wrong type for getsourcelines'
-                                                  ' - skipped: x y')
-
-
-def test_get_locs_for_unit_err_2(monkeypatch):
-    """unittest for check_repo.get_locs_for_unit geeft OSError
-    """
-    def mock_get(arg):
-        """stub
-        """
-        raise OSError('this')
-    monkeypatch.setattr(testee.inspect, 'getsourcelines', mock_get)
-    assert testee.get_locs_for_unit('x', 'y') == (0, 0, 'this for x y')
-
-
-def test_get_locs_for_unit(monkeypatch):
-    """unittest for check_repo.get_locs_for_unit
-    """
-    def mock_get(arg):
-        """stub
-        """
-        return ['line1', 'x', 'y', 'z', 'last line'], 2
-    monkeypatch.setattr(testee.inspect, 'getsourcelines', mock_get)
-    assert testee.get_locs_for_unit('x', 'y') == (4, 3, '')
 
 
 class TestCheckTextDialog:
@@ -428,11 +362,11 @@ class TestDiffViewDialog:
         monkeypatch.setattr(testee.DiffViewDialog, '__init__', mock_dialog_init)
         monkeypatch.setattr(testee.qtw.QApplication, 'clipboard', mock_clipboard)
         testobj = testee.DiffViewDialog('parent', 'title', 'caption')
-        testobj.data = ('lines of code for `module`\n\n'
+        testobj.data = ('Lines of code for `module`\n\n'
                         'method: 1 lines (2)  \nfunction: 10 lines (5-14)\n\n'
-                        'lines of code for `other/module`\n\n'
+                        'Lines of code for `other/module`\n\n'
                         'nothing found\n\n'
-                        'lines of code for `third/module.py`\n\n'
+                        'Lines of code for `third/module.py`\n\n'
                         'method: 1 lines (2)  \nfunction: 10 lines (5-14)\n\n')
         testobj.export()
         assert capsys.readouterr().out == (

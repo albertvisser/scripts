@@ -15,6 +15,7 @@ import PyQt5.QtGui as gui
 import PyQt5.Qsci as sci  # scintilla
 import settings
 from check_repo_tooltips import tooltips
+import count_locs
 
 HOME = pathlib.Path.home()
 root = HOME / 'projects'
@@ -134,30 +135,7 @@ class DiffViewDialog(qtw.QDialog):
 
     def export(self):
         "transform output and copy to clipboard"
-        def firstlinenum(x):
-            if '-' in x[0]:
-                return int(x[0].split('-')[0])
-            return int(x[0])
-        locsdict = {}
-        for line in self.data.split('\n'):
-            line = line.strip()
-            if line.startswith('lines of code'):
-                filename = line.split('`')[1]
-                locsdict[filename] = []
-                # print(locsdict)
-            elif line and ': ' in line:
-                name, rest = line.split(': ', 1)
-                count, linenums = rest.split(' lines ')
-                locsdict[filename].append((linenums[1:-1], name, count))
-        outlist = []
-        for name, data in locsdict.items():
-            if not data:
-                continue
-            if outlist:
-                outlist.append('====')
-            outlist.append(f'module: `{name}`')
-            # outlist.extend([f'{x:4}-{y:4} {z} ({a})' for x, y, z, a in sorted(locsdict[name])])
-            outlist.extend([f'{f"{x}":9} {y} ({z})' for x, y, z in sorted(data, key=firstlinenum)])
+        outlist = count_locs.sort_locs_by_lineno(self.data.split('\n'))
         clp = qtw.QApplication.clipboard()
         clp.setText('\n'.join(outlist))
 
@@ -779,83 +757,15 @@ def get_locs_for_modules(namelist, path):
     "turn filenames into modulenames and count locs"
     result = []
     for name in namelist:
-        result.extend(['', f'lines of code per function / method for `{name}`', ''])
+        result.extend(['', count_locs.HEADING.format(name), ''])
         name = os.path.splitext(name)[0].replace('/', '.')
-        # result.extend([f'{x}: {y} lines' for x, y in get_locs(name, path)])
-        for x, y, z in get_locs(name, path):
+        for x, y, z in count_locs.get_locs(name, path):
             if y:
                 where = f'{z}' if y == 1 else f'{z}-{z + y - 1}'
-                result.append(f'{x}: {y} lines ({where})')
+                result.append(count_locs.DETAIL.format(x, y, where))
             else:
                 result.append(x)
     return result
-
-
-def get_locs(module, path):
-    "get lines of code per function / method"
-    sys.path.append(str(path))
-    lineslist = []
-    moduleobj = importlib.import_module(module)
-    for name, subobj in inspect.getmembers(moduleobj):
-        if isinstance(subobj, invoke.tasks.Task):
-            lines, start, text = get_locs_for_unit(name, subobj)
-            if not text:
-                docstr = subobj.__doc__
-                if docstr:
-                    doclen = len(docstr.split('\n'))
-                    start += doclen
-                    lines -= doclen
-            lineslist.append((text or f'{name} (invoke task)', lines, start + 1))
-        elif inspect.isclass(subobj):
-            if subobj.__module__ != module:
-                continue
-            classname = name
-            for name2, subsubobj in inspect.getmembers(subobj):
-                if inspect.isfunction(subsubobj) or inspect.ismethod(subsubobj):
-                    if subsubobj.__module__ != module:
-                        continue
-                    if not subsubobj.__qualname__.startswith(classname):
-                        continue
-                    lines, start, text = get_locs_for_unit(name, subsubobj)
-                    if not text:
-                        docstr = subsubobj.__doc__
-                        if docstr:
-                            doclen = len(docstr.split('\n'))
-                            start += doclen
-                            lines -= doclen
-                    lineslist.append((text or f'{classname}.{name2}', lines, start))
-        elif inspect.isfunction(subobj):
-            if subobj.__module__ != module:
-                continue
-            functionname = name
-            lines, start, text = get_locs_for_unit(name, subobj)
-            if not text:
-                docstr = subobj.__doc__
-                if docstr:
-                    doclen = len(docstr.split('\n'))
-                    start += doclen
-                    lines -= doclen
-            lineslist.append((text or functionname, lines, start))
-        # voor wxPython modules gaat dit mogelijk ook nog niet helemaal jofel
-    sys.path.pop()
-    return lineslist
-
-
-def get_locs_for_unit(name, unit):
-    "get the actual number of lines"
-    try:
-        lines = inspect.getsourcelines(unit)
-    except TypeError:
-        return 0, 0, f'wrong type for getsourcelines - skipped: {name} {unit}'
-    except OSError as e:
-        return 0, 0, f'{e} for {name} {unit}'
-    # with open('/tmp/test_get_locs', 'a') as f:
-    #     # print(lines[0], file=f)  # lineslist.extend(code)
-    #     for ix, line in enumerate(lines[0]):
-    #         f.write(f'{lines[1] + ix:4} {line}')
-    count = len(lines[0]) - 1  # exclude declaration
-    start = lines[1] + 1       # exclude declaration
-    return count, start, ''
 
 
 def startapp(args):

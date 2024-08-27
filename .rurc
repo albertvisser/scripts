@@ -12,6 +12,7 @@ check: test_check_repo.py
 db:    test_db.py
 jsonp: test_jsonp.py
 lang:  test_lang.py
+locs:  test_count_locs.py
 lists: test_list2scite.py
 listv: test_list2vi.py
 morefd: test_morefromdos.py
@@ -34,6 +35,7 @@ check: check_repo.py
 db:    db.py
 jsonp: jsonp.py
 lang:  lang.py
+locs:  count_locs.py
 lists: list2scite.py
 listv: list2vi.py
 morefd: morefromdos.py
