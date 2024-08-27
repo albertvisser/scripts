@@ -50,7 +50,7 @@ called Editor.setFont
 called Editor.setMarginsFont
 called Fontmetrics.__init__()
 called Editor.setMarginsFont
-called Editor.width()
+called Editor.horizontalAdvance()
 called Editor.setMarginWidth with args (0, None)
 called Editor.setMarginLineNumbers with args (0, True)
 called Editor.setMarginsBackgroundColor with arg 'color #cccccc'

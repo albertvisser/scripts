@@ -9,10 +9,10 @@ import invoke
 import inspect
 import argparse
 import subprocess
-import PyQt5.QtWidgets as qtw
-import PyQt5.QtGui as gui
-# import PyQt5.QtCore as core
-import PyQt5.Qsci as sci  # scintilla
+import PyQt6.QtWidgets as qtw
+import PyQt6.QtGui as gui
+# import PyQt6.QtCore as core
+import PyQt6.Qsci as sci  # scintilla
 import settings
 from check_repo_tooltips import tooltips
 import count_locs
@@ -96,7 +96,7 @@ class DiffViewDialog(qtw.QDialog):
         hbox.addStretch()
         vbox.addLayout(hbox)
         self.setLayout(vbox)
-        do = qtw.QAction('Done', self)
+        do = gui.QAction('Done', self)
         do.triggered.connect(self.close)
         do.setShortcut('Esc')
         self.addAction(do)
@@ -115,14 +115,14 @@ class DiffViewDialog(qtw.QDialog):
         # Margin 0 is used for line numbers
         fontmetrics = gui.QFontMetrics(font)
         self.text.setMarginsFont(font)
-        self.text.setMarginWidth(0, fontmetrics.width("00000"))
+        self.text.setMarginWidth(0, fontmetrics.horizontalAdvance("00000"))
         self.text.setMarginLineNumbers(0, True)
         self.text.setMarginsBackgroundColor(gui.QColor("#cccccc"))
 
         # Enable brace matching, auto-indent, code-folding
-        self.text.setBraceMatching(sci.QsciScintilla.SloppyBraceMatch)
+        self.text.setBraceMatching(sci.QsciScintilla.BraceMatch.SloppyBraceMatch)
         self.text.setAutoIndent(True)
-        self.text.setFolding(sci.QsciScintilla.PlainFoldStyle)
+        self.text.setFolding(sci.QsciScintilla.FoldStyle.PlainFoldStyle)
 
         # Current line visible with special background color
         self.text.setCaretLineVisible(True)
@@ -245,7 +245,7 @@ class Gui(qtw.QWidget):
 
         hbox = qtw.QHBoxLayout()
         self.list = qtw.QListWidget(self)
-        self.list.setSelectionMode(qtw.QAbstractItemView.ExtendedSelection)
+        self.list.setSelectionMode(qtw.QAbstractItemView.SelectionMode.ExtendedSelection)
         # self.populate_frame()
         hbox.addWidget(self.list)
 
@@ -343,7 +343,7 @@ class Gui(qtw.QWidget):
 
         self.setLayout(vbox)
 
-        do = qtw.QAction('Done', self)
+        do = gui.QAction('Done', self)
         do.triggered.connect(self.close)
         do.setShortcut('Ctrl+Q')
         self.addAction(do)
@@ -389,7 +389,7 @@ class Gui(qtw.QWidget):
         if filenames:
             lines = get_locs_for_modules(filenames, self.path)
             caption = 'Show loc-counts for all tracked modules'
-            DiffViewDialog(self, self.title, caption, '\n'.join(lines), (600, 400)).exec_()
+            DiffViewDialog(self, self.title, caption, '\n'.join(lines), (600, 400)).exec()
 
     def count_selected(self):
         """show lines of code for selected files
@@ -398,7 +398,7 @@ class Gui(qtw.QWidget):
         if filenames:
             lines = get_locs_for_modules(filenames, self.path)
             caption = 'Show loc-counts for: ' + ', '.join(filenames)
-            DiffViewDialog(self, self.title, caption, '\n'.join(lines), (600, 400)).exec_()
+            DiffViewDialog(self, self.title, caption, '\n'.join(lines), (600, 400)).exec()
 
     def diff_all(self):
         """show diff for all tracked files
@@ -431,7 +431,7 @@ class Gui(qtw.QWidget):
                 qtw.QMessageBox.information(self, self.title, '\n'.join(_err))
                 return
             caption = 'Show diffs for: ' + ', '.join(filenames)
-            DiffViewDialog(self, self.title, caption, _out).exec_()
+            DiffViewDialog(self, self.title, caption, _out).exec()
 
     def add_ignore(self):
         """add selected file to ignore list"""
@@ -471,7 +471,7 @@ class Gui(qtw.QWidget):
 
     def commit_all(self):
         """hg commit uitvoeren - vraag om commit message"""
-        if FriendlyReminder(self).exec_() == qtw.QDialog.Rejected:
+        if FriendlyReminder(self).exec() == qtw.QDialog.DialogCode.Rejected:
             return
         message, ok = qtw.QInputDialog.getText(self, self.title, 'Enter a commit message:')
         if ok:
@@ -482,13 +482,13 @@ class Gui(qtw.QWidget):
 
     def commit_selected(self):
         """hg commit <selected files> uitvoeren - vraag om commit message"""
-        # if FriendlyReminder(self).exec_() == qtw.QDialog.Rejected:
+        # if FriendlyReminder(self).exec() == qtw.QDialog.DialogCode.Rejected:
         #     return
         # filenames = self.filter_tracked(self.get_selected_files())
         filelist = self.get_selected_files()
         to_commit = [pathlib.Path(x[1]) for x in filelist]
         if ([y for y in to_commit if y.suffix == '.py' and not y.name.startswith('test_')]
-                and FriendlyReminder(self).exec_() == qtw.QDialog.Rejected):
+                and FriendlyReminder(self).exec() == qtw.QDialog.DialogCode.Rejected):
             return
         filenames = self.filter_tracked(filelist)
         if filenames:
@@ -506,7 +506,7 @@ class Gui(qtw.QWidget):
             return
         message = self.run_and_capture(['git', 'log', '-1', '--pretty=format:%s'])[0][0]
         self.dialog_data = None, None
-        if CheckTextDialog(self, self.title, message).exec_() != qtw.QDialog.Accepted:
+        if CheckTextDialog(self, self.title, message).exec() != qtw.QDialog.DialogCode.Accepted:
             return
         add_files, commit_message = self.dialog_data
         if add_files:
@@ -551,7 +551,7 @@ class Gui(qtw.QWidget):
                 qtw.QMessageBox.information(self, self.title, '\n'.join(_err))
                 return
             caption = 'Show annotations for: ' + ', '.join(filenames)
-            DiffViewDialog(self, self.title, caption, '\n'.join(_out), (1200, 800)).exec_()
+            DiffViewDialog(self, self.title, caption, '\n'.join(_out), (1200, 800)).exec()
 
     def filter_tracked(self, filelist, notify=True):
         """return only the tracked files, optionally (don't) show messages for untracked ones
@@ -638,7 +638,7 @@ class Gui(qtw.QWidget):
                                         'Select a branch different from the current one first')
             return
         ok = qtw.QMessageBox.question(self, self.title, f'Merge {branch_name} into {current}?')
-        if ok == qtw.QMessageBox.Yes:
+        if ok == qtw.QMessageBox.StandardButton.Yes:
             self.run_and_report(['git', 'merge', branch_name])
             # self.update_branches()
             self.refresh_frame()
@@ -658,7 +658,7 @@ class Gui(qtw.QWidget):
         for label, callback in (('&New Stash', self.stash_push),
                                 ('&Apply Stash', self.stash_pop),
                                 ('&Remove Stash', self.stash_kill)):
-            action = qtw.QAction(label, self)
+            action = gui.QAction(label, self)
             action.triggered.connect(callback)
             menu.addAction(action)
         return menu
@@ -792,7 +792,7 @@ def startapp(args):
         return args.project + ' is not a repository'
     win = Gui(path, repotype)
     win.show()
-    sys.exit(win.app.exec_())
+    sys.exit(win.app.exec())
 
 
 def main():

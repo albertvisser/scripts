@@ -194,32 +194,32 @@ def test_startapp(monkeypatch, capsys, tmp_path):
     assert capsys.readouterr().out == ('called Application.__init__\n'
             f"called Gui.__init__() with args ({tmp_path!r}, 'git')\n"
             'called Gui.show()\n'
-            'called Application.exec_\n')
+            'called Application.exec\n')
     with pytest.raises(SystemExit):
         testee.startapp(types.SimpleNamespace(project='x'))
     assert capsys.readouterr().out == ('called Application.__init__\n'
             "called Gui.__init__() with args (PosixPath('/rootdir/x'), 'git')\n"
             'called Gui.show()\n'
-            'called Application.exec_\n')
+            'called Application.exec\n')
     with pytest.raises(SystemExit):
         testee.startapp(types.SimpleNamespace(project='tests'))
     assert capsys.readouterr().out == ('called Application.__init__\n'
             "called Gui.__init__() with args (PosixPath('/homedir/testscripts'), 'git')\n"
             'called Gui.show()\n'
-            'called Application.exec_\n')
+            'called Application.exec\n')
     assert capsys.readouterr().out == ''
     with pytest.raises(SystemExit):
         testee.startapp(types.SimpleNamespace(project='.'))
     assert capsys.readouterr().out == ('called Application.__init__\n'
             f"called Gui.__init__() with args ({tmp_path!r}, 'git')\n"
             'called Gui.show()\n'
-            'called Application.exec_\n')
+            'called Application.exec\n')
     with pytest.raises(SystemExit):
         testee.startapp(types.SimpleNamespace(project='testscripts'))
     assert capsys.readouterr().out == ('called Application.__init__\n'
             "called Gui.__init__() with args (PosixPath('/homedir/testscripts'), 'git')\n"
             'called Gui.show()\n'
-            'called Application.exec_\n')
+            'called Application.exec\n')
     counter = 0
     monkeypatch.setattr(testee.pathlib.Path, 'exists', return_false_then_true)
     with pytest.raises(SystemExit):
@@ -227,7 +227,7 @@ def test_startapp(monkeypatch, capsys, tmp_path):
     assert capsys.readouterr().out == ('called Application.__init__\n'
             f"called Gui.__init__() with args ({tmp_path!r}, 'hg')\n"
             'called Gui.show()\n'
-            'called Application.exec_\n')
+            'called Application.exec\n')
     monkeypatch.setattr(testee.pathlib.Path, 'exists', lambda *x: False)
     assert testee.startapp(types.SimpleNamespace(project='')) == '. is not a repository'
     assert capsys.readouterr().out == ''
@@ -329,7 +329,7 @@ class TestDiffViewDialog:
         monkeypatch.setattr(testee.gui, 'QFont', mockqtw.MockFont)
         monkeypatch.setattr(testee.gui, 'QFontMetrics', mockqtw.MockFontMetrics)
         monkeypatch.setattr(testee.qtw, 'QPushButton', mockqtw.MockPushButton)
-        monkeypatch.setattr(testee.qtw, 'QAction', mockqtw.MockAction)
+        monkeypatch.setattr(testee.gui, 'QAction', mockqtw.MockAction)
         monkeypatch.setattr(testee.gui, 'QColor', mockqtw.MockColor)
         caption = 'caption'
         testobj = testee.DiffViewDialog('parent', 'title', caption)
@@ -493,7 +493,7 @@ class TestGui:
         monkeypatch.setattr(testee.gui, 'QFontMetrics', mockqtw.MockFontMetrics)
         monkeypatch.setattr(testee.qtw, 'QPushButton', mockqtw.MockPushButton)
         monkeypatch.setattr(testee.qtw, 'QMenu', mockqtw.MockMenu)
-        monkeypatch.setattr(testee.qtw, 'QAction', mockqtw.MockAction)
+        monkeypatch.setattr(testee.gui, 'QAction', mockqtw.MockAction)
         monkeypatch.setattr(testee.Gui, 'get_repofiles', mock_get_repofiles)
         monkeypatch.setattr(testee.Gui, 'refresh_frame', mock_refresh_frame)
         monkeypatch.setattr(testee.Gui, 'setup_stashmenu', mock_setup_stashmenu)
@@ -639,7 +639,7 @@ class TestGui:
                 """stub
                 """
                 print('called DiffViewDialog with args', args[1:])
-            def exec_(self):
+            def exec(self):
                 """stub
                 """
                 print('exec dialog')
@@ -689,7 +689,7 @@ class TestGui:
                 """stub
                 """
                 print('called DiffViewDialog with args', args[1:])
-            def exec_(self):
+            def exec(self):
                 """stub
                 """
                 print('exec dialog')
@@ -772,7 +772,7 @@ class TestGui:
                 """stub
                 """
                 print('call DiffViewDialog with args', args[1:])
-            def exec_(self):
+            def exec(self):
                 """stub
                 """
                 print('exec dialog')
@@ -932,11 +932,13 @@ class TestGui:
             print('run_and_report with args:', *args)
         monkeypatch.setattr(testee.qtw.QInputDialog, 'getText', mock_gettext)
         monkeypatch.setattr(testee.Gui, 'run_and_report', mock_run)
-        monkeypatch.setattr(mockqtw.MockDialog, 'exec_', lambda *x: testee.qtw.QDialog.Rejected)
+        monkeypatch.setattr(mockqtw.MockDialog, 'exec',
+                            lambda *x: testee.qtw.QDialog.DialogCode.Rejected)
         monkeypatch.setattr(testee, 'FriendlyReminder', mockqtw.MockDialog)
         testobj.commit_all()
         assert capsys.readouterr().out == f'called Dialog.__init__ with args {testobj} () {{}}\n'
-        monkeypatch.setattr(mockqtw.MockDialog, 'exec_', lambda *x: testee.qtw.QDialog.Accepted)
+        monkeypatch.setattr(mockqtw.MockDialog, 'exec',
+                            lambda *x: testee.qtw.QDialog.DialogCode.Accepted)
         monkeypatch.setattr(testee, 'FriendlyReminder', mockqtw.MockDialog)
         testobj.commit_all()
         assert capsys.readouterr().out == (f'called Dialog.__init__ with args {testobj} () {{}}\n'
@@ -997,7 +999,8 @@ class TestGui:
         monkeypatch.setattr(testee.Gui, 'run_and_report', mock_run)
         monkeypatch.setattr(testee.Gui, 'filter_tracked', mock_filter_tracked)
         monkeypatch.setattr(testee.Gui, 'get_selected_files', mock_get_selected_none)
-        monkeypatch.setattr(mockqtw.MockDialog, 'exec_', lambda *x: testee.qtw.QDialog.Rejected)
+        monkeypatch.setattr(mockqtw.MockDialog, 'exec',
+                            lambda *x: testee.qtw.QDialog.DialogCode.Rejected)
         monkeypatch.setattr(testee, 'FriendlyReminder', mockqtw.MockDialog)
         testobj.commit_selected()
         assert capsys.readouterr().out == ('call get_selected_filenames()\n'
@@ -1029,7 +1032,8 @@ class TestGui:
         assert capsys.readouterr().out == ('call get_selected_filenames()\n'
                                            f'called Dialog.__init__ with args {testobj} () {{}}\n')
 
-        monkeypatch.setattr(mockqtw.MockDialog, 'exec_', lambda *x: testee.qtw.QDialog.Accepted)
+        monkeypatch.setattr(mockqtw.MockDialog, 'exec',
+                            lambda *x: testee.qtw.QDialog.DialogCode.Accepted)
         # monkeypatch.setattr(testee.Gui, 'get_selected_files', mock_get_selected)
         testobj.commit_selected()
         assert capsys.readouterr().out == ('call get_selected_filenames()\n'
@@ -1087,11 +1091,11 @@ class TestGui:
                 """
                 self.parent = args[0]
                 print('call CheckTextDialog with args', args[1:])
-            def exec_(self):
+            def exec(self):
                 """stub
                 """
                 self.parent.dialog_data = True, 'commit_message'
-                return testee.qtw.QDialog.Accepted
+                return testee.qtw.QDialog.DialogCode.Accepted
         class MockDialog_2:
             """stub
             """
@@ -1100,11 +1104,11 @@ class TestGui:
                 """
                 self.parent = args[0]
                 print('call CheckTextDialog with args', args[1:])
-            def exec_(self):
+            def exec(self):
                 """stub
                 """
                 self.parent.dialog_data = True, 'commit_message'
-                return testee.qtw.QDialog.Rejected
+                return testee.qtw.QDialog.DialogCode.Rejected
         monkeypatch.setattr(testee.qtw.QMessageBox, 'information', mock_information)
         monkeypatch.setattr(testee.Gui, 'run_and_capture', mock_runc)
         monkeypatch.setattr(testee.Gui, 'get_selected_files', mock_get_selected)
@@ -1267,11 +1271,11 @@ class TestGui:
             def __init__(self, *args):
                 self.parent = args[0]
                 print('call DiffViewDialog with args', args[1:])
-            def exec_(self):
+            def exec(self):
                 """stub
                 """
                 self.parent.dialog_data = True, 'commit_message'
-                return testee.qtw.QDialog.Accepted
+                return testee.qtw.QDialog.DialogCode.Accepted
         monkeypatch.setattr(testee.Gui, 'run_and_capture', mock_run)
         monkeypatch.setattr(testee.Gui, 'filter_tracked', mock_filter_tracked)
         monkeypatch.setattr(testee.Gui, 'get_selected_files', mock_get_selected_none)
@@ -1498,7 +1502,7 @@ class TestGui:
             """stub
             """
             print(f'display question `{message}`')
-            return testee.qtw.QMessageBox.Yes
+            return testee.qtw.QMessageBox.StandardButton.Yes
         def mock_currenttext():
             """stub
             """
@@ -1571,7 +1575,7 @@ class TestGui:
         """unittest for Gui.setup_stashmenu
         """
         monkeypatch.setattr(testee.qtw, 'QMenu', mockqtw.MockMenu)
-        monkeypatch.setattr(testee.qtw, 'QAction', mockqtw.MockAction)
+        monkeypatch.setattr(testee.gui, 'QAction', mockqtw.MockAction)
         assert isinstance(testobj.setup_stashmenu(), mockqtw.MockMenu)
         assert capsys.readouterr().out == (
                 "called Menu.__init__ with args ()\n"
