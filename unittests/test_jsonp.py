@@ -1,38 +1,26 @@
 """unittests for ./jsonp.py
 """
-import os
-import jsonp
+import jsonp as testee
 
-def test_main_error(capsys):
-    """unittest for jsonp.main_error
-    """
-    usagemessage = "usage: python(3) jsonp.py <filename>\n"
-    jsonp.main([])
-    assert capsys.readouterr().out == usagemessage
-    jsonp.main(['scriptname'])
-    assert capsys.readouterr().out == usagemessage
-    jsonp.main(['scriptname', 'filename', 'extra'])
-    assert capsys.readouterr().out == usagemessage
-
-def test_main(tmp_path):
+def test_main(monkeypatch, capsys):
     """unittest for jsonp.main
     """
-    filename = str(tmp_path / 'test_jsonp.json')
-    outname = str(tmp_path / 'test_jsonp_pretty.json')
-    with open(filename, 'w') as f:
-        f.write('["foo", {"bar": ["baz", null, 1.0, 2]}]')
-    jsonp.main(['scriptname', filename])
-    assert os.path.exists(outname)
-    with open(outname) as f:
-        data = f.read()
-    assert data == ('[\n'
-                    '  "foo",\n'
-                    '  {\n'
-                    '    "bar": [\n'
-                    '      "baz",\n'
-                    '      null,\n'
-                    '      1.0,\n'
-                    '      2\n'
-                    '    ]\n'
-                    '  }\n'
-                    ']')
+    def mock_check(*args):
+        print("called jsonvp.check_usage with args", args)
+    def mock_check_2(*args):
+        print("called jsonvp.check_usage with args", args)
+        return 'xxx'
+    def mock_read(filename):
+        print(f"called jsonvp.read_json with arg '{filename}'")
+    def mock_dump(*args):
+        print("called jsonvp.dump_json with args", args)
+    monkeypatch.setattr(testee.jsonvp, 'check_usage', mock_check)
+    monkeypatch.setattr(testee.jsonvp, 'read_json', mock_read)
+    monkeypatch.setattr(testee.jsonvp, 'dump_json', mock_dump)
+    testee.main('args')
+    assert capsys.readouterr().out == "called jsonvp.check_usage with args ('args', 'jsonp')\n"
+    monkeypatch.setattr(testee.jsonvp, 'check_usage', mock_check_2)
+    testee.main('args')
+    assert capsys.readouterr().out == ("called jsonvp.check_usage with args ('args', 'jsonp')\n"
+                                       "called jsonvp.read_json with arg 'xxx'\n"
+                                       "called jsonvp.dump_json with args ('xxx_pretty', None)\n")

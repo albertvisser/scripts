@@ -4,23 +4,17 @@
 saves a pretty-printed version instead of overwriting the original
 """
 import sys
-import os
-import json
-
-INDENT = 2
+import os.path
+import jsonvp
 
 
 def main(args):
     "do the thing"
-    if len(args) != 2:
-        print("usage: python(3) jsonp.py <filename>")
-        return
-    filename = args[1]
-    outname = '_pretty'.join(os.path.splitext(filename))
-    with open(filename, encoding='utf-8') as _in:
-        data = json.load(_in)
-    with open(outname, "w", encoding='utf-8') as _out:
-        json.dump(data, _out, indent=INDENT)
+    filename = jsonvp.check_usage(args, 'jsonp')
+    if filename:
+        data = jsonvp.read_json(filename)
+        outname = '_pretty'.join(os.path.splitext(filename))
+        jsonvp.dump_json(outname, data)
 
 
 if __name__ == "__main__":
