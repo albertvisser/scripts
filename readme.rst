@@ -78,9 +78,13 @@ but in the form of a script that generates these symlinks and invocations.
     execute ``invoke`` tasks in nginx-config directory (for server configuration stuff).
     the same applies as for **binfab**
 
-**jsonp.py**
+**jsonp / jsonp.py**
 
     generate pretty-printed version of file with json data
+
+**jsonv / jsonv.py**
+
+    view pretty-printed version of file with json data without copying it
 
 **lang.py**
 
@@ -162,7 +166,7 @@ but in the form of a script that generates these symlinks and invocations.
  
 **settings.py**
 
-    Configuration values for the fabfile (and the tasks files) in this directory,
+    Configuration values for the the tasks files in this directory,
     mostly for the mercurial repo stuff.
 
 **setup-nginx**
@@ -193,8 +197,6 @@ but in the form of a script that generates these symlinks and invocations.
 
     a function that reads entries from a config file (called ``arcstuff.ini``,
     example present) to build an archive containing backups of selected data files.
-
-    a function to set up a Python source tree in a standardized way (really?)
 
 **tedit**
 
