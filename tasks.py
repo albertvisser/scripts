@@ -127,36 +127,6 @@ def arcstuff(c, names):
         c.run(command)
 
 
-@task(help={'path': 'root path on which the permissions need to be reset'})
-def chmodrecursive(c, path=None):
-    """
-    Permissies in een directory tree op standaard waarden zetten
-    bv. nadat de bestanden zijn gekopieerd vanaf een device
-    dat geen unix permits kan onthouden (zoals een mobiele FAT-harddisk)
-
-    eenvoudigst om uit te voeren in de root van de betreffende tree
-    kan wellicht ook met `find -name *.py -exec chmod 766`...
-    """
-    if path is None:
-        path = os.getcwd()
-    for entry in os.listdir(path):
-        if entry in ('__pycache__',) or entry.startswith('.'):
-            continue
-        fnaam = os.path.join(path, entry)
-        if os.path.isfile(fnaam):
-            with contextlib.suppress(PermissionError):
-                os.chmod(fnaam, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH)
-        elif os.path.islink(fnaam):
-            continue
-        elif os.path.isdir(fnaam):
-            try:
-                os.chmod(fnaam, stat.S_IFDIR | stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
-            except PermissionError:
-                pass
-            else:
-                chmodrecursive(c, fnaam)
-
-
 ns = Collection()
 ns.add_collection(session)
 ns.add_collection(repo)
@@ -168,4 +138,3 @@ ns.add_collection(scriptlib)
 ns.add_task(install_scite)
 ns.add_task(build_scite)
 ns.add_task(arcstuff)
-ns.add_task(chmodrecursive)

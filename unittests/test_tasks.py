@@ -203,41 +203,6 @@ def test_arcstuff(monkeypatch, capsys):
         os.remove('arcstuff_test.conf')
 
 
-def test_chmodrecursive(monkeypatch, capsys):
-    """unittest for tasks.chmodrecursive
-    """
-    counter = 0
-    def mock_listdir(*args):
-        """stub
-        """
-        nonlocal counter
-        counter += 1
-        if counter > 1:
-            print('entering recursive call')
-            return []
-        return ['file', 'name', '__pycache__', '.hg', 'link', 'dir', 'map']
-    def mock_chmod(*args):
-        """stub
-        """
-        if os.path.basename(args[0]) in ('file', 'dir'):
-            print('ignoring PermissionError for', args[0])
-            raise PermissionError
-        print('changing file permissions for', args[0])
-    monkeypatch.setattr(tasks.os, 'getcwd', lambda: 'current_dir')
-    monkeypatch.setattr(tasks.os, 'listdir', mock_listdir)
-    monkeypatch.setattr(tasks.os.path, 'isfile', lambda x: x.endswith(('file', 'name')))
-    monkeypatch.setattr(tasks.os.path, 'islink', lambda x: x.endswith('link'))
-    monkeypatch.setattr(tasks.os.path, 'isdir', lambda x: x.endswith(('dir', 'map')))
-    monkeypatch.setattr(tasks.os, 'chmod', mock_chmod)
-    c = MockContext()
-    tasks.chmodrecursive(c)
-    assert capsys.readouterr().out == ('ignoring PermissionError for current_dir/file\n'
-                                       'changing file permissions for current_dir/name\n'
-                                       'ignoring PermissionError for current_dir/dir\n'
-                                       'changing file permissions for current_dir/map\n'
-                                       'entering recursive call\n')
-
-
 class MockDatetime:
     """stub for datetime.DateTime
     """
