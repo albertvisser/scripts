@@ -11,6 +11,8 @@ unittests
 check: test_check_repo.py
 db:    test_db.py
 jsonp: test_jsonp.py
+jsonv: test_jsonv.py
+jsonvp: test_jsonvp.py
 lang:  test_lang.py
 locs:  test_count_locs.py
 lists: test_list2scite.py
@@ -34,6 +36,8 @@ xmlp:  test_xmlp.py
 check: check_repo.py
 db:    db.py
 jsonp: jsonp.py
+jsonv: jsonv.py
+jsonvp: jsonvp.py
 lang:  lang.py
 locs:  count_locs.py
 lists: list2scite.py
