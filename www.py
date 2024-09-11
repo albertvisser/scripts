@@ -119,7 +119,8 @@ def stage(c, sitename, new_only=False, filename='', list_only=False):
     elif new_only:
         files = newfiles
     else:
-        files = [line.split()[1] for line in result.stdout.split('\n') if line and line[0] != '?']
+        files = [line.split()[1] for line in result.stdout.split('\n')
+                 if line and line[0] not in ('?', '!')]
     if not files:
         print('Nothing to stage')
         return
