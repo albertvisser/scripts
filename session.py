@@ -45,16 +45,6 @@ def newproject(c, name):
     os.rename(os.path.join(loc, 'projectname'), os.path.join(loc, name))
 
 
-# @task(help={'name': 'name of session file'})
-def start_old(c, name):
-    """start a programming session using various tools
-
-    expects a session script of the same name in .sessions (subdirectory for now)
-    """
-    fname = os.path.join(SESSIONS, name)
-    c.run(f'/bin/sh {fname}')
-
-
 @task(help={'name': 'project name'})
 def start(c, name, light_background=False):
     """start a programming session for a given repo using various tools
@@ -95,7 +85,21 @@ def start(c, name, light_background=False):
 
 
 @task(help={'name': 'project name'})
-def get_info(c, name):
+def get_info(c, name=''):
+    """get info about started processes for project or all open sessions (list all session pidfiles)
+    """
+    if not name:
+        for path in glob.glob('*-session-pids-start-at-*', root_dir=sessionfile_root):
+            print(path)
+        return
+    # with open(_get_session_info(name)) as f:
+    #     info = f.readlines()
+    # print(info)
+    info = _get_session_info(name)
+    print(f'info in {info}')
+
+
+def _get_session_info(name):
     """get info about started processes (originally intended for use in a "close session" script
     """
     paths = glob.glob(f'{name}-session-pids-start-at-*', root_dir=sessionfile_root)
@@ -113,6 +117,15 @@ def get_info(c, name):
                 continue
             f.write(f'{proc.pid}, {proc.info["ppid"]}, {proc.info["name"]}, {proc.info["exe"]}, '
                     f'{proc.info["cmdline"]}\n')
+    return fname
+
+
+@task(help={'name': 'project name'})
+def delete(c, name):
+    """remove any pidfile for this project
+    """
+    for file in glob.glob(f'{sessionfile_root}/{name}-session-*'):
+        os.unlink(file)
 
 
 @task(help={'name': 'project name'})

@@ -73,16 +73,6 @@ def test_newproject(monkeypatch, capsys):
                                        ' to `/home/albert/projects/name/name`\n')
 
 
-def test_start_old(monkeypatch, capsys):
-    """unittest for session.start_old
-    """
-    monkeypatch.setattr(testee, 'SESSIONS', 'sessions_location')
-    monkeypatch.setattr(MockContext, 'run', mock_run)
-    c = MockContext()
-    testee.start_old(c, 'session_file')
-    assert capsys.readouterr().out == '/bin/sh sessions_location/session_file\n'
-
-
 def test_start(monkeypatch, capsys, tmp_path):
     """unittest for session.start
     """
@@ -196,13 +186,16 @@ def test_get_info(monkeypatch, capsys, tmp_path):
                         lambda *x, **y: ['project_name-session-pids-start-at-12345'])
     monkeypatch.setattr(testee.psutil, 'process_iter', mock_iter)
     c = MockContext()
+    testee.get_info(c)
+    assert capsys.readouterr().out == "project_name-session-pids-start-at-12345\n"
     testee.get_info(c, 'project_name')
     with open(f'{testee.sessionfile_root}/project_name-session-info') as f:
         data = f.read()
     assert data == ("12345, 1, y, yy, ['b', 'bb']\n"
                     "12346, 1, z, zz, ['c', 'cc']\n")
-    assert capsys.readouterr().out == ("called psutil.proc_info with args"
-                                       " (['name', 'ppid', 'exe', 'cmdline'],)\n")
+    assert capsys.readouterr().out == (
+            "called psutil.proc_info with args (['name', 'ppid', 'exe', 'cmdline'],)\n"
+            f"info in {testee.sessionfile_root}/project_name-session-info\n")
 
     mock_data.append(types.SimpleNamespace(pid=12347, info={'ppid': 1, 'name': 'q', 'exe': 'qq',
                                                             'cmdline': ['d', 'dd']}))
@@ -212,8 +205,9 @@ def test_get_info(monkeypatch, capsys, tmp_path):
     assert data == ("12345, 1, y, yy, ['b', 'bb']\n"
                     "12346, 1, z, zz, ['c', 'cc']\n"
                     "12347, 1, q, qq, ['d', 'dd']\n")
-    assert capsys.readouterr().out == ("called psutil.proc_info with args"
-                                       " (['name', 'ppid', 'exe', 'cmdline'],)\n")
+    assert capsys.readouterr().out == (
+            "called psutil.proc_info with args (['name', 'ppid', 'exe', 'cmdline'],)\n"
+            f"info in {testee.sessionfile_root}/project_name-session-info.1\n")
 
     testee.get_info(c, 'project_name')
     with open(f'{testee.sessionfile_root}/project_name-session-info.2') as f:
@@ -221,8 +215,22 @@ def test_get_info(monkeypatch, capsys, tmp_path):
     assert data == ("12345, 1, y, yy, ['b', 'bb']\n"
                     "12346, 1, z, zz, ['c', 'cc']\n"
                     "12347, 1, q, qq, ['d', 'dd']\n")
-    assert capsys.readouterr().out == ("called psutil.proc_info with args"
-                                       " (['name', 'ppid', 'exe', 'cmdline'],)\n")
+    assert capsys.readouterr().out == (
+            "called psutil.proc_info with args (['name', 'ppid', 'exe', 'cmdline'],)\n"
+            f"info in {testee.sessionfile_root}/project_name-session-info.2\n")
+
+def test_delete(monkeypatch, capsys):
+    """unittest for session.delete
+    """
+    def mock_unlink(name):
+        """stub
+        """
+        print(f'called os.unlink with arg `{name}`')
+    monkeypatch.setattr(testee.glob, 'glob', lambda *x, **y: ['xx-session-pids-start-at-12345'])
+    monkeypatch.setattr(testee.os, 'unlink', mock_unlink)
+    c = MockContext()
+    testee.delete(c, 'xx')
+    assert capsys.readouterr().out == 'called os.unlink with arg `xx-session-pids-start-at-12345`\n'
 
 
 def test_end(monkeypatch, capsys):
@@ -406,16 +414,6 @@ def test_check_process():
     assert testee.check_process(testproc, True) == (True, False, True)  # niet (False, True, True)
     testproc = types.SimpleNamespace(info={'name': 'bash'})
     assert testee.check_process(testproc, False) == (False, True, True)
-
-
-def test_edit_old(monkeypatch, capsys):
-    """unittest for session.edit_old
-    """
-    monkeypatch.setattr(testee, 'SESSIONS', 'sessions_location')
-    monkeypatch.setattr(MockContext, 'run', mock_run)
-    c = MockContext()
-    testee.edit_old(c, 'session_file')
-    assert capsys.readouterr().out == 'pedit sessions_location/session_file\n'
 
 
 def test_get_input_from_user(monkeypatch):
