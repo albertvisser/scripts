@@ -1,13 +1,17 @@
 #! /bin/sh
-if test "$progs"; then
-        pedit -ml $progs
-	if test "$dml"; then pedit -ml $dml; fi
-	if test "$gui"; then pedit -ml $gui; fi
-	if test "$data"; then pedit -r $data; fi
-	if test "$tests"; then pedit -r $tests; fi
-	if test "$tpl"; then pedit -mr $tpl; fi
-	if test "$url"; then pedit -mr $url; fi
-	if test "$lang"; then pedit -mr $lang; fi
-else 
-	echo "No definition of files to open"
+if [ "$1" = "-p" ]; then
+	binfab repo.predit -p $2 $3
+else
+	if test "$progs"; then
+	        pedit -ml $progs
+		if test "$dml"; then pedit -ml $dml; fi
+		if test "$gui"; then pedit -ml $gui; fi
+		if test "$data"; then pedit -r $data; fi
+		if test "$tests"; then pedit -r $tests; fi
+		if test "$tpl"; then pedit -mr $tpl; fi
+		if test "$url"; then pedit -mr $url; fi
+		if test "$lang"; then pedit -mr $lang; fi
+	else 
+		echo "No definition of files to open"
+	fi
 fi

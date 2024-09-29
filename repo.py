@@ -648,3 +648,29 @@ def list_branches(c, name=''):
             with c.cd(get_project_dir(project)):
                 print(f'branches for project {project}')
                 c.run('git branch')
+
+
+@task(help={'project': 'name of repository to search', 'filename': 'name of program file to edit'})
+def predit(c, project, filename):
+    """open a program file in a given repo for editing
+    """
+    where = get_project_dir(project)
+    if not where:
+        print(f'{project} is not a known project')
+        return
+    with open(os.path.join(where, '.rurc')) as testconf:
+        found_testees = False
+        for line in testconf:
+            if found_testees:
+                break
+            if line.strip() == '[testees]':
+                found_testees = True
+    if ' = ' in line:
+        sourcedir = os.path.dirname(line.split(" = ", 1)[1].strip())
+    elif ': ' in line:
+        sourcedir = os.path.dirname(line.split(": ", 1)[1].strip())
+    else:
+        print(f"unsupported delimiter found in line: '{line.strip()}'")
+        return
+    fullname = os.path.join(where, sourcedir, filename)
+    c.run(f'pedit {fullname}')

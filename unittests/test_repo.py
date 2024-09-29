@@ -820,6 +820,32 @@ def test_preadme(monkeypatch, capsys):
                                        " 'pedit readme.rst')\n")
 
 
+def test_predit(monkeypatch, capsys, tmp_path):
+    """unittest for repo.predit
+    """
+    monkeypatch.setattr(testee, 'get_project_dir', lambda x: '')
+    monkeypatch.setattr(MockContext, 'run', mock_run)
+    c = MockContext()
+    testee.predit(c, 'testproj', 'testfile')
+    assert capsys.readouterr().out == "testproj is not a known project\n"
+
+    (tmp_path / '.rurc').touch()
+    (tmp_path / '.rurc').write_text("\n\n\n[testees]\ntestfile = testfile.py\ngargl\n")
+    monkeypatch.setattr(testee, 'get_project_dir', lambda x: str(tmp_path))
+    testee.predit(c, 'testproj', 'testfile')
+    assert capsys.readouterr().out == f"called run with args ('pedit {tmp_path}/testfile',) {{}}\n"
+
+    (tmp_path / '.rurc').write_text("\n\n\n[testees]\ntestfile: testdir/testfile.py\ngargl\n")
+    testee.predit(c, 'testproj', 'testfile')
+    assert capsys.readouterr().out == (
+            f"called run with args ('pedit {tmp_path}/testdir/testfile',) {{}}\n")
+
+    (tmp_path / '.rurc').write_text("\n\n\n[testees]\ntestfile - testdir/testfile.py\ngargl\n")
+    testee.predit(c, 'testproj', 'testfile')
+    assert capsys.readouterr().out == (
+            "unsupported delimiter found in line: 'testfile - testdir/testfile.py'\n")
+
+
 def test_prshell(monkeypatch, capsys):
     """unittest for repo.prshell
     """
