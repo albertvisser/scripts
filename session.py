@@ -12,6 +12,7 @@ from settings import PROJECTS_BASE, get_project_dir  # , private_repos
 SESSIONS = 'not used anymore'
 DEVEL = 'not used anymore'
 sessionfile_root = '/tmp'
+sessionfile_mid = '-session-pids-start-at-'
 # session_pids_name = 'session_pids_start_at'
 # session_info_name = 'session_info'
 # session_end_name = 'session_closing'
@@ -53,7 +54,7 @@ def start(c, name, light_background=False):
     """
     # via run blijven het commando's wachten tot je het afsluit
     # met subprocess.Popen en shebangs in alle scripts werkt het wel
-    paths = glob.glob(f'{name}-session-pids-start-at-*', root_dir=sessionfile_root)
+    paths = glob.glob(f'{name}{sessionfile_mid}*', root_dir=sessionfile_root)
     if paths:
         print('you already started a session for this project')
         return
@@ -89,7 +90,7 @@ def get_info(c, name=''):
     """get info about started processes for project or all open sessions (list all session pidfiles)
     """
     if not name:
-        for path in glob.glob('*-session-pids-start-at-*', root_dir=sessionfile_root):
+        for path in glob.glob(f'*{sessionfile_mid}*', root_dir=sessionfile_root):
             print(path)
         return
     # with open(_get_session_info(name)) as f:
@@ -102,7 +103,7 @@ def get_info(c, name=''):
 def _get_session_info(name):
     """get info about started processes (originally intended for use in a "close session" script
     """
-    paths = glob.glob(f'{name}-session-pids-start-at-*', root_dir=sessionfile_root)
+    paths = glob.glob(f'{name}{sessionfile_mid}*', root_dir=sessionfile_root)
     min_pid = paths[0].rsplit('-', 1)[1]  # there should be only one
     # determine name of file to write
     fname = initial_name = f'{sessionfile_root}/{name}-session-info'
@@ -124,7 +125,7 @@ def _get_session_info(name):
 def delete(c, name):
     """remove any pidfile for this project
     """
-    for file in glob.glob(f'{sessionfile_root}/{name}-session-*'):
+    for file in glob.glob(f'{sessionfile_root}/{name}-{sessionfile_mid}*'):
         os.unlink(file)
 
 
@@ -133,7 +134,7 @@ def end(c, name=''):
     """end the processes belonging to this session
     """
     # check if a session is active
-    paths = glob.glob('*-session-pids-start-at-*', root_dir=sessionfile_root)
+    paths = glob.glob(f'*{sessionfile_mid}*', root_dir=sessionfile_root)
     if not name:
         name = select_name_for_session(c, paths)
         if not name:
@@ -181,7 +182,7 @@ def end(c, name=''):
 def select_name_for_session(c, names):
     """send dialog to select from available session names and get selected name
     """
-    paths = [x.split('-', 1)[0] for x in names]
+    paths = [x.split(f'{sessionfile_mid}', 1)[0] for x in names]
     if len(paths) == 1:
         return paths[0]
     result = c.run('zenity --list --title="Choose which session to terminate"'
@@ -191,7 +192,7 @@ def select_name_for_session(c, names):
 
 def get_start_end_pids(paths, name):
     "determine the boundaries of process ids to search through"
-    splitpaths = [x.split('-session-pids-start-at-') for x in paths]
+    splitpaths = [x.split(f'{sessionfile_mid}') for x in paths]
     from_pid = -1
     to_pid = 0
     for project, pid in sorted(splitpaths, key=lambda x: int(x[1])):
