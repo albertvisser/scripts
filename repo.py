@@ -182,7 +182,7 @@ class Check:
                 writestuff += buf1 + "\n"
                 writestuff += "-- remote:\n"
                 writestuff += buf2 + "\n"
-            elif result:
+            else:  # elif result: kan niet want als niet use_tipfile krijgt deze altijd een waarde
                 writestuff += result.stdout + '\n'
         else:
             stats_append, writestuff = '', ''
@@ -436,7 +436,7 @@ def make_repocsv(outdict, outfile):
         for item in filelist:
             if '/' not in item:
                 item = './' + item
-            in_changeset_dict[item][int(key)] = "x"
+            in_changeset_dict[item][int(key) - 1] = "x"
     with open(outfile, "w") as _out:
         writer = csv.writer(_out)
         writer.writerow(date_headers)
@@ -650,8 +650,9 @@ def list_branches(c, name=''):
                 c.run('git branch')
 
 
-@task(help={'project': 'name of repository to search', 'filename': 'name of program file to edit'})
-def predit(c, project, filename):
+@task(help={'project': 'name of repository to search', 'filename': 'name of program file to edit',
+            'testmod': 'get testscript instead of program file'})
+def predit(c, project, filename, testmod=False):
     """open a program file in a given repo for editing
     """
     where = get_project_dir(project)
@@ -659,12 +660,28 @@ def predit(c, project, filename):
         print(f'{project} is not a known project')
         return
     with open(os.path.join(where, '.rurc')) as testconf:
-        found_testees = False
-        for line in testconf:
+        found_testdir = found_testees = False
+        testdir = ''
+        lines = testconf.readlines()
+        if not lines:
+            print(f'{project}: testconf is empty')
+            return
+        for line in lines:
+            line = line.strip()
+            if found_testdir and not testdir:
+                testdir = line
+            if not found_testdir and line == '[testdir]':
+                found_testdir = True
             if found_testees:
                 break
-            if line.strip() == '[testees]':
+            if line == '[testees]':
                 found_testees = True
+    if not found_testdir:
+        print(f'{project}: no testdir found')
+        return
+    if not found_testees:
+        print(f'{project}: no testees found')
+        return
     if ' = ' in line:
         sourcedir = os.path.dirname(line.split(" = ", 1)[1].strip())
     elif ': ' in line:
@@ -672,5 +689,6 @@ def predit(c, project, filename):
     else:
         print(f"unsupported delimiter found in line: '{line.strip()}'")
         return
+    sourcedir = testdir if testmod else sourcedir
     fullname = os.path.join(where, sourcedir, filename)
     c.run(f'pedit {fullname}')
