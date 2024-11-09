@@ -18,11 +18,13 @@ scriptlib = test_scriptlib.py
 session = test_session.py
 sett = test_settings.py
 sort = test_sort_file.py
+sortargs = test_sort_file_invocations.py
 tags = test_tags.py
 tasks = test_tasks.py
 www = test_www.py
 xmlp = test_xmlp.py
 csv = test_format_csv.py
+build = test_build_bin_scripts.py
 
 [testees]
 check = check_repo.py
@@ -41,9 +43,11 @@ scriptlib = scriptlib.py
 session = session.py
 sett = settings.py
 sort = sort_file.py
+sortargs = sort_file.py
 tags = tags.py
 tasks = tasks.py
 www = www.py
 xmlp = xmlp.py
 csv = format_csv.py
+build = build_bin_scripts.py
 
