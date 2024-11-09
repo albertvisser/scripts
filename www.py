@@ -134,9 +134,10 @@ def stage(c, sitename, new_only=False, filename='', list_only=False):
 
     # kopieer naar staging locatie
     for item in files:
-        dest = os.path.join(root, '.staging', item)
-        if not os.path.exists(dest):
-            os.makedirs(os.path.dirname(dest), exist_ok=True)
+        staging = os.path.join(root, '.staging')
+        dest = os.path.join(staging, item)
+        if not os.path.exists(staging):
+            os.makedirs(staging, exist_ok=True)
         with c.cd(root):
             result = c.run(f'cp {item} .staging/{item}')
 
@@ -190,11 +191,12 @@ def list_staged(c, sitename, full=False):
             for subitem in sorted(os.scandir(item), key=lambda x: x.name):
                 if subitem.is_dir():
                     for entry in sorted(os.scandir(subitem), key=lambda x: x.name):
-                        if entry.is_file():  # eigenlijk de enige mogelijkheid
+                        if entry.is_file():
                             if full:
                                 filelist.append(os.path.join(item.name, subitem.name, entry.name))
                             subdircount += 1
-                elif subitem.is_file:
+                        # else:  # currently not possible
+                else:  # if subitem.is_file:
                     if full or (has_seflinks_true(sitename)
                                 and os.path.splitext(subitem.name)[1] == '.html'):
                         filelist.append(os.path.join(item.name, subitem.name))
@@ -202,7 +204,7 @@ def list_staged(c, sitename, full=False):
             if subdircount and not full:
                 subdirlist.append(f'{subdircount} files in {item.name}/')
             stagecount += subdircount
-        elif item.is_file():
+        else:  # if item.is_file():
             filelist.append(item.name)
             stagecount += 1
     for item in filelist:

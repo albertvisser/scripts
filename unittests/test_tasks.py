@@ -1,12 +1,10 @@
 """unittests for ./tasks.py
 """
-import os
-import shutil
 import datetime
 import pytest
 import types
 from invoke import MockContext
-import tasks
+import tasks as testee
 FIXDATE = datetime.datetime(2020, 1, 1)
 
 
@@ -35,18 +33,18 @@ def test_install_scite(monkeypatch, capsys, tmp_path):
         """
         print(*args)
         return types.SimpleNamespace(failed=False)
-    monkeypatch.setattr(tasks, 'GSCITELOC', str(tmp_path / 'scite{}_test'))
-    fname = tasks.GSCITELOC.format('x')
+    monkeypatch.setattr(testee, 'GSCITELOC', str(tmp_path / 'scite{}_test'))
+    fname = testee.GSCITELOC.format('x')
 
     c = MockContext()
-    tasks.install_scite(c, 'x')
+    testee.install_scite(c, 'x')
     assert capsys.readouterr().out == f'{fname} does not exist\n'
 
     with open(fname, 'w') as f:
         f.write('')
     monkeypatch.setattr(MockContext, 'run', mock_run_1)
     c = MockContext()
-    tasks.install_scite(c, 'x')
+    testee.install_scite(c, 'x')
     assert capsys.readouterr().out == (f'tar -zxf {fname}\ntar -xf {fname}\n'
                                        'sudo cp gscite/SciTE /usr/bin\n'
                                        'sudo cp gscite/*.properties /etc/scite\n'
@@ -57,7 +55,7 @@ def test_install_scite(monkeypatch, capsys, tmp_path):
         f.write('')
     monkeypatch.setattr(MockContext, 'run', mock_run_2)
     c = MockContext()
-    tasks.install_scite(c, 'x')
+    testee.install_scite(c, 'x')
     assert capsys.readouterr().out == (f'tar -zxf {fname}\nsudo cp gscite/SciTE /usr/bin\n'
                                        'sudo cp gscite/*.properties /etc/scite\n'
                                        'sudo cp gscite/*.html /usr/share/scite\n'
@@ -103,18 +101,18 @@ def test_build_scite(monkeypatch, capsys, tmp_path):
         print(*args, 'in', c.cwd)
         counter += 1
         return types.SimpleNamespace(failed=False, stdout=f'results from call {counter}')
-    monkeypatch.setattr(tasks, 'SCITELOC', str(tmp_path / 'scite{}_test'))
-    fname = tasks.SCITELOC.format('x')
-    monkeypatch.setattr(tasks.os.path, 'exists', lambda x: False)
+    monkeypatch.setattr(testee, 'SCITELOC', str(tmp_path / 'scite{}_test'))
+    fname = testee.SCITELOC.format('x')
+    monkeypatch.setattr(testee.os.path, 'exists', lambda x: False)
     c = MockContext()
-    tasks.build_scite(c, 'x')
+    testee.build_scite(c, 'x')
     assert capsys.readouterr().out == f'{fname} does not exist\n'
-    monkeypatch.setattr(tasks.os.path, 'exists', lambda x: True)
+    monkeypatch.setattr(testee.os.path, 'exists', lambda x: True)
 
     counter = 0
     monkeypatch.setattr(MockContext, 'run', mock_run_1)
     c = MockContext()
-    tasks.build_scite(c, 'x')
+    testee.build_scite(c, 'x')
     assert capsys.readouterr().out == (f'tar -zxf {fname} in /tmp\n'
                                        f'tar -xf {fname} in /tmp\n'
                                        'make in /tmp/scintilla/gtk\n'
@@ -126,7 +124,7 @@ def test_build_scite(monkeypatch, capsys, tmp_path):
     counter = 0
     monkeypatch.setattr(MockContext, 'run', mock_run_2)
     c = MockContext()
-    tasks.build_scite(c, 'x')
+    testee.build_scite(c, 'x')
     assert capsys.readouterr().out == (f'tar -zxf {fname} in /tmp\n'
                                        'make in /tmp/scintilla/gtk\n'
                                        'make in /tmp/scite/gtk\n'
@@ -138,7 +136,7 @@ def test_build_scite(monkeypatch, capsys, tmp_path):
     counter = 0
     monkeypatch.setattr(MockContext, 'run', mock_run_3)
     c = MockContext()
-    tasks.build_scite(c, 'x')
+    testee.build_scite(c, 'x')
     assert capsys.readouterr().out == (f'tar -zxf {fname} in /tmp\n'
                                        'make in /tmp/scintilla/gtk\n'
                                        'make in /tmp/scite/gtk\n'
@@ -152,7 +150,7 @@ def test_build_scite(monkeypatch, capsys, tmp_path):
     counter = 0
     monkeypatch.setattr(MockContext, 'run', mock_run_4)
     c = MockContext()
-    tasks.build_scite(c, 'x')
+    testee.build_scite(c, 'x')
     assert capsys.readouterr().out == (f'tar -zxf {fname} in /tmp\n'
                                        'make in /tmp/scintilla/gtk\n'
                                        'make in /tmp/scite/gtk\n'
@@ -163,44 +161,29 @@ def test_build_scite(monkeypatch, capsys, tmp_path):
     assert data == 'results from call 2\nresults from call 3\nresults from call 4\n'
 
 
-def test_arcstuff(monkeypatch, capsys):
+def test_arcstuff(monkeypatch, capsys, tmp_path):
     """unittest for tasks.arcstuff
     """
-    if os.path.exists('arcstuff.conf'):
-        shutil.copyfile('arcstuff.conf', '/tmp/arcstuff.conf')
-    with open('arcstuff.conf', 'w') as f:
-        print('[hello', file=f)
-        print('', file=f)
-        print('hello', file=f)
-        print('files', file=f)
-    if os.path.exists('arcstuff_test.conf'):
-        shutil.copyfile('arcstuff_test.conf', '/tmp/arcstuff_test.conf')
-    with open('arcstuff_test.conf', 'w') as f:
-        print('#hello', file=f)
-        print('[hello]', file=f)
-        print('hello', file=f)
-        print('files', file=f)
-
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
-    monkeypatch.setattr(tasks.os, 'listdir', lambda x: ['test', 'test.conf', 'arcstuff.conf',
-                                                        'arcstuff_test.conf'])
-    monkeypatch.setattr(tasks.datetime, 'datetime', MockDatetime)
+    monkeypatch.setattr(testee.datetime, 'datetime', MockDatetime)
+    monkeypatch.setattr(testee, 'HERE', str(tmp_path))
+    testee.arcstuff(c, 'all')
+    assert capsys.readouterr().out == ""
+    with pytest.raises(IndexError) as exc:
+        testee.arcstuff(c, '')
+    assert str(exc.value) == 'string index out of range'
     with pytest.raises(ValueError) as exc:
-        tasks.arcstuff(c, 'test,stuff')
+        testee.arcstuff(c, 'test,stuff')
     assert str(exc.value) == 'abort: no config file for stuff (arcstuff_stuff.conf does not exist)'
-    tasks.arcstuff(c, 'all')
+    (tmp_path / 'arcstuff.conf').write_text('[hello\n\nhello\nfiles\n')
+    (tmp_path / 'arcstuff_test.conf').write_text('#hello\n[hello]\nhello\nfiles\n')
+    (tmp_path / 'test').touch()
+    (tmp_path / 'test.conf').touch()
+    testee.arcstuff(c, 'all')
     assert capsys.readouterr().out == (
          'tar -czvf /home/albert/arcstuff/all_20200101000000.tar.gz hello files\n'
          'tar -czvf /home/albert/arcstuff/test_20200101000000.tar.gz hello/hello hello/files\n')
-    if os.path.exists('/tmp/arcstuff.conf'):
-        shutil.copyfile('/tmp/arcstuff.conf', 'arcstuff.conf')
-    else:
-        os.remove('arcstuff.conf')
-    if os.path.exists('/tmp/arcstuff_test.conf'):
-        shutil.copyfile('/tmp/arcstuff_test.conf', 'arcstuff_test.conf')
-    else:
-        os.remove('arcstuff_test.conf')
 
 
 class MockDatetime:

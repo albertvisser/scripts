@@ -60,6 +60,9 @@ def test_build(monkeypatch, capsys):
     assert capsys.readouterr().out == 'ctags -f .tags file name in name\n'
     tags.build(c, 'repo')
     assert capsys.readouterr().out == 'ctags -f .tags file name in repo\n'
+    monkeypatch.setattr(tags, 'list_repofiles', lambda x, y: ('', ['file', 'name']))
+    tags.build(c, 'repo')
+    assert capsys.readouterr().out == ''
 
 
 def test_check_changes(monkeypatch, capsys):
@@ -116,6 +119,14 @@ def test_check(monkeypatch, capsys):
     tags.check(c, 'repo')
     assert capsys.readouterr().out == '.tags file rebuild needed for project repo\n'
 
+    monkeypatch.setattr(tags, 'list_repofiles', lambda x, y: ('', ['file', 'name']))
+    tags.check(c, 'repo')
+    assert capsys.readouterr().out == ''
+    monkeypatch.setattr(tags, 'list_repofiles', lambda x, y: (y, ['file', 'name']))
+    monkeypatch.setattr(tags, 'check_changes', lambda x, y: False)
+    tags.check(c, 'repo')
+    assert capsys.readouterr().out == ''
+
 
 def test_update(monkeypatch, capsys):
     """unittest for tags.update
@@ -131,3 +142,11 @@ def test_update(monkeypatch, capsys):
     tags.update(c, 'repo')
     assert capsys.readouterr().out == ('rebuilding .tags file for project repo\n'
                                        'ctags -f .tags file name in repo\n')
+
+    monkeypatch.setattr(tags, 'list_repofiles', lambda x, y: ('', ['file', 'name']))
+    tags.update(c, 'repo')
+    assert capsys.readouterr().out == ''
+    monkeypatch.setattr(tags, 'list_repofiles', lambda x, y: (y, ['file', 'name']))
+    monkeypatch.setattr(tags, 'check_changes', lambda x, y: False)
+    tags.update(c, 'repo')
+    assert capsys.readouterr().out == ''

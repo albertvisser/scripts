@@ -157,15 +157,18 @@ def test_get_locs_for_module(monkeypatch, capsys):
         return [('xxx', 0, 2), ('yyy', 1, 5), ('zzz', 2, 7)]
     monkeypatch.setattr(testee, 'HEADING', 'heading')
     monkeypatch.setattr(testee, 'DETAIL', '{} {} {}')
-    monkeypatch.setattr(testee, 'get_locs',mock_get)
+    monkeypatch.setattr(testee, 'get_locs', mock_get)
     assert testee.get_locs_for_module(testee.pathlib.Path('xxx'), testee.pathlib.Path('path')) == [
             'heading', 'xxx', 'yyy 1 5', 'zzz 2 7-8']
     assert capsys.readouterr().out == "called get_locs with args ('xxx', PosixPath('path'))\n"
 
 
-def test_get_locs():
+def test_get_locs(monkeypatch):
     """unittest for count_locs.get_locs
     """
+    def mock_get(*args):
+        print('called get_locs_for_unit with args', args)
+        return 0, 0, 'message'
     tempfile = testee.pathlib.Path('test_get_locs.py')
     doc1 = '\t\"\"\"doc\"\"\"\n'
     doc2 = '\t\"\"\"doc\n\t\"\"\"\n'
@@ -193,6 +196,10 @@ def test_get_locs():
                                                     ('command2 (invoke task)', 3, 37),
                                                     ('function', 2, 7),
                                                     ('function2', 2, 29)]
+    monkeypatch.setattr(testee, 'get_locs_for_unit', mock_get)
+    assert testee.get_locs('test_get_locs', '') == [('message', 0, 0), ('message', 0, 0),
+                                                    ('message', 0, 1), ('message', -2, 3),
+                                                    ('message', 0, 0), ('message', 0, 0)]
     # tempfile.unlink()
 
 

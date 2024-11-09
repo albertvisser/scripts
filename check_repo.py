@@ -4,9 +4,6 @@
 import os
 import sys
 import pathlib
-import importlib
-import invoke
-import inspect
 import argparse
 import subprocess
 import PyQt6.QtWidgets as qtw
@@ -355,7 +352,7 @@ class Gui(qtw.QWidget):
             command = [self.repotype, 'status']
             if self.repotype == 'git':
                 command.append('--short')
-        elif self.outtype == 'repolist':
+        else:  # if self.outtype == 'repolist':  # -- currently the only other possibility
             command = {'hg': ['hg', 'manifest'], 'git': ['git', 'ls-files']}[self.repotype]
         result = subprocess.run(command, stdout=subprocess.PIPE, cwd=str(self.path), check=False)
         return [x for x in str(result.stdout, encoding='utf-8').split('\n') if x]

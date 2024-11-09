@@ -86,12 +86,21 @@ def test_get_branchname(monkeypatch, capsys):
         """
         print(*args, 'in', self.cwd)
         return types.SimpleNamespace(stdout='* master\n  another\n')
+    def mock_run_3(self, *args, **kwargs):
+        """stub
+        """
+        print(*args, 'in', self.cwd)
+        return types.SimpleNamespace(stdout='')
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
     testobj = testee.Check(c)
     assert testobj.get_branchname('path/to/repo') == 'current'
     assert capsys.readouterr().out == 'git branch in path/to/repo\n'
     monkeypatch.setattr(MockContext, 'run', mock_run_2)
+    c = MockContext(c)
+    assert testobj.get_branchname('path/to/repo') == ''
+    assert capsys.readouterr().out == 'git branch in path/to/repo\n'
+    monkeypatch.setattr(MockContext, 'run', mock_run_3)
     c = MockContext(c)
     assert testobj.get_branchname('path/to/repo') == ''
     assert capsys.readouterr().out == 'git branch in path/to/repo\n'
@@ -132,18 +141,6 @@ def test_check_run(monkeypatch, capsys):
 
     eigenlijk test op de sturing binnen de run() methode
     """
-    def mock_changes(*args):
-        """stub
-        """
-        return True, '', ''
-    def mock_outgoing(*args):
-        """stub
-        """
-        return True, '', ''
-    def mock_push(*args):
-        """stub
-        """
-        return [], ''
     monkeypatch.setattr(testee.Check, 'get_locations', lambda *x: ('pwd', 'root'))
     monkeypatch.setattr(testee.Check, 'register_uncommitted', lambda *x: (False, '', ''))
     monkeypatch.setattr(testee.Check, 'register_outgoing', lambda *x: (False, '', ''))
@@ -179,6 +176,13 @@ def test_check_run(monkeypatch, capsys):
     with open(testee.LOCALCHG) as f:
         data = f.read()
     assert data == 'check local repos on today\n\n\nbbb\nccc'
+    assert capsys.readouterr().out == ('yyy for check-it\n\n'
+                                       'for details see /tmp/repo_local_changes\n')
+    monkeypatch.setattr(testee.Check, 'execute_push', lambda *x: '')
+    testee.Check(c, push=True).run()
+    with open(testee.LOCALCHG) as f:
+        data = f.read()
+    assert data == 'check local repos on today\n\n\nbbb\n'
     assert capsys.readouterr().out == ('yyy for check-it\n\n'
                                        'for details see /tmp/repo_local_changes\n')
 
@@ -315,6 +319,7 @@ def test_register_outgoing(monkeypatch, capsys):
     assert testobj.register_outgoing('name', 'root', 'pwd') == ('xxx', 'outgoing changes',
                                                                 'outgoing changes for name\nxxx\n')
     assert capsys.readouterr().out == 'git log origin/master..master\n'
+
     if not os.path.exists('/tmp/repochecktest'):
         os.mkdir('/tmp/repochecktest')
     with open('/tmp/repochecktest/name_tip', 'w') as f:
@@ -555,6 +560,8 @@ def test_repo_overzicht(monkeypatch, capsys):
     assert capsys.readouterr().out == ("called make_repolist_git()\n"
                                        "called make_repocsv with args ({'.git': 'outdict_git'},"
                                        " 'path/to/.overzicht/name_repo.csv')\n")
+    assert testee.repo_overzicht(c, 'name', 'path/to/repo', '') == 'path/to/.overzicht'
+    assert capsys.readouterr().out == "called make_repolist_git()\n"
 
 
 def test_make_repolist_hg(monkeypatch, capsys):
@@ -608,6 +615,11 @@ def test_make_repolist_git(monkeypatch, capsys):
                 " 2panefm                        |   1 -\n"
                 " bstart                         |   1 -\n"
                 " build-bin-scripts              |  70 +++++++++++++++++++++\n"))
+    def mock_run_2(c, *args, **kwargs):
+        """stub
+        """
+        print(*args, 'in', c.cwd)
+        return types.SimpleNamespace(stdout='')
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
     assert testee.make_repolist_git(c, 'path/to/repo') == {
@@ -620,6 +632,9 @@ def test_make_repolist_git(monkeypatch, capsys):
         "f89d785": {'date': "Mon Jun 6 20:50:06 2022 +0200",
                     'description': "updated readme, unittests and more",
                     'files': ['2panefm', 'bstart', 'build-bin-scripts']}}
+    assert capsys.readouterr().out == 'git log --pretty="%h; %ad; %s" --stat in path/to/repo\n'
+    monkeypatch.setattr(MockContext, 'run', mock_run_2)  # output git log leeg - erg onwaarschijnlijk
+    assert testee.make_repolist_git(c, 'path/to/repo') == {}
     assert capsys.readouterr().out == 'git log --pretty="%h; %ad; %s" --stat in path/to/repo\n'
 
 
@@ -642,17 +657,19 @@ def test_make_repocsv(monkeypatch, capsys, tmp_path):
     if filename.exists():
         filename.unlink()
     testee.make_repocsv({'1': {'date': 'ddd', 'desc': ['x;x', 'x'], 'files': ['file1', 'file2']},
-                        '2': {'date': 'eee', 'desc': ['y,y', 'y']}}, filename)
+                         '2': {'date': 'eee', 'desc': ['y,y', 'y']},
+                         '3': {'date': 'fff', 'desc': ['zzz'], 'files': ['dir/file']}}, filename)
     assert filename.exists()
     assert capsys.readouterr().out == (
             f"create writer to file <_io.TextIOWrapper name='{filename}'"
             " mode='w' encoding='UTF-8'>\n"
-            r"call writer.writerow for data [' \\ date', 'ddd', 'eee']""\n"
+            r"call writer.writerow for data [' \\ date', 'ddd', 'eee', 'fff']""\n"
             r"call writer.writerow for data ['filename \\ description',"
-            """ '"x;x\\nx"', '"y,y\\ny"']"""
+            """ '"x;x\\nx"', '"y,y\\ny"', 'zzz']"""
             "\n"
-            "call writer.writerow for data ['./file1', '', 'x']\n"
-            "call writer.writerow for data ['./file2', '', 'x']\n")
+            "call writer.writerow for data ['./file1', 'x', '', '']\n"
+            "call writer.writerow for data ['./file2', 'x', '', '']\n"
+            "call writer.writerow for data ['dir/file', '', '', 'x']\n")
 
 
 def test_add2gitweb(monkeypatch, capsys):
@@ -727,6 +744,11 @@ def test_add2gitweb(monkeypatch, capsys):
         'called testee.get_repodesc\n'
         f'called run with args (\'echo "repodesc" > {testee.GITLOC}/name/.git/description\',)'
         ' {}\n')
+    counter = counter2 = 0
+    monkeypatch.setattr(testee.pathlib.Path, 'exists', mock_exists)
+    monkeypatch.setattr(testee.pathlib.Path, 'read_text', mock_read_2)
+    testee.add2gitweb(c, 'name')
+    assert capsys.readouterr().out == ""
     counter = counter2 = 0
     monkeypatch.setattr(testee.pathlib.Path, 'exists', mock_exists_2)
     monkeypatch.setattr(testee.pathlib.Path, 'read_text', mock_read_2)
@@ -830,17 +852,33 @@ def test_predit(monkeypatch, capsys, tmp_path):
     assert capsys.readouterr().out == "testproj is not a known project\n"
 
     (tmp_path / '.rurc').touch()
+    monkeypatch.setattr(testee, 'get_project_dir', lambda x: str(tmp_path))
+    testee.predit(c, 'testproj', 'testfile')
+    assert capsys.readouterr().out == "testproj: testconf is empty\n"
+
+    (tmp_path / '.rurc').write_text("\n[testdir]\ntestdir\n")
+    testee.predit(c, 'testproj', 'testfile')
+    assert capsys.readouterr().out == "testproj: no testees found\n"
+
     (tmp_path / '.rurc').write_text("\n\n\n[testees]\ntestfile = testfile.py\ngargl\n")
+    monkeypatch.setattr(testee, 'get_project_dir', lambda x: str(tmp_path))
+    testee.predit(c, 'testproj', 'testfile')
+    assert capsys.readouterr().out == "testproj: no testdir found\n"
+
+    (tmp_path / '.rurc').write_text("[testdir]\ntestdir\n\n\n\n[testees]\ntestfile = testfile.py\n"
+                                    "gargl\n")
     monkeypatch.setattr(testee, 'get_project_dir', lambda x: str(tmp_path))
     testee.predit(c, 'testproj', 'testfile')
     assert capsys.readouterr().out == f"called run with args ('pedit {tmp_path}/testfile',) {{}}\n"
 
-    (tmp_path / '.rurc').write_text("\n\n\n[testees]\ntestfile: testdir/testfile.py\ngargl\n")
+    (tmp_path / '.rurc').write_text("[testdir]\ntestdir\n\n\n\n[testees]\n"
+                                    "testfile: testdir/testfile.py\ngargl\n")
     testee.predit(c, 'testproj', 'testfile')
     assert capsys.readouterr().out == (
             f"called run with args ('pedit {tmp_path}/testdir/testfile',) {{}}\n")
 
-    (tmp_path / '.rurc').write_text("\n\n\n[testees]\ntestfile - testdir/testfile.py\ngargl\n")
+    (tmp_path / '.rurc').write_text("[testdir]\ntestdir\n\n\n\n[testees]\n"
+                                    "testfile - testdir/testfile.py\ngargl\n")
     testee.predit(c, 'testproj', 'testfile')
     assert capsys.readouterr().out == (
             "unsupported delimiter found in line: 'testfile - testdir/testfile.py'\n")

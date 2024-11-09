@@ -3,7 +3,7 @@
 import os
 import types
 import builtins
-import sort_file
+import sort_file as testee
 
 def test_main(monkeypatch, capsys):
     """unittest for sort_file.main
@@ -12,23 +12,23 @@ def test_main(monkeypatch, capsys):
         """stub
         """
         print('called sort() with args', args)
-    monkeypatch.setattr(sort_file, 'sort', mock_sort)
-    sort_file.main(types.SimpleNamespace(file='filename.ext', output='', column='5'))
+    monkeypatch.setattr(testee, 'sort', mock_sort)
+    testee.main(types.SimpleNamespace(file='filename.ext', output='', column='5'))
     assert capsys.readouterr().out == ("called sort() with args ('filename.ext',"
                                        " 'filename_sorted.ext', '5')\n"
                                        'klaar, output in filename_sorted.ext\n')
-    sort_file.main(types.SimpleNamespace(file='filename', output='', column=5))
+    testee.main(types.SimpleNamespace(file='filename', output='', column=5))
     assert capsys.readouterr().out == ("called sort() with args ('filename', 'filename_sorted', 5)\n"
                                        'klaar, output in filename_sorted\n')
-    sort_file.main(types.SimpleNamespace(file='filename', output='other_file', column=''))
+    testee.main(types.SimpleNamespace(file='filename', output='other_file', column=''))
     assert capsys.readouterr().out == ("called sort() with args ('filename', 'other_file', '')\n"
                                        'klaar, output in other_file\n')
     monkeypatch.setattr(builtins, 'input', lambda *args, **kwargs: 'somefile')
-    sort_file.main(types.SimpleNamespace(file='', output='', column=''))
+    testee.main(types.SimpleNamespace(file='', output='', column=''))
     assert capsys.readouterr().out == ("called sort() with args ('somefile', 'somefile_sorted', '')\n"
                                        'klaar, output in somefile_sorted\n')
 
-def test_sort(monkeypatch, capsys, tmp_path):
+def test_sort(tmp_path):
     """unittest for sort_file.sort
     """
     workdir = tmp_path / 'sorttest'
@@ -41,13 +41,13 @@ def test_sort(monkeypatch, capsys, tmp_path):
         print('volgende', file=f)
         print('ook een', file=f)
         print('dat was het dan', file=f)
-    sort_file.sort(source, target, '')
+    testee.sort(source, target, '')
     assert os.path.exists(target)
     with open(target) as in_:
         data = in_.readlines()
     assert data == ['dat was het dan\n', 'de eerste\n', 'een regel\n', 'ook een\n', 'volgende\n']
 
-    sort_file.sort(source, target, '3')
+    testee.sort(source, target, '3')
     with open(target) as in_:
         data = in_.readlines()
     assert data == ['ook een\n', 'een regel\n', 'dat was het dan\n', 'de eerste\n', 'volgende\n']

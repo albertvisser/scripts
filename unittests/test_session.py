@@ -120,6 +120,32 @@ def test_start(monkeypatch, capsys, tmp_path):
             """stub
             """
             return True
+    class MockParser4(dict):
+        """stub
+        """
+        def read(self, *args):
+            """stub
+            """
+            print('called ConfigParser.read() with args', *args)
+            self['env'] = {}
+            self['options'] = {'other': 'y'}
+        def sections(self):
+            """stub
+            """
+            return True
+    class MockParser5(dict):
+        """stub
+        """
+        def read(self, *args):
+            """stub
+            """
+            print('called ConfigParser.read() with args', *args)
+            self['env'] = {}
+            self['options'] = {'predit': 'n', 'dtree': 'n', 'prfind': 'n', 'check-repo': 'n'}
+        def sections(self):
+            """stub
+            """
+            return True
     # monkeypatch.setattr(MockContext, 'run', mock_run)
     monkeypatch.setattr(testee.subprocess, 'Popen', mock_run)
     c = MockContext()
@@ -127,11 +153,13 @@ def test_start(monkeypatch, capsys, tmp_path):
     monkeypatch.setattr(testee, 'get_project_dir', lambda x: '')
     testee.start(c, 'project_name')
     assert capsys.readouterr().out == 'could not determine project location\n'
+
     monkeypatch.setattr(testee, 'get_project_dir', lambda x: 'project')
     monkeypatch.setattr(testee.configparser, 'ConfigParser', MockParser)
     testee.start(c, 'project_name')
     assert capsys.readouterr().out == ('called ConfigParser.read() with args project/.sessionrc\n'
                                        'could not find session configuration\n')
+
     monkeypatch.setattr(testee.configparser, 'ConfigParser', MockParser2)
     testee.start(c, 'project_name')
     with open(f'{testee.sessionfile_root}/project_name-session-pids-start-at-12345') as f:
@@ -142,9 +170,11 @@ def test_start(monkeypatch, capsys, tmp_path):
     assert capsys.readouterr().out == ('called ConfigParser.read() with args project/.sessionrc\n'
                                        "['gnome-terminal', '--geometry=132x43+4+40']"
                                        f" {{'cwd': 'project', 'env': {newenv}}}\n")
+
     monkeypatch.setattr(testee.configparser, 'ConfigParser', MockParser3)
     testee.start(c, 'project_name')
     assert capsys.readouterr().out == 'you already started a session for this project\n'
+
     os.remove(f'{testee.sessionfile_root}/project_name-session-pids-start-at-12345')
     testee.start(c, 'project_name')
     with open(f'{testee.sessionfile_root}/project_name-session-pids-start-at-12345') as f:
@@ -155,6 +185,7 @@ def test_start(monkeypatch, capsys, tmp_path):
                                        f"['dtree'] {{'cwd': 'project', 'env': {newenv}}}\n"
                                        f"['prfind'] {{'cwd': 'project', 'env': {newenv}}}\n"
                                        f"['check-repo'] {{'cwd': 'project', 'env': {newenv}}}\n")
+
     os.remove(f'{testee.sessionfile_root}/project_name-session-pids-start-at-12345')
     testee.start(c, 'project_name', True)
     with open(f'{testee.sessionfile_root}/project_name-session-pids-start-at-12345') as f:
@@ -165,6 +196,17 @@ def test_start(monkeypatch, capsys, tmp_path):
                                        f"['dtree'] {{'cwd': 'project', 'env': {newenv}}}\n"
                                        f"['prfind'] {{'cwd': 'project', 'env': {newenv}}}\n"
                                        f"['check-repo'] {{'cwd': 'project', 'env': {newenv}}}\n")
+
+    os.remove(f'{testee.sessionfile_root}/project_name-session-pids-start-at-12345')
+    monkeypatch.setattr(testee.configparser, 'ConfigParser', MockParser4)
+    testee.start(c, 'project_name', True)
+    assert not os.path.exists(f'{testee.sessionfile_root}/project_name-session-pids-start-at-12345')
+    assert capsys.readouterr().out == 'called ConfigParser.read() with args project/.sessionrc\n'
+
+    monkeypatch.setattr(testee.configparser, 'ConfigParser', MockParser5)
+    testee.start(c, 'project_name', True)
+    assert not os.path.exists(f'{testee.sessionfile_root}/project_name-session-pids-start-at-12345')
+    assert capsys.readouterr().out == 'called ConfigParser.read() with args project/.sessionrc\n'
 
 
 def test_get_info(monkeypatch, capsys, tmp_path):
@@ -219,6 +261,7 @@ def test_get_info(monkeypatch, capsys, tmp_path):
             "called psutil.proc_info with args (['name', 'ppid', 'exe', 'cmdline'],)\n"
             f"info in {testee.sessionfile_root}/project_name-session-info.2\n")
 
+
 def test_delete(monkeypatch, capsys):
     """unittest for session.delete
     """
@@ -264,13 +307,18 @@ def test_end(monkeypatch, capsys):
     def mock_check_kill(*args):
         """stub
         """
-        print('called check_kill with args', args)
+        print('called check_process with args', args)
         return False, True, False
     def mock_check_invalid(*args):
         """stub
         """
-        print('called check_invalid with args', args)
+        print('called check_process with args', args)
         return True, True, False
+    def mock_check_nokill(*args):
+        """stub
+        """
+        print('called check_process with args', args)
+        return False, False, False
     def mock_wait(procs, timeout):
         """stub
         """
@@ -333,7 +381,7 @@ def test_end(monkeypatch, capsys):
     testee.end(c, 'project_name')
     assert capsys.readouterr().out == ("called psutil.proc_info with args"
                                        " (['name', 'ppid', 'exe', 'cmdline'],)\n"
-                                       "called check_invalid with args (namespace(pid=1018,"
+                                       "called check_process with args (namespace(pid=1018,"
                                        " info={'ppid': 1, 'name': 'x'}), False)\n"
                                        "No processes to terminate\n")
 
@@ -342,27 +390,35 @@ def test_end(monkeypatch, capsys):
     testee.end(c, 'project_name')
     assert capsys.readouterr().out == ("called psutil.proc_info with args"
                                        " (['name', 'ppid', 'exe', 'cmdline'],)\n"
-                                       f"called check_kill with args ({mock_procs[1]}, False)\n"
+                                       f"called check_process with args ({mock_procs[1]}, False)\n"
                                        "called process.terminate\n"
                                        f"called psutil.wait_procs with args [{mock_procs[1]}], 3\n"
                                        "called process.kill\n"
                                        "called os.unlink with arg `filename`\n")
+
+    mock_procs = [MockProcess(1, 'systemd', 0), MockProcess(1001, 'xx', 1)]
+    monkeypatch.setattr(testee, 'check_process', mock_check_nokill)
+    testee.end(c, 'project_name')
+    assert capsys.readouterr().out == ("called psutil.proc_info with args"
+                                       " (['name', 'ppid', 'exe', 'cmdline'],)\n"
+                                       f"called check_process with args ({mock_procs[1]}, False)\n"
+                                       "No processes to terminate\n")
 
 
 def test_select_name_for_session(monkeypatch, capsys):
     """unittest for session.test_select_name_for_session
     """
     def mock_run(self, *args, **kwargs):
-        print('called contect.run with args', args, kwargs)
+        print('called context.run with args', args, kwargs)
         return types.SimpleNamespace(stdout='result')
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
-    assert testee.select_name_for_session(c, ['xxx-yyy']) == 'xxx'
+    assert testee.select_name_for_session(c, ['xxx-yyy']) == 'xxx-yyy'
     assert capsys.readouterr().out == ""
     assert testee.select_name_for_session(c, ['xxx-aaa', 'yyy-bbb']) == 'result'
-    assert capsys.readouterr().out == ('called contect.run with args (\'zenity --list'
+    assert capsys.readouterr().out == ('called context.run with args (\'zenity --list'
                                        ' --title="Choose which session to terminate"'
-                                       ' --column="Session name" xxx yyy\',)'
+                                       ' --column="Session name" xxx-aaa yyy-bbb\',)'
                                        ' {\'warn\': True, \'hide\': True}\n')
 
 

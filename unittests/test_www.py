@@ -144,6 +144,11 @@ def test_permits(monkeypatch, capsys):
     testee.permits(c, 'here')
     assert capsys.readouterr().out == 'chmod 755 abs/here/name\n'
 
+    monkeypatch.setattr(testee.os, 'listdir', lambda x: ['name'])
+    monkeypatch.setattr(testee.os.path, 'isdir', lambda x: False)
+    testee.permits(c, 'here')
+    assert capsys.readouterr().out == ''
+
 
 def test_stage(monkeypatch, capsys, tmp_path):
     """unittest for www.stage
@@ -226,8 +231,9 @@ def test_stage(monkeypatch, capsys, tmp_path):
     assert capsys.readouterr().out == ("called c.run with args hg st {'hide': 'out', 'warn': True}\n"
                                        'somefile\n\n'
                                        '1 files to be staged\n')
-    testee.stage(c, 'testsite', filename='somefile')
     stagingdir = siteroot / '.staging'
+    assert not stagingdir.exists()
+    testee.stage(c, 'testsite', filename='somefile')
     assert stagingdir.exists()
     assert capsys.readouterr().out == ("called c.run with args hg st {'hide': 'out', 'warn': True}\n"
                                        'called c.run with args cp somefile .staging/somefile {}\n'
@@ -262,6 +268,7 @@ def test_stage(monkeypatch, capsys, tmp_path):
                                        'called c.run with args'
                                        ' hg ci file1 file4 -m "a message" {}\n'
                                        '2 files staged\n')
+
     monkeypatch.setattr(testee.os, 'remove', mock_remove)
     monkeypatch.setattr(MockContext, 'run', mock_run_5)
     c = MockContext()
@@ -276,7 +283,6 @@ def test_stage(monkeypatch, capsys, tmp_path):
                                        f'called os.remove with arg {stagingdir}/file1\n'
                                        f'called os.remove with arg {stagingdir}/file4\n'
                                        'Afgebroken\n')
-
 
 def test_list_staged(monkeypatch, capsys, tmp_path):
     """unittest for www.list_staged

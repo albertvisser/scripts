@@ -72,23 +72,17 @@ webapps = {'cgit': {'appid': 'aihbdennncljibneldlcadheboalahee', 'start_server':
            'gitweb': {'appid': 'nhlpkodndoiadgldeanohldkpfoeahan', 'start_server': False},
            'tickets': {'appid': 'ddmclccmlegfljocpmghoodmgmmbcneh', 'start_server': 'trac'}}
 
+
 def get_project_root(name, context='local'):
     """find out where a repository lives
 
     context can be 'local' or 'remote' or a repo type ('sf', 'bb', 'git')
     """
     is_private = name in private_repos
-    is_private_value = name in private_repos.values()
-    if is_private_value:
-        # value = name
-        # for name in private_repos:
-        #     if private_repos[name] == value:
-        #         is_private = True
-        #         break
-        for value in private_repos.values():
-            if value == name:
-                is_private = True
-                break
+    for value in private_repos.values():
+        if value == name:
+            is_private = True
+            break
     git_repo = name in git_repos
     sf_repo = name in sf_repos
     root = pathlib.Path(PROJECTS_BASE)

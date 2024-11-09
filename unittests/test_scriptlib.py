@@ -679,14 +679,23 @@ def test_scriptlib_add_link(monkeypatch, capsys):
     monkeypatch.setattr(testee.ScriptLib, '__init__', MockLib.__init__)
     testobj = testee.ScriptLib()
     assert capsys.readouterr().out == 'called ScriptLib.__init__\n'
+
     testobj.add_link('test', 'symlinks')
     assert testobj.data.sections() == ['section1', 'section2', 'symlinks']
     assert list(testobj.data['symlinks']) == ['test']
     assert testobj.data['symlinks']['test'] == 'target'
     assert capsys.readouterr().out == ('called path.is_link on x/test\n'
                                        'called path.readlink on x/test\n')
+
+    assert testobj.add_link('test2', 'symlinks') == ''
+    assert list(testobj.data['symlinks']) == ['test', 'test2']
+    assert testobj.data['symlinks']['test2'] == 'target'
+    assert capsys.readouterr().out == ('called path.is_link on x/test2\n'
+                                       'called path.readlink on x/test2\n')
+
     assert testobj.add_link('test', 'symlinks2') == 'wrong section'
     monkeypatch.setattr(testee.pathlib.Path, 'is_symlink', lambda *x: False)
+
     assert testobj.add_link('test', 'symlinks') == 'not a valid symlink'
 
 
@@ -726,6 +735,12 @@ def test_scriptlib_add_script(monkeypatch, capsys):
     assert capsys.readouterr().out == ('called path.is_file on x/test\n'
                                        'called path.is_link on x/test\n'
                                        'called path.read_text on x/test\n')
+    testobj.add_script('test2', 'scripts')
+    assert testobj.data['scripts']['test2'] == 'contents'
+    assert capsys.readouterr().out == ('called path.is_file on x/test2\n'
+                                       'called path.is_link on x/test2\n'
+                                       'called path.read_text on x/test2\n')
+
     monkeypatch.setattr(testee.pathlib.Path, 'read_text', mock_read_2)
     testobj = testee.ScriptLib()
     assert capsys.readouterr().out == 'called ScriptLib.__init__\n'

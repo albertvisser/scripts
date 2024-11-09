@@ -7,7 +7,7 @@ called dialog.__init()__ with args ()
 called dialog.setWindowTitle() with args ('title',)
 called VBox.__init__
 called HBox.__init__
-called CheckBox.__init__
+called CheckBox.__init__ with text 'Add selected files to the last commit'
 called HBox.addWidget with arg of type <class 'mockgui.mockqtwidgets.MockCheckBox'>
 called VBox.addLayout with arg of type <class 'mockgui.mockqtwidgets.MockHBoxLayout'>
 called HBox.__init__
@@ -101,7 +101,7 @@ called VBox.addSpacing
 called Label.__init__ with args ('* Did you test the files to be committed?',)
 called VBox.addWidget with arg of type <class 'mockgui.mockqtwidgets.MockLabel'>
 called VBox.addSpacing
-called CheckBox.__init__
+called CheckBox.__init__ with text 'Yes, I know what I'm doing'
 called VBox.addWidget with arg of type <class 'mockgui.mockqtwidgets.MockCheckBox'>
 called HBox.__init__
 called HBox.addStretch
@@ -303,6 +303,8 @@ called Gui.update_branches()
 
 @pytest.fixture
 def expected_output():
+    """output expectations for check_repo gui functions
+    """
     return {'checktextdialog': check_text,
             'diffviewdialog': diffview_start + diffview_middle + diffview_end,
             'diffviewdialog2': diffview_start + dv_copy1 + diffview_middle + dv_copy2 + diffview_end,
