@@ -257,6 +257,8 @@ This script creates the following symlinks and short starter scripts for my own 
     No arguments.
 **dt_print**
     starts up a program to print the contents of a doctree file
+**end-session**
+    slightly simpler way to say "binfab session.end"
 **flarden**
     points notetree to a collection of text snippets
 **gamestuff**
@@ -301,6 +303,8 @@ This script creates the following symlinks and short starter scripts for my own 
 **pfind-test**
     shortcut for a ``binfab`` command that starts up *filefindr* to search in all my Python software 
     projects unittest modules
+**popup**
+    show some text in a popup
 **probreg**
     starts up my 'probreg' application. Optional arguments: either the name of an
     XML file or 'sql' optionally followed by a project name. Without arguments:
@@ -331,6 +335,8 @@ This script creates the following symlinks and short starter scripts for my own 
     start a-propos using a file in /tmp (which is not saved over Linux sessions)
 **sdv-modman**
     starts up my Stardew Valley Mod Manager
+**start-session**
+    slightly simpler way to start a programming session for a project
 **tickets**
     starts probreg as my issue tracker, replacing trac.lemoncurry.nl
 **treedocs**
