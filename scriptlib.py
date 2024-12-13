@@ -206,7 +206,7 @@ def check_readme(c):
 def build_descdict(readme):
     "create a dictionary of scriptnames and descriptions based on contents of readme file"
     descdict = {}
-    name, desc = '', []
+    names, desc = [], []
     with readme.open() as f:
         for line in f:
             line = line.rstrip()
@@ -216,13 +216,18 @@ def build_descdict(readme):
                 break
             if line.startswith('**'):
                 if desc:
-                    descdict[name] = desc
+                    for name in names:
+                        descdict[name.strip()] = desc
                     desc = []
-                name = line.strip('*')
+                if '/' in line:
+                    names = line.strip('*').split('/')
+                else:
+                    names = [line.strip('*')]
             elif line.startswith(' '):
                 desc.append(line.lstrip())
         if desc:
-            descdict[name] = desc
+            for name in names:
+                descdict[name.strip()] = desc
     return descdict
 
 

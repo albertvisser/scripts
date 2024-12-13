@@ -550,6 +550,10 @@ def test_build_destdict(tmp_path):
                            '**another name**\n  a description\n')
     assert testee.build_descdict(mock_readme) == {'a name': ['a description', 'with extra text'],
                                                   'another name': ['a description']}
+    # dubbele naam
+    mock_readme.write_text('tekst\n**name / name.py**\n  a description\n  with extra text\n')
+    assert testee.build_descdict(mock_readme) == {'name': ['a description', 'with extra text'],
+                                                  'name.py': ['a description', 'with extra text']}
     # alles na afsluitende tekst
     mock_readme.write_text('scripts that were replaced\n**a name**\n  a description\n'
                            '**another name**\n  a description\n')
