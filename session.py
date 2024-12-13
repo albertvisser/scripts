@@ -47,7 +47,7 @@ def newproject(c, name):
 
 
 @task(help={'name': 'project name'})
-def start(c, name, light_background=False):
+def start(c, name, light_background=False, force=False):
     """start a programming session for a given repo using various tools
 
     expects a .sessionrc file in the project directory
@@ -56,8 +56,11 @@ def start(c, name, light_background=False):
     # met subprocess.Popen en shebangs in alle scripts werkt het wel
     paths = glob.glob(f'{name}{sessionfile_mid}*', root_dir=sessionfile_root)
     if paths:
-        print('you already started a session for this project')
-        return
+        if force:
+            os.remove(os.path.join(sessionfile_root, paths[0]))
+        else:
+            print('you already started a session for this project')
+            return
     runcommands = {'term': ['gnome-terminal', '--geometry=132x43+4+40'],
                    'check-repo': ['check-repo'],
                    'predit': ['predit'], 'dtree': ['dtree'], 'prfind': ['prfind']}

@@ -175,8 +175,8 @@ def test_start(monkeypatch, capsys, tmp_path):
     testee.start(c, 'project_name')
     assert capsys.readouterr().out == 'you already started a session for this project\n'
 
-    os.remove(f'{testee.sessionfile_root}/project_name-session-pids-start-at-12345')
-    testee.start(c, 'project_name')
+    # os.remove(f'{testee.sessionfile_root}/project_name-session-pids-start-at-12345')
+    testee.start(c, 'project_name', force=True)
     with open(f'{testee.sessionfile_root}/project_name-session-pids-start-at-12345') as f:
         data = f.read()
     assert data == '12345\n12345\n12345\n12345'
