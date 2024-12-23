@@ -341,6 +341,8 @@ This script creates the following symlinks and short starter scripts for my own 
     starts probreg as my issue tracker, replacing trac.lemoncurry.nl
 **treedocs**
     symlink to the doctree application. Used by the doctree script (among others)
+**tview**
+    readonly version of tedit, without position options
 **viewhtml**
     viewer for HTML formatted documents.
     Can be used with Double Commander or from within SciTE etc.

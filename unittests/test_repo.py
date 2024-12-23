@@ -423,8 +423,8 @@ def test_check_local_changes(monkeypatch, capsys):
     monkeypatch.setattr(MockContext, 'run', run_in_dir)
     c = MockContext()
     testee.check_local_changes(c)
-    assert capsys.readouterr().out == ("called run with args ('gnome-terminal --geometry=100x40 -- "
-                                       "view /tmp/repo_local_changes',) {} in ~/projects\n")
+    assert capsys.readouterr().out == ("called run with args"
+                                       " ('tview /tmp/repo_local_changes',) {} in ~/projects\n")
 
 
 def test_check_local_notes(monkeypatch, capsys):

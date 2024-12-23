@@ -250,7 +250,7 @@ def check_local(c):  # , dry_run=False):
 def check_local_changes(c):
     "view output of check_local command"
     with c.cd('~/projects'):
-        c.run(f'gnome-terminal --geometry=100x40 -- view {LOCALCHG}')
+        c.run(f'tview {LOCALCHG}')
 
 
 @task
