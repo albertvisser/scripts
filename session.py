@@ -65,7 +65,7 @@ def start(c, name, light_background=False, force=False):
                    'check-repo': ['check-repo'],
                    'predit': ['predit'], 'dtree': ['dtree'], 'prfind': ['prfind']}
     if light_background:
-        runcommands['predit'] = ['predit-l']
+        runcommands['predit'] = ['tredit']
     path = get_project_dir(name)
     if not path:
         print('could not determine project location')
