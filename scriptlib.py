@@ -20,7 +20,13 @@ def add(c, name, section):
         print(retval)
     else:
         lib.update()
-        print(f'{name} successfully added')
+        ignore_file = lib.basepath / '.gitignore'
+        ignores = ignore_file.read_text().split('\n')
+        ignores.append(name)
+        shutil.copyfile(str(ignore_file), str(ignore_file) + '~')
+        ignore_file.write_text('\n'.join(ignores))
+        print(f"'{name}' successfully added to library and .gitignore")
+        print("Don't forget to also add it to readme.rst")
 
 
 @task(help={'name': 'name of the script or symlink to compare - use "all" for the entire library'})

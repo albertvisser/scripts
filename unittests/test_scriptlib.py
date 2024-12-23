@@ -77,18 +77,44 @@ class MockLib:
 def test_add(monkeypatch, capsys):
     """unittest for scriptlib.add
     """
+    def mock_read(*args):
+        """stub
+        """
+        print('called path.read_text with args', args)
+        return 'harry\nsally'
+    def mock_copy(*args):
+        """stub
+        """
+        print('called shutil.copyfile with args', args)
+    def mock_write(*args):
+        """stub
+        """
+        print('called path.write_text with args', args)
+    monkeypatch.setattr(testee.shutil, 'copyfile', mock_copy)
+    monkeypatch.setattr(testee.pathlib.Path, 'read_text', mock_read)
+    monkeypatch.setattr(testee.pathlib.Path, 'write_text', mock_write)
     monkeypatch.setattr(testee, 'ScriptLib', MockLib)
     c = MockContext()
     testee.add(c, 'test', 'symlinks')
-    assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
-                                       "called ScriptLib.add_link with args ('test', 'symlinks')\n"
-                                       "called ScriptLib.update\n"
-                                       "test successfully added\n")
+    assert capsys.readouterr().out == (
+            "called ScriptLib.__init__\n"
+            "called ScriptLib.add_link with args ('test', 'symlinks')\n"
+            "called ScriptLib.update\n"
+            "called path.read_text with args (PosixPath('x/.gitignore'),)\n"
+            "called shutil.copyfile with args ('x/.gitignore', 'x/.gitignore~')\n"
+            "called path.write_text with args (PosixPath('x/.gitignore'), 'harry\\nsally\\ntest')\n"
+            "'test' successfully added to library and .gitignore\n"
+            "Don't forget to also add it to readme.rst\n")
     testee.add(c, 'test', 'scripts')
-    assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
-                                       "called ScriptLib.add_script with args ('test', 'scripts')\n"
-                                       "called ScriptLib.update\n"
-                                       "test successfully added\n")
+    assert capsys.readouterr().out == (
+            "called ScriptLib.__init__\n"
+            "called ScriptLib.add_script with args ('test', 'scripts')\n"
+            "called ScriptLib.update\n"
+            "called path.read_text with args (PosixPath('x/.gitignore'),)\n"
+            "called shutil.copyfile with args ('x/.gitignore', 'x/.gitignore~')\n"
+            "called path.write_text with args (PosixPath('x/.gitignore'), 'harry\\nsally\\ntest')\n"
+            "'test' successfully added to library and .gitignore\n"
+            "Don't forget to also add it to readme.rst\n")
     monkeypatch.setattr(MockLib, 'add_link', lambda *x: 'error adding link')
     monkeypatch.setattr(MockLib, 'add_script', lambda *x: 'error adding script')
     monkeypatch.setattr(testee, 'ScriptLib', MockLib)
