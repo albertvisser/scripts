@@ -756,12 +756,16 @@ def get_locs_for_modules(namelist, path):
     for name in namelist:
         result.extend(['', count_locs.HEADING.format(name), ''])
         name = os.path.splitext(name)[0].replace('/', '.')
-        for x, y, z in count_locs.get_locs(name, path):
-            if y:
-                where = f'{z}' if y == 1 else f'{z}-{z + y - 1}'
-                result.append(count_locs.DETAIL.format(x, y, where))
-            else:
-                result.append(x)
+        try:
+            for x, y, z in count_locs.get_locs(name, path):
+                if y:
+                    where = f'{z}' if y == 1 else f'{z}-{z + y - 1}'
+                    result.append(count_locs.DETAIL.format(x, y, where))
+                else:
+                    result.append(x)
+        except ImportError as e:
+            result.extend([f'{name} could not be counted this way because of the following error',
+                           f'ImportError: {e}'])
     return result
 
 

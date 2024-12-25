@@ -253,12 +253,27 @@ def test_get_locs_for_modules(monkeypatch, capsys):
         """
         print('called get_locs with args', args)
         return ('fun', 15, 2), ('cls.meth', 12, 20), ('oops', 0, 0)
+    def mock_get_2(*args):
+        """stub
+        """
+        print('called get_locs with args', args)
+        raise ImportError('a message')
     monkeypatch.setattr(testee.count_locs, 'get_locs', mock_get)
     assert testee.get_locs_for_modules(['name1.py', 'path/name2'], 'a path') == [
             '', 'Lines of code per function / method for `name1.py`', '',
             'fun: 15 lines (2-16)', 'cls.meth: 12 lines (20-31)', 'oops',
             '', 'Lines of code per function / method for `path/name2`', '',
             'fun: 15 lines (2-16)', 'cls.meth: 12 lines (20-31)', 'oops']
+    assert capsys.readouterr().out == ("called get_locs with args ('name1', 'a path')\n"
+                                       "called get_locs with args ('path.name2', 'a path')\n")
+    monkeypatch.setattr(testee.count_locs, 'get_locs', mock_get_2)
+    assert testee.get_locs_for_modules(['name1.py', 'path/name2'], 'a path') == [
+            '', 'Lines of code per function / method for `name1.py`',
+            '', 'name1 could not be counted this way because of the following error',
+            'ImportError: a message',
+            '', 'Lines of code per function / method for `path/name2`',
+            '', 'path.name2 could not be counted this way because of the following error',
+            'ImportError: a message']
     assert capsys.readouterr().out == ("called get_locs with args ('name1', 'a path')\n"
                                        "called get_locs with args ('path.name2', 'a path')\n")
 
@@ -363,6 +378,8 @@ class TestDiffViewDialog:
         """
 
     def test_export(self, monkeypatch, capsys):
+        """unittest for DiffViewDialog.export
+        """
         class MockClipBoard:
             """stub
             """
