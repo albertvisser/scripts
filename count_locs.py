@@ -1,7 +1,9 @@
+#! /usr/bin/env python3
+"""Count lines of code in modules by *import*ing and *inspect*ing them
+"""
 import sys
 import pathlib
 import importlib
-import contextlib
 import inspect
 import invoke
 import tkinter.simpledialog as sd
@@ -20,6 +22,7 @@ the module is imported into
 """
 HEADING = "Lines of code per function / method for `{}`"
 DETAIL = '{}: {} lines ({})'
+
 
 def main():
     """entry point when called as a module
@@ -174,6 +177,7 @@ def sort_locs_by_lineno(data):
         # outlist.extend([f'{x:4}-{y:4} {z} ({a})' for x, y, z, a in sorted(locsdict[name])])
         outlist.extend([f'{f"{x}":9} {y} ({z})' for x, y, z in sorted(data, key=firstlinenum)])
     return outlist
+
 
 if __name__ == '__main__':
     main()

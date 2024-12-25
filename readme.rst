@@ -56,6 +56,12 @@ but in the form of a script that generates these symlinks and invocations.
     that makes it possible to start several basic repo management tasks from a gui
     and without needing to step into the repo first.
 
+**count-locs / count_locs.py**
+
+    simple lines-of-code counter based on importlib / inspect.
+    Output can be shown sorted by function / method name or by line number. 
+    Used by ``check-repo`` but can be run by itself. 
+
 **covtest**
 
     script to launch unittests and analyse testcoverage (using pytest and coverage.py).

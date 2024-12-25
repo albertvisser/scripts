@@ -1,5 +1,6 @@
 """unittests for ./count_locs.py
 """
+import os
 import count_locs as testee
 
 
@@ -163,18 +164,16 @@ def test_get_locs_for_module(monkeypatch, capsys):
     assert capsys.readouterr().out == "called get_locs with args ('xxx', PosixPath('path'))\n"
 
 
-def test_get_locs(monkeypatch):
+def test_get_locs(monkeypatch, tmp_path):
     """unittest for count_locs.get_locs
     """
     def mock_get(*args):
         print('called get_locs_for_unit with args', args)
         return 0, 0, 'message'
-    tempfile = testee.pathlib.Path('test_get_locs.py')
+    tempfile = tmp_path / 'test_get_locs.py'
     doc1 = '\t\"\"\"doc\"\"\"\n'
     doc2 = '\t\"\"\"doc\n\t\"\"\"\n'
     doc3 = '\t\t\"\"\"doc\n\t\t\"\"\"\n'
-    if tempfile.exists():
-        tempfile.unlink()
     tempfile.write_text(
             "from os.path import split\nfrom invoke import task\n"
             "from datetime import datetime\nimport wx\n\n"
@@ -190,6 +189,8 @@ def test_get_locs(monkeypatch):
             f"class AnotherClass2(AnotherClass):\n{doc1}\n\tdef method2(self):\n{doc3}"
             "\t\tprint('something')\n\t\treturn arg\n"
             "\n\nclass MyEditor(wx.TextCtrl):\n    pass\n")
+    origwd = os.getcwd()
+    os.chdir(tmp_path)
     assert testee.get_locs('test_get_locs', '') == [('AnotherClass.method', 2, 23),
                                                     ('AnotherClass2.method2', 2, 52),
                                                     ('command (invoke task)', 3, 13),
@@ -200,7 +201,7 @@ def test_get_locs(monkeypatch):
     assert testee.get_locs('test_get_locs', '') == [('message', 0, 0), ('message', 0, 0),
                                                     ('message', 0, 1), ('message', -2, 3),
                                                     ('message', 0, 0), ('message', 0, 0)]
-    # tempfile.unlink()
+    os.chdir(origwd)
 
 
 def test_get_locs_for_unit_err_1(monkeypatch):
