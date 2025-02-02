@@ -4,8 +4,6 @@ __pycache__/
 *$py.class
 
 # development stuff
-*.swp
-*.swo
 .coverage
 .coveragerc
 projdocs*
