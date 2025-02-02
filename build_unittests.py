@@ -11,7 +11,7 @@ import configparser
 
 class Main:
     "entry point"
-    def __init__(self, project, testee, nickname):
+    def __init__(self, project, testee, nickname='', rebuild=False):
         if project in ('bin', 'scripts'):
             root = '~/bin'
         elif project in ('nginx-config', 'server-stuff'):
@@ -28,6 +28,9 @@ class Main:
             conf = None
             testdir = 'unittests'
         testscriptname = self.create_testscript(root, project, testdir, testee)
+        if rebuild:
+            print(f'`{testscriptname}` in {root}/{testdir} rebuilt')
+            return
         create_conf = update_conf = False
         if not conf:
             create_conf = True
@@ -134,5 +137,8 @@ class Main:
 if __name__ == '__main__':
     if not len(sys.argv) == 4:
         sys.exit('usage: [python] build_unittests.py <project-name> <module-to-test>'
-                 ' <nickname-in-testconf>')
-    Main(*sys.argv[1:])
+                 ' { <nickname-in-testconf> | { -r | --rebuild } }')
+    if sys.argv[-1] in ('-r', '--rebuild'):
+        Main(*sys.argv[1:-1], rebuild=True)
+    else:
+        Main(*sys.argv[1:])
