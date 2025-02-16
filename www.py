@@ -136,8 +136,8 @@ def stage(c, sitename, new_only=False, filename='', list_only=False):
     for item in files:
         staging = os.path.join(root, '.staging')
         dest = os.path.join(staging, item)
-        if not os.path.exists(staging):
-            os.makedirs(staging, exist_ok=True)
+        if not os.path.exists(os.path.dirname(dest)):
+            os.makedirs(os.path.dirname(dest), exist_ok=True)
         with c.cd(root):
             result = c.run(f'cp {item} .staging/{item}')
 
@@ -185,24 +185,28 @@ def list_staged(c, sitename, full=False):
     # breakpoint()
     filelist = []
     subdirlist = []
+    # print(list(os.scandir(os.path.join(root, '.staging'))))
     for item in sorted(os.scandir(os.path.join(root, '.staging')), key=lambda x: x.name):
         if item.is_dir():
             subdircount = 0
+            # print(list(os.scandir(item)))
             for subitem in sorted(os.scandir(item), key=lambda x: x.name):
                 if subitem.is_dir():
+                    # print(list(os.scandir(subitem)))
                     for entry in sorted(os.scandir(subitem), key=lambda x: x.name):
                         if entry.is_file():
-                            if full:
+                            if full or (has_seflinks_true(sitename)
+                                    and os.path.splitext(entry.name)[1] == '.html'):
                                 filelist.append(os.path.join(item.name, subitem.name, entry.name))
-                            subdircount += 1
+                                subdircount += 1
                         # else:  # currently not possible
                 else:  # if subitem.is_file:
                     if full or (has_seflinks_true(sitename)
                                 and os.path.splitext(subitem.name)[1] == '.html'):
                         filelist.append(os.path.join(item.name, subitem.name))
-                    subdircount += 1
+                        subdircount += 1
             if subdircount and not full:
-                subdirlist.append(f'{subdircount} files in {item.name}/')
+                subdirlist.append(f'{subdircount} file(s) in {item.name}/')
             stagecount += subdircount
         else:  # if item.is_file():
             filelist.append(item.name)
@@ -211,7 +215,7 @@ def list_staged(c, sitename, full=False):
         print(item)
     for item in subdirlist:
         print(item)
-    print(f'{stagecount} files staged')
+    print(f'{stagecount} file(s) staged')
 
 
 def has_seflinks_true(sitename):

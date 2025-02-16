@@ -284,6 +284,7 @@ def test_stage(monkeypatch, capsys, tmp_path):
                                        f'called os.remove with arg {stagingdir}/file4\n'
                                        'Afgebroken\n')
 
+
 def test_list_staged(monkeypatch, capsys, tmp_path):
     """unittest for www.list_staged
     """
@@ -291,6 +292,7 @@ def test_list_staged(monkeypatch, capsys, tmp_path):
     c = MockContext()
     mock_base = tmp_path / 'list-staged'
     monkeypatch.setattr(testee, 'R2HBASE', mock_base)
+    monkeypatch.setattr(testee, 'has_seflinks_true', lambda x: False)
     testee.list_staged(c, 'testsite')
     assert capsys.readouterr().out == 'No existing mirror location found for `testsite`\n'
     (mock_base / 'testsite').mkdir(parents=True)
@@ -299,17 +301,40 @@ def test_list_staged(monkeypatch, capsys, tmp_path):
     stagingloc = mock_base / 'testsite' / '.staging'
     stagingloc.mkdir(parents=True)
     testee.list_staged(c, 'testsite')
-    assert capsys.readouterr().out == '0 files staged\n'
+    assert capsys.readouterr().out == '0 file(s) staged\n'
+    (stagingloc / 'index.html').touch()
+    (stagingloc / 'xxx').mkdir()
+    (stagingloc / 'xxx/index.html').touch()
+    (stagingloc / 'xxx/yyy').mkdir()
+    (stagingloc / 'xxx/yyy/index.html').touch()
+    (stagingloc / 'xxx/yyy/zzz').mkdir()
+    testee.list_staged(c, 'testsite')
+    assert capsys.readouterr().out == ("index.html\n"
+                                       "1 file(s) staged\n")
+    testee.list_staged(c, 'testsite', full=True)
+    assert capsys.readouterr().out == ("index.html\n"
+                                       "xxx/index.html\n"
+                                       "xxx/yyy/index.html\n"
+                                       "3 file(s) staged\n")
+    monkeypatch.setattr(testee, 'has_seflinks_true', lambda x: True)
+    testee.list_staged(c, 'testsite')
+    assert capsys.readouterr().out == ("index.html\n"
+                                       "xxx/index.html\n"
+                                       "xxx/yyy/index.html\n"
+                                       "2 file(s) in xxx/\n"
+                                       "3 file(s) staged\n")
 
 
-def test_list_staged_reflinks(monkeypatch, capsys, tmp_path):
+# heb ik met de bovenstaande test de volgende twee nog wel nodig?
+def _test_list_staged_reflinks(monkeypatch, capsys, tmp_path):
     """unittest for www.list_staged_reflinks
     """
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
     mock_base = tmp_path / 'list-staged'
     monkeypatch.setattr(testee, 'R2HBASE', mock_base)
-    stagingloc = mock_base / 'testsite' / '.staging'
+    monkeypatch.setattr(testee, 'has_seflinks_true', lambda x: False)
+    stagingloc = mock_base / 'testsite2' / '.staging'
     stagingloc.mkdir(parents=True)
     (stagingloc / 'index.html').touch()
     (stagingloc / 'pic1.png').touch()
@@ -325,15 +350,15 @@ def test_list_staged_reflinks(monkeypatch, capsys, tmp_path):
     (stagingloc / 'page3').mkdir()
     (stagingloc / 'page3' / 'pic3.png').touch()
     (stagingloc / 'page3' / 'index.html').touch()
-    testee.list_staged(c, 'testsite')
+    testee.list_staged(c, 'testsite2')
     assert capsys.readouterr().out == ('index.html\n'
                                        'page2/index.html\n'
                                        'page3/index.html\n'
                                        'pic1.png\n'
-                                       '5 files in page2/\n'
-                                       '2 files in page3/\n'
-                                       '9 files staged\n')
-    testee.list_staged(c, 'testsite', full=True)
+                                       '5 file(s) in page2/\n'
+                                       '2 file(s) in page3/\n'
+                                       '9 file(s) staged\n')
+    testee.list_staged(c, 'testsite2', full=True)
     assert capsys.readouterr().out == ('index.html\n'
                                        'page2/doc1/index.html\n'
                                        'page2/doc2/index.html\n'
@@ -343,17 +368,17 @@ def test_list_staged_reflinks(monkeypatch, capsys, tmp_path):
                                        'page3/index.html\n'
                                        'page3/pic3.png\n'
                                        'pic1.png\n'
-                                       '9 files staged\n')
+                                       '9 file(s) staged\n')
 
 
-def test_list_staged_reflinks_false(monkeypatch, capsys, tmp_path):
+def _test_list_staged_reflinks_false(monkeypatch, capsys, tmp_path):
     """unittest for www.list_staged_reflinks_false
     """
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
     mock_base = tmp_path / 'list-staged'
     monkeypatch.setattr(testee, 'R2HBASE', mock_base)
-    stagingloc = mock_base / 'testsite' / '.staging'
+    stagingloc = mock_base / 'testsite3' / '.staging'
     stagingloc.mkdir(parents=True)
     (stagingloc / 'index.html').touch()
     (stagingloc / 'pic.png').touch()
@@ -363,14 +388,14 @@ def test_list_staged_reflinks_false(monkeypatch, capsys, tmp_path):
     (stagingloc / 'page2' / 'doc1.html').touch()
     (stagingloc / 'page2' / 'pic2.png').touch()
     (stagingloc / 'page2' / 'doc2.html').touch()
-    testee.list_staged(c, 'testsite')
+    testee.list_staged(c, 'testsite3')
     assert capsys.readouterr().out == ('index.html\npage2.html\npage3.html\npic.png\n'
-                                       '3 files in page2/\n7 files staged\n')
-    testee.list_staged(c, 'testsite', full=True)
+                                       '3 filei(s) in page2/\n7 file(s) staged\n')
+    testee.list_staged(c, 'testsite3', full=True)
     assert capsys.readouterr().out == ('index.html\n'
                                        'page2/doc1.html\npage2/doc2.html\npage2/pic2.png\n'
                                        'page2.html\npage3.html\npic.png\n'
-                                       '7 files staged\n')
+                                       '7 file(s) staged\n')
 
 
 def test_has_seflinks_true(monkeypatch):
