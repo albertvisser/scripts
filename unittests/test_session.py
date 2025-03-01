@@ -192,7 +192,7 @@ def test_start(monkeypatch, capsys, tmp_path):
         data = f.read()
     assert data == '12345\n12345\n12345\n12345'
     assert capsys.readouterr().out == ('called ConfigParser.read() with args project/.sessionrc\n'
-                                       f"['predit-l'] {{'cwd': 'project', 'env': {newenv}}}\n"
+                                       f"['tredit'] {{'cwd': 'project', 'env': {newenv}}}\n"
                                        f"['dtree'] {{'cwd': 'project', 'env': {newenv}}}\n"
                                        f"['prfind'] {{'cwd': 'project', 'env': {newenv}}}\n"
                                        f"['check-repo'] {{'cwd': 'project', 'env': {newenv}}}\n")
@@ -483,7 +483,7 @@ def test_get_input_from_user(monkeypatch):
     assert testee.get_input_from_user('prompt', 'y') == 'y'
 
 
-def test_editconf(monkeypatch, capsys):
+def test_editconf(monkeypatch, capsys, tmp_path):
     """unittest for session.editconf
     """
     def mock_get_input(prompt, response):
@@ -509,9 +509,20 @@ def test_editconf(monkeypatch, capsys):
     monkeypatch.setattr(testee.os.path, 'exists', lambda x: True)
     testee.editconf(c, 'projname')
     assert capsys.readouterr().out == 'pedit testproj/.sessionrc\n'
+    orig = testee.os.getcwd()
+    projdir = tmp_path / 'testdir'
+    projdir.mkdir()
+    os.chdir(projdir)
+    monkeypatch.setattr(testee, 'all_repos', [])
+    testee.editconf(c)
+    assert capsys.readouterr().out == "you are not in a (known) repository\n"
+    monkeypatch.setattr(testee, 'all_repos', ['testdir'])
+    testee.editconf(c)
+    assert capsys.readouterr().out == f"pedit {projdir}/.sessionrc\n"
+    os.chdir(orig)
 
 
-def test_edittestconf(monkeypatch, capsys):
+def test_edittestconf(monkeypatch, capsys, tmp_path):
     """unittest for session.edittestconf
     """
     def mock_get_input(prompt, response):
@@ -537,3 +548,14 @@ def test_edittestconf(monkeypatch, capsys):
     monkeypatch.setattr(testee.os.path, 'exists', lambda x: True)
     testee.edittestconf(c, 'projname')
     assert capsys.readouterr().out == 'pedit testproj/.rurc\n'
+    orig = testee.os.getcwd()
+    projdir = tmp_path / 'testdir'
+    projdir.mkdir()
+    os.chdir(projdir)
+    monkeypatch.setattr(testee, 'all_repos', [])
+    testee.edittestconf(c)
+    assert capsys.readouterr().out == "you are not in a (known) repository\n"
+    monkeypatch.setattr(testee, 'all_repos', ['testdir'])
+    testee.edittestconf(c)
+    assert capsys.readouterr().out == f"pedit {projdir}/.rurc\n"
+    os.chdir(orig)

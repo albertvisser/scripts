@@ -8,7 +8,7 @@ import configparser
 import subprocess  # voor die ene die niet met invoke lukt
 from invoke import task
 # from repo import check_and_run_for_project
-from settings import PROJECTS_BASE, get_project_dir  # , private_repos
+from settings import PROJECTS_BASE, get_project_dir, all_repos  # , private_repos
 SESSIONS = 'not used anymore'
 DEVEL = 'not used anymore'
 sessionfile_root = '/tmp'
@@ -240,15 +240,21 @@ def check_process(proc, found_bash):
 
 
 @task(help={'name': 'project name'})
-def editconf(c, name):
+def editconf(c, name=''):
     """define the variables / tools to use in a session for a given repo
 
     checks for a .sessionrc file; if not found, provide one from a template
     """
-    path = get_project_dir(name)
-    if not path:
-        print('could not determine project location')
-        return
+    if name:
+        path = get_project_dir(name)
+        if not path:
+            print('could not determine project location')
+            return
+    else:
+        path = os.getcwd()
+        if os.path.basename(path) not in all_repos:
+            print('you are not in a (known) repository')
+            return
     fname = os.path.join(path, '.sessionrc')
     if not os.path.exists(fname):
         test = get_input_from_user('no file .sessionrc found - create one now (Y/n)?', 'y')
@@ -259,15 +265,21 @@ def editconf(c, name):
 
 
 @task(help={'name': 'project name'})
-def edittestconf(c, name):
+def edittestconf(c, name=''):
     """define the locations of testscripts and scripts to test for a given repo
 
     checks for a .rurc file; if not found, provide one from a template
     """
-    path = get_project_dir(name)
-    if not path:
-        print('could not determine project location')
-        return
+    if name:
+        path = get_project_dir(name)
+        if not path:
+            print('could not determine project location')
+            return
+    else:
+        path = os.getcwd()
+        if os.path.basename(path) not in all_repos:
+            print('you are not in a (known) repository')
+            return
     fname = os.path.join(path, '.rurc')
     if not os.path.exists(fname):
         test = get_input_from_user('no file .rurc found - create one now (Y/n)?', 'y')
