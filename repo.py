@@ -576,7 +576,7 @@ def search(c, find='', rebuild=False, mode='both'):
     "search in (all) tracked python files in all repos"
     if not os.path.exists(f'{FILELIST}-{mode}') or rebuild:
         rebuild_filenamelist(c, mode)
-    command = f'afrift -l {FILELIST}-{mode} -e py -P'
+    command = f'afrift -l {FILELIST}-{mode} -e py -Q'
     if find:
         command += 'N -s ' + find
     c.run(command)
