@@ -9,7 +9,7 @@ import subprocess  # voor die ene die niet met invoke lukt
 from invoke import task
 # from repo import check_and_run_for_project
 from settings import PROJECTS_BASE, get_project_dir, all_repos  # , private_repos
-SESSIONS = 'not used anymore'
+SESSIONLOC = os.path.expanduser('~/bin')
 DEVEL = 'not used anymore'
 sessionfile_root = '/tmp'
 sessionfile_mid = '-session-pids-start-at-'
@@ -46,7 +46,8 @@ def newproject(c, name):
     os.rename(os.path.join(loc, 'projectname'), os.path.join(loc, name))
 
 
-@task(help={'name': 'project name'})
+@task(help={'name': 'project name', 'force': "don't check if session already started",
+            'light_background': 'no dark mode for source files'})
 def start(c, name, light_background=False, force=False):
     """start a programming session for a given repo using various tools
 
@@ -86,6 +87,35 @@ def start(c, name, light_background=False, force=False):
     if proc_pids:
         with open(f'{sessionfile_root}/{name}-session-pids-start-at-{proc_pids[0]}', 'w') as f:
             f.write('\n'.join([str(x) for x in proc_pids]))
+
+
+@task(help={'name': 'project name', 'light_background': 'no dark mode for source files'})
+def create(c, name, light_background=False):
+    """create a script to start a programming session for a given repo using various tools
+
+    the script can be sourced from within an existing terminal session
+    expects a .sessionrc file in the project directory
+    """
+    runcommands = ['check-repo', 'predit', 'dtree', 'prfind']
+    path = get_project_dir(name)
+    if not path:
+        print('could not determine project location')
+        return
+    conf = configparser.ConfigParser()
+    conf.read(os.path.join(path, '.sessionrc'))
+    if not conf.sections():
+        print('could not find session configuration')
+        return
+    with open(f'{SESSIONLOC}/{name}.session', 'w') as f:
+        f.write('wmctrl -r :ACTIVE: -e 0,4,0,1072,808\n')
+        f.write(f'cd {path}\n')
+        for item in conf['env']:
+            f.write(f"export {item}='{conf['env'][item]}'\n")
+        for item in conf['options']:
+            if item in runcommands and str(conf['options'][item]).lower() == 'y':
+                if light_background and item == 'predit':
+                    item = 'tredit'
+                f.write(f'{item} &\n')
 
 
 @task(help={'name': 'project name'})

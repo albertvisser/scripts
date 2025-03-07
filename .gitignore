@@ -8,6 +8,7 @@ __pycache__/
 .coveragerc
 projdocs*
 .sessionrc
+*.session
 
 #backups
 .gitignore~

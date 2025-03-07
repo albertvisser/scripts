@@ -209,6 +209,108 @@ def test_start(monkeypatch, capsys, tmp_path):
     assert capsys.readouterr().out == 'called ConfigParser.read() with args project/.sessionrc\n'
 
 
+def test_create(monkeypatch, capsys, tmp_path):
+    """unittest for session.create
+    """
+    def mock_run(*args, **kwargs):
+        """stub
+        """
+        print(*args, kwargs)
+        return types.SimpleNamespace(pid=12345)
+    class MockParser(dict):
+        """stub
+        """
+        def read(self, *args):
+            """stub
+            """
+            print('called ConfigParser.read() with args', *args)
+            self['env'] = []
+            self['options'] = []
+        def sections(self):
+            """stub
+            """
+            return []
+    class MockParser2(dict):
+        """stub
+        """
+        def read(self, *args):
+            """stub
+            """
+            print('called ConfigParser.read() with args', *args)
+            self['env'] = {'var': 'value', 'x': 'yy'}
+            self['options'] = {'predit': 'y', 'dtree': 'y', 'prfind': 'y', 'check-repo': 'y'}
+        def sections(self):
+            """stub
+            """
+            return True
+    class MockParser3(dict):
+        """stub
+        """
+        def read(self, *args):
+            """stub
+            """
+            print('called ConfigParser.read() with args', *args)
+            self['env'] = {}
+            self['options'] = {'other': 'y'}
+        def sections(self):
+            """stub
+            """
+            return True
+    class MockParser4(dict):
+        """stub
+        """
+        def read(self, *args):
+            """stub
+            """
+            print('called ConfigParser.read() with args', *args)
+            self['env'] = {}
+            self['options'] = {'predit': 'n', 'dtree': 'n', 'prfind': 'n', 'check-repo': 'n'}
+        def sections(self):
+            """stub
+            """
+            return True
+    # monkeypatch.setattr(MockContext, 'run', mock_run)
+    monkeypatch.setattr(testee.subprocess, 'Popen', mock_run)
+    c = MockContext()
+    monkeypatch.setattr(testee, 'sessionfile_root', str(tmp_path))
+    monkeypatch.setattr(testee, 'get_project_dir', lambda x: '')
+    testee.create(c, 'project_name')
+    assert capsys.readouterr().out == 'could not determine project location\n'
+
+    monkeypatch.setattr(testee, 'get_project_dir', lambda x: 'project')
+    monkeypatch.setattr(testee.configparser, 'ConfigParser', MockParser)
+    testee.create(c, 'project_name')
+    assert capsys.readouterr().out == ('called ConfigParser.read() with args project/.sessionrc\n'
+                                       'could not find session configuration\n')
+
+    monkeypatch.setattr(testee, 'SESSIONLOC', str(tmp_path))
+    monkeypatch.setattr(testee.configparser, 'ConfigParser', MockParser2)
+    testee.create(c, 'project_name')
+    assert (tmp_path / 'project_name.session').exists()
+    assert (tmp_path / 'project_name.session').read_text() == (
+        'wmctrl -r :ACTIVE: -e 0,4,0,1072,808\ncd project\n'
+        "export var='value'\nexport x='yy'\npredit &\ndtree &\nprfind &\ncheck-repo &\n")
+    assert capsys.readouterr().out == 'called ConfigParser.read() with args project/.sessionrc\n'
+
+    testee.create(c, 'project_name', True)
+    assert (tmp_path / 'project_name.session').read_text() == (
+        'wmctrl -r :ACTIVE: -e 0,4,0,1072,808\ncd project\n'
+        "export var='value'\nexport x='yy'\ntredit &\ndtree &\nprfind &\ncheck-repo &\n")
+    assert capsys.readouterr().out == 'called ConfigParser.read() with args project/.sessionrc\n'
+
+    monkeypatch.setattr(testee.configparser, 'ConfigParser', MockParser3)
+    testee.create(c, 'project_name')
+    assert (tmp_path / 'project_name.session').read_text() == (
+        'wmctrl -r :ACTIVE: -e 0,4,0,1072,808\ncd project\n')
+    assert capsys.readouterr().out == 'called ConfigParser.read() with args project/.sessionrc\n'
+
+    monkeypatch.setattr(testee.configparser, 'ConfigParser', MockParser4)
+    testee.create(c, 'project_name')
+    assert (tmp_path / 'project_name.session').read_text() == (
+        'wmctrl -r :ACTIVE: -e 0,4,0,1072,808\ncd project\n')
+    assert capsys.readouterr().out == 'called ConfigParser.read() with args project/.sessionrc\n'
+
+
 def test_get_info(monkeypatch, capsys, tmp_path):
     """unittest for session.get_info
     """
