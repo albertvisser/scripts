@@ -7,6 +7,10 @@ elif test "$1" == "-x"; then
     # geen warnings (Wi), stoppen bij eerste fout (x)
     coverage run --branch --include=$3 -m pytest $2 -vv -Wi -x
     coverage report -m
+elif test "$1" == "-w"; then
+    # geen warnings (Wi)
+    coverage run --branch --include=$3 -m pytest $2 -vv -Wi
+    coverage report -m
 else
     coverage run --branch --include=$2 -m pytest $1 -vv 
     coverage report -m

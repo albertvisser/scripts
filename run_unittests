@@ -11,12 +11,14 @@ import subprocess
 # import shutil
 import configparser
 usage = """\
-usage: python run_unittests.py [ -p PROJECT ] [ -x ] [ NAMES | all ]
+usage: python run_unittests.py [ -p PROJECT ] [ -x ] [-w] [ NAMES | all ]
     NAMES is a comma-delimited list of names as used in .rurc
     use all (literal) to run all tests in all modules
     use nonexistant name to get a list of available names
     use -p to run from a project directory you're not in
-    use -x to stop at the first failing test"""
+    use -x to stop at the first failing test.
+        This option also doesn't show warnings from imported modules
+    use -w to run all tests for a module and not show warnings"""
 
 args = sys.argv[1:]
 if args and args[0] in ('-h', '--help'):
@@ -25,6 +27,10 @@ if args and args[0] in ('-h', '--help'):
 stopfirst = True if '-x' in args else False
 if stopfirst:
     args.pop(args.index('-x'))
+
+nowarn = True if '-w' in args else False
+if nowarn:
+    args.pop(args.index('-w'))
 
 project = ''
 if '-p' in args:
@@ -59,6 +65,8 @@ for parm in tests:
         ok = True
         if stopfirst:
             command = ['covtest', '-x', os.path.join(testdir, tests[parm]), modules[parm]]
+        elif nowarn:
+            command = ['covtest', '-w', os.path.join(testdir, tests[parm]), modules[parm]]
         else:
             command = ['covtest', os.path.join(testdir, tests[parm]), modules[parm]]
         subprocess.run(command, check=False)
