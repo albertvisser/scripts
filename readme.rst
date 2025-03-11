@@ -448,7 +448,8 @@ It also creates starters for various other programs:
 **vstart**
     start Vivaldi (snapshot) browser on workspace 1
 **widevi**
-    takes two filenames and starts vi(m) practically full screen to edit the files side-by-side
+    takes two or three filenames and starts vi(m) practically full screen to edit the files
+    side-by-side
 **wing**
     (if installed) starts up WING editor which I sometimes use for GUI debugging
 **wstart**
