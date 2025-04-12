@@ -21,7 +21,7 @@ def add(c, name, section):
     else:
         lib.update()
         ignore_file = lib.basepath / '.gitignore'
-        ignores = ignore_file.read_text().split('\n')
+        ignores = ignore_file.read_text().strip().split('\n')
         ignores.append(name)
         shutil.copyfile(str(ignore_file), str(ignore_file) + '~')
         ignore_file.write_text('\n'.join(ignores))
