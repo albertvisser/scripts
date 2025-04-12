@@ -116,7 +116,7 @@ def create(c, name, light_background=False):
                 if light_background and item == 'predit':
                     item = 'tredit'
                 f.write(f'{item} &\n')
-
+    print(f'done; start the session using "source {name}.session"')
 
 @task(help={'name': 'project name'})
 def get_info(c, name=''):
