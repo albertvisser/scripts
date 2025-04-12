@@ -347,6 +347,8 @@ This script creates the following symlinks and short starter scripts for my own 
     starts probreg as my issue tracker, replacing trac.lemoncurry.nl
 **treedocs**
     symlink to the doctree application. Used by the doctree script (among others)
+**treedocsp**
+    symlink to the doctree application's print utility..
 **tview**
     readonly version of tedit, without position options
 **viewhtml**

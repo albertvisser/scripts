@@ -116,3 +116,5 @@ start-session
 end-session
 tview
 count-locs
+
+treedocsp
