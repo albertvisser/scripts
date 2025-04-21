@@ -290,25 +290,33 @@ def test_create(monkeypatch, capsys, tmp_path):
     assert (tmp_path / 'project_name.session').read_text() == (
         'wmctrl -r :ACTIVE: -e 0,4,0,1072,808\ncd project\n'
         "export var='value'\nexport x='yy'\npredit &\ndtree &\nprfind &\ncheck-repo &\n")
-    assert capsys.readouterr().out == 'called ConfigParser.read() with args project/.sessionrc\n'
+    assert capsys.readouterr().out == (
+            'called ConfigParser.read() with args project/.sessionrc\n'
+            'done; start the session using "source project_name.session"\n')
 
     testee.create(c, 'project_name', True)
     assert (tmp_path / 'project_name.session').read_text() == (
         'wmctrl -r :ACTIVE: -e 0,4,0,1072,808\ncd project\n'
         "export var='value'\nexport x='yy'\ntredit &\ndtree &\nprfind &\ncheck-repo &\n")
-    assert capsys.readouterr().out == 'called ConfigParser.read() with args project/.sessionrc\n'
+    assert capsys.readouterr().out == (
+            'called ConfigParser.read() with args project/.sessionrc\n'
+            'done; start the session using "source project_name.session"\n')
 
     monkeypatch.setattr(testee.configparser, 'ConfigParser', MockParser3)
     testee.create(c, 'project_name')
     assert (tmp_path / 'project_name.session').read_text() == (
         'wmctrl -r :ACTIVE: -e 0,4,0,1072,808\ncd project\n')
-    assert capsys.readouterr().out == 'called ConfigParser.read() with args project/.sessionrc\n'
+    assert capsys.readouterr().out == (
+            'called ConfigParser.read() with args project/.sessionrc\n'
+            'done; start the session using "source project_name.session"\n')
 
     monkeypatch.setattr(testee.configparser, 'ConfigParser', MockParser4)
     testee.create(c, 'project_name')
     assert (tmp_path / 'project_name.session').read_text() == (
         'wmctrl -r :ACTIVE: -e 0,4,0,1072,808\ncd project\n')
-    assert capsys.readouterr().out == 'called ConfigParser.read() with args project/.sessionrc\n'
+    assert capsys.readouterr().out == (
+            'called ConfigParser.read() with args project/.sessionrc\n'
+            'done; start the session using "source project_name.session"\n')
 
 
 def test_get_info(monkeypatch, capsys, tmp_path):
@@ -607,10 +615,12 @@ def test_editconf(monkeypatch, capsys, tmp_path):
     monkeypatch.setattr(testee, 'get_input_from_user', lambda x, y: 'Yes')
     testee.editconf(c, 'projname')
     assert capsys.readouterr().out == ('cp ~/bin/.sessionrc.template testproj/.sessionrc\n'
-                                       'pedit testproj/.sessionrc\n')
+                                       'pedit testproj/.sessionrc\n'
+                                       "Don't forget to (re)create the session script if needed\n")
     monkeypatch.setattr(testee.os.path, 'exists', lambda x: True)
     testee.editconf(c, 'projname')
-    assert capsys.readouterr().out == 'pedit testproj/.sessionrc\n'
+    assert capsys.readouterr().out == ('pedit testproj/.sessionrc\n'
+                                       "Don't forget to (re)create the session script if needed\n")
     orig = testee.os.getcwd()
     projdir = tmp_path / 'testdir'
     projdir.mkdir()
@@ -620,7 +630,8 @@ def test_editconf(monkeypatch, capsys, tmp_path):
     assert capsys.readouterr().out == "you are not in a (known) repository\n"
     monkeypatch.setattr(testee, 'all_repos', ['testdir'])
     testee.editconf(c)
-    assert capsys.readouterr().out == f"pedit {projdir}/.sessionrc\n"
+    assert capsys.readouterr().out == (f"pedit {projdir}/.sessionrc\n"
+                                       "Don't forget to (re)create the session script if needed\n")
     os.chdir(orig)
 
 

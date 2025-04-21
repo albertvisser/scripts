@@ -292,6 +292,7 @@ def editconf(c, name=''):
             return
         c.run(f'cp ~/bin/.sessionrc.template {fname}')
     c.run(f'pedit {fname}')
+    print("Don't forget to (re)create the session script if needed")
 
 
 @task(help={'name': 'project name'})
