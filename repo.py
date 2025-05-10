@@ -6,6 +6,7 @@ import pathlib  # makkelijk unittesten van add2gitweb, ook bruikbaar voor andere
 import collections
 import functools
 import datetime
+import configparser
 import csv
 from invoke import task
 from settings import (PROJECTS_BASE, GITLOC, get_project_dir, get_project_root, all_repos,
@@ -653,7 +654,7 @@ def list_branches(c, name=''):
 @task(help={'project': 'name of repository to search', 'filename': 'name of program file to edit',
             'testmod': 'get testscript instead of program file'})
 def predit(c, project, filename, testmod=False):
-    """open a program file in a given repo for editing
+    """open a (program) file in a given repo for editing
     """
     where = get_project_dir(project)
     if not where:
@@ -692,3 +693,49 @@ def predit(c, project, filename, testmod=False):
     sourcedir = testdir if testmod else sourcedir
     fullname = os.path.join(where, sourcedir, filename)
     c.run(f'pedit {fullname}')
+
+
+@task(help={'project': 'name of repository to search',
+            'name': 'mnemonic for or name of (program) file(s) to edit',
+            'testmod': 'get testscript(s) instead of program file'})
+def new_predit(c, project, name, testmod=False):
+    """open a (program) file in a given repo for editing
+    """
+    where = get_project_dir(project)
+    if not where:
+        print(f'{project} is not a known project')
+        return
+    conf = configparser.ConfigParser()
+    conf.read(os.path.join(where, '.sessionrc'))
+    if not conf.sections():
+        print('could not find session configuration')
+        return
+    testconf = configparser.ConfigParser(allow_no_value=True)
+    testconf.read(os.path.join(where, '.rurc'))
+    if not testconf.sections():
+        print('could not find test configuration')
+        return
+
+    from_conf = list(conf['env'])
+    from_testconf = list(testconf['testees'])
+    if testconf.options('testdir'):
+        testdir = testconf.options('testdir')[0]
+    elif testmod:
+        print('testdir not configured in test configuration')
+        return
+    if name in conf['env']:
+        command = 'pedit -r ' + conf['env'][name]
+    elif name == '?':
+        print(f'possible mnemonics are: {from_conf + from_testconf}')
+        return
+    elif name in testconf['testees']:
+        if testmod:
+            command = 'pedit -r ' + os.path.join(testdir, testconf['testscripts'][name])
+        else:
+            command = 'pedit ' + testconf['testees'][name]
+    else:
+        sourcedir = os.path.dirname(list(testconf['testees'])[0])
+        sourcedir = testdir if testmod else sourcedir
+        command = 'pedit ' + os.path.join(sourcedir, name)
+    with c.cd(where):
+        c.run(command)

@@ -1138,6 +1138,61 @@ def test_list_branches(monkeypatch, capsys):
             "called run with args ('git branch',) {} in xxx\n")
 
 
+def test_new_predit(monkeypatch, capsys, tmp_path):
+    """unittest for repo.predit
+    """
+    monkeypatch.setattr(testee, 'get_project_dir', lambda x: '')
+    monkeypatch.setattr(MockContext, 'run', mock_run)
+    c = MockContext()
+    testee.new_predit(c, 'testproj', 'testfile')
+    assert capsys.readouterr().out == "testproj is not a known project\n"
+
+    monkeypatch.setattr(testee, 'get_project_dir', lambda x: str(tmp_path))
+    testee.new_predit(c, 'testproj', 'testfile')
+    assert capsys.readouterr().out == "could not find session configuration\n"
+
+    (tmp_path / '.sessionrc').touch()
+    testee.new_predit(c, 'testproj', 'testfile')
+    assert capsys.readouterr().out == "could not find session configuration\n"
+
+    (tmp_path / '.sessionrc').write_text("[env]\n\n[options]")
+    testee.new_predit(c, 'testproj', 'testfile')
+    assert capsys.readouterr().out == "could not find test configuration\n"
+
+    (tmp_path / '.rurc').touch()
+    testee.new_predit(c, 'testproj', 'testfile')
+    assert capsys.readouterr().out == "could not find test configuration\n"
+
+    (tmp_path / '.sessionrc').write_text("[env]\nmnem1 = xxx yyy\nmnem2 = aaa bbb")
+    (tmp_path / '.rurc').write_text("[testdir]\ntestroot\n\n[testscripts]\ntestfile = testfile.py\n"
+                                    "[testees]\ntestfile = src/file_to_test.py\n")
+    testee.new_predit(c, 'testproj', '?')
+    assert capsys.readouterr().out == "possible mnemonics are: ['mnem1', 'mnem2', 'testfile']\n"
+
+    testee.new_predit(c, 'testproj', 'testfile')
+    assert capsys.readouterr().out == "called run with args ('pedit src/file_to_test.py',) {}\n"
+
+    testee.new_predit(c, 'testproj', 'testfile', True)
+    assert capsys.readouterr().out == "called run with args ('pedit -r testroot/testfile.py',) {}\n"
+
+    testee.new_predit(c, 'testproj', 'mnem1')
+    assert capsys.readouterr().out == "called run with args ('pedit -r xxx yyy',) {}\n"
+
+    testee.new_predit(c, 'testproj', 'mnem2', True)
+    assert capsys.readouterr().out == "called run with args ('pedit -r aaa bbb',) {}\n"
+
+    testee.new_predit(c, 'testproj', 'path/to/file')
+    assert capsys.readouterr().out == "called run with args ('pedit path/to/file',) {}\n"
+    (tmp_path / '.rurc').write_text("[testdir]\n\n\n[testscripts]\ntestfile = testfile.py\n"
+                                    "[testees]\ntestfile = src/file_to_test.py\n")
+    testee.new_predit(c, 'testproj', 'testfile.py')
+    assert capsys.readouterr().out == "called run with args ('pedit testfile.py',) {}\n"
+    (tmp_path / '.rurc').write_text("[testdir]\n\n\n[testscripts]\ntestfile = testfile.py\n"
+                                    "[testees]\ntestfile = src/file_to_test.py\n")
+    testee.new_predit(c, 'testproj', 'testfile.py', True)
+    assert capsys.readouterr().out == "testdir not configured in test configuration\n"
+
+
 class MockWriter:
     """stub for csv.Writer object
     """

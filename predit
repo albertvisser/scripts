@@ -1,6 +1,6 @@
 #! /bin/sh
 if [ "$1" = "-p" ]; then
-	binfab repo.predit -p $2 $3 $4
+	binfab repo.new-predit -p $2 $3 $4 $5
 else
 	if test "$progs"; then
 	        pedit -ml $progs
