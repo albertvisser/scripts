@@ -1,17 +1,24 @@
 #! /bin/sh
-if [ "$1" = "-p" ]; then
-	binfab repo.new-predit -p $2 $3 $4 $5
+if [ "$1" = "-h" ] || [ "$1" == "--help" ]; then
+	echo "without -p as first argument:"
+ 	echo "When in programming session, opens files as defined in current project's .sessionrc"
+	echo "with -p as first argument:"
+	binfab --help repo.new-predit
 else
-	if test "$progs"; then
-	        pedit -ml $progs
-		if test "$dml"; then pedit -ml $dml; fi
-		if test "$gui"; then pedit -ml $gui; fi
-		if test "$data"; then pedit -r $data; fi
-		if test "$tests"; then pedit -r $tests; fi
-		if test "$tpl"; then pedit -mr $tpl; fi
-		if test "$url"; then pedit -mr $url; fi
-		if test "$lang"; then pedit -mr $lang; fi
-	else 
-		echo "No definition of files to open"
+	if [ "$1" = "-p" ]; then
+		binfab repo.new-predit -p $2 $3 $4 $5
+	else
+		if test "$progs"; then
+		        pedit -ml $progs
+			if test "$dml"; then pedit -ml $dml; fi
+			if test "$gui"; then pedit -ml $gui; fi
+			if test "$data"; then pedit -r $data; fi
+			if test "$tests"; then pedit -r $tests; fi
+			if test "$tpl"; then pedit -mr $tpl; fi
+			if test "$url"; then pedit -mr $url; fi
+			if test "$lang"; then pedit -mr $lang; fi
+		else 
+			echo "No definition of files to open"
+		fi
 	fi
 fi
