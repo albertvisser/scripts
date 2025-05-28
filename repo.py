@@ -701,6 +701,52 @@ def predit(c, project, filename, testmod=False):
 def new_predit(c, project, name, testmod=False):
     """open a (program) file in a given repo for editing
     """
+    conf = check_args(project, name, testmod)
+    if not conf:
+        return
+    where, testdir, conf, testconf = conf
+    if name in conf['env']:
+        command = 'pedit -r ' + conf['env'][name]
+    elif name in testconf['testees']:
+        if testmod:
+            command = 'pedit -r ' + os.path.join(testdir, testconf['testscripts'][name])
+        else:
+            command = 'pedit ' + testconf['testees'][name]
+    else:
+        sourcedir = os.path.dirname(list(testconf['testees'])[0])
+        sourcedir = testdir if testmod else sourcedir
+        command = 'pedit ' + os.path.join(sourcedir, name)
+    with c.cd(where):
+        c.run(command)
+
+
+@task(help={'project': 'name of repository to search',
+            'name': 'mnemonic for or name of (program) file(s) to edit',
+            'testmod': 'get testscript(s) instead of program file'})
+def new_prfind(c, project, name, testmod=False):
+    """find in (program) file in a given repo
+    """
+    conf = check_args(project, name, testmod)
+    if not conf:
+        return
+    where, testdir, conf, testconf = conf
+    if name in conf['env']:
+        command = 'afrift -P ' + conf['env'][name]
+    elif name in testconf['testees']:
+        if testmod:
+            command = 'afrift -P ' + os.path.join(testdir, testconf['testscripts'][name])
+        else:
+            command = 'afrift -P ' + testconf['testees'][name]
+    else:
+        sourcedir = os.path.dirname(list(testconf['testees'])[0])
+        sourcedir = testdir if testmod else sourcedir
+        command = 'afrift -P ' + os.path.join(sourcedir, name)
+    with c.cd(where):
+        c.run(command)
+
+
+def check_args(project, name, testmod):
+    "check validity of arguments"
     where = get_project_dir(project)
     if not where:
         print(f'{project} is not a known project')
@@ -718,24 +764,11 @@ def new_predit(c, project, name, testmod=False):
 
     from_conf = list(conf['env'])
     from_testconf = list(testconf['testees'])
-    if testconf.options('testdir'):
-        testdir = testconf.options('testdir')[0]
-    elif testmod:
+    if not testconf.has_section('testdir'):
         print('testdir not configured in test configuration')
         return
-    if name in conf['env']:
-        command = 'pedit -r ' + conf['env'][name]
-    elif name == '?':
+    if name == '?':
         print(f'possible mnemonics are: {from_conf + from_testconf}')
         return
-    elif name in testconf['testees']:
-        if testmod:
-            command = 'pedit -r ' + os.path.join(testdir, testconf['testscripts'][name])
-        else:
-            command = 'pedit ' + testconf['testees'][name]
-    else:
-        sourcedir = os.path.dirname(list(testconf['testees'])[0])
-        sourcedir = testdir if testmod else sourcedir
-        command = 'pedit ' + os.path.join(sourcedir, name)
-    with c.cd(where):
-        c.run(command)
+    testdir = testconf.options('testdir')[0]
+    return where, testdir, conf, testconf

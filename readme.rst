@@ -127,11 +127,16 @@ but in the form of a script that generates these symlinks and invocations.
 
     executing ``binfab session-start <project-name>`` starts a terminal session for that project
     and sets up an environment variable $files (and others) for use with this command to start editing
-    the specified (source) files
+    the specified (source) files.
+    It is also possible to specfy the project to use using option -p with the project name;
+    in that case you can specif the file(s) to open by using either the program name(s)
+    or a mnemonic used in .sessonrc or .rurc. In the latter case, you can use the -t flag to 
+    indicate if you want the program itself or the testscript for it
 
 **prfind**
 
-    uses the same environment variable to start ``filefindr`` in multiple file mode  
+    uses the same environment variable to start ``filefindr`` in multiple file mode.
+    The save possibilities for the -p option as for ``predit`` apply here
 
 **pytest.ini**
 
