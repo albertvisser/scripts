@@ -501,6 +501,12 @@ class Gui(qtw.QWidget):
         if self.repotype != 'git':
             qtw.QMessageBox.information(self, self.title, 'Only implemented for git repos')
             return
+        out = self.run_and_capture(['git', 'status', '-uno'])[0]
+        if not 'ahead' in out[1]:
+        # if 'up to date' in out[1]:
+            qtw.QMessageBox.information(self, self.title,
+                                        'Cannot amend: last commit was already pushed')
+            return
         message = self.run_and_capture(['git', 'log', '-1', '--pretty=format:%s'])[0][0]
         self.dialog_data = None, None
         if CheckTextDialog(self, self.title, message).exec() != qtw.QDialog.DialogCode.Accepted:

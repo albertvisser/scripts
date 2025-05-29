@@ -44,7 +44,7 @@ called HBox.__init__
 called Editor.__init__ with args ({testobj},)
 called Font.__init__
 called Font.setFamily
-called Font.setFixedPitch
+called Font.setFixedPitch with arg `True`
 called Font.setPointSize
 called Editor.setFont
 called Editor.setMarginsFont

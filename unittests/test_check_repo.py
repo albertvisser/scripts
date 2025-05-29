@@ -1106,7 +1106,16 @@ class TestGui:
             """stub
             """
             print('run_and_capture with args:', *args)
-            return (('commit_message', ''), '')
+            return (['commit_message', ''], [])
+        def mock_runc_2(self, *args):
+            """stub
+            """
+            nonlocal counter
+            print('run_and_capture with args:', *args)
+            counter += 1
+            if counter == 1:
+                return (['', 'ahead'], [])
+            return (['commit_message', ''], [])
         def mock_get_selected(self):
             """stub
             """
@@ -1173,14 +1182,23 @@ class TestGui:
         monkeypatch.setattr(testee, 'CheckTextDialog', MockDialog)
         testobj.amend_commit()
         assert capsys.readouterr().out == (
+                "run_and_capture with args: ['git', 'status', '-uno']\n"
+                "display message `Cannot amend: last commit was already pushed`\n")
+        counter = 0
+        monkeypatch.setattr(testee.Gui, 'run_and_capture', mock_runc_2)
+        testobj.amend_commit()
+        assert capsys.readouterr().out == (
+                "run_and_capture with args: ['git', 'status', '-uno']\n"
                 "run_and_capture with args: ['git', 'log', '-1', '--pretty=format:%s']\n"
                 "call CheckTextDialog with args"
                 " ('Uncommitted changes for `base`', 'commit_message')\n"
                 "run_and_report with args: ['git', 'commit', '--amend', '-m', 'xx']\n"
                 "called Gui.refresh_frame()\n")
+        counter = 0
         monkeypatch.setattr(testee, 'CheckTextDialog', MockDialog_2)
         testobj.amend_commit()
         assert capsys.readouterr().out == (
+                "run_and_capture with args: ['git', 'status', '-uno']\n"
                 "run_and_capture with args: ['git', 'log', '-1', '--pretty=format:%s']\n"
                 "call CheckTextDialog with args"
                 " ('Uncommitted changes for `base`', 'commit_message')\n"
@@ -1189,8 +1207,10 @@ class TestGui:
                 "run_and_report with args: ['git', 'commit', '--amend', '-m', 'commit_message']\n"
                 "called Gui.refresh_frame()\n")
         monkeypatch.setattr(testee.Gui, 'get_selected_files', mock_get_selected_2)
+        counter = 0
         testobj.amend_commit()
         assert capsys.readouterr().out == (
+                "run_and_capture with args: ['git', 'status', '-uno']\n"
                 "run_and_capture with args: ['git', 'log', '-1', '--pretty=format:%s']\n"
                 "call CheckTextDialog with args"
                 " ('Uncommitted changes for `base`', 'commit_message')\n"
@@ -1200,12 +1220,15 @@ class TestGui:
                 "run_and_report with args: ['git', 'commit', '--amend', '-m', 'commit_message']\n"
                 "called Gui.refresh_frame()\n")
         monkeypatch.setattr(testee, 'CheckTextDialog', MockDialog_3)
+        counter = 0
         testobj.amend_commit()
         assert capsys.readouterr().out == (
+                "run_and_capture with args: ['git', 'status', '-uno']\n"
                 "run_and_capture with args: ['git', 'log', '-1', '--pretty=format:%s']\n"
                 "call CheckTextDialog with args ('Uncommitted changes for `base`',"
                 " 'commit_message')\n")
         testobj.repotype = 'not git'
+        counter = 0
         testobj.amend_commit()
         assert capsys.readouterr().out == 'display message `Only implemented for git repos`\n'
 
