@@ -1141,56 +1141,167 @@ def test_list_branches(monkeypatch, capsys):
 def test_new_predit(monkeypatch, capsys, tmp_path):
     """unittest for repo.predit
     """
+    def mock_check(*args):
+        print('called check_args with args', args)
+        return
+    def mock_check_2(*args):
+        print('called check_args with args', args)
+        (tmp_path / '.sessionrc').write_text("[env]\nmnem1 = xxx yyy\nmnem2 = aaa bbb")
+        (tmp_path / '.rurc').write_text("[testdir]\ntestroot\n\n[testscripts]\ntestfile ="
+                                        " testfile.py\n[testees]\ntestfile = src/file_to_test.py\n")
+        conf = testee.configparser.ConfigParser()
+        conf.read(str(tmp_path / '.sessionrc'))
+        testconf = testee.configparser.ConfigParser(allow_no_value=True)
+        testconf.read(str(tmp_path / '.rurc'))
+        return str(tmp_path), 'testroot', conf, testconf
     monkeypatch.setattr(testee, 'get_project_dir', lambda x: '')
+    monkeypatch.setattr(testee, 'check_args', mock_check)
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
+
     testee.new_predit(c, 'testproj', 'testfile')
+    monkeypatch.setattr(testee, 'check_args', mock_check_2)
+    assert capsys.readouterr().out == (
+            "called check_args with args ('testproj', 'testfile', False)\n")
+    testee.new_predit(c, 'testproj', 'testfile')
+    assert capsys.readouterr().out == (
+            "called check_args with args ('testproj', 'testfile', False)\n"
+            "called run with args ('pedit src/file_to_test.py',) {}\n")
+
+    testee.new_predit(c, 'testproj', 'testfile', True)
+    assert capsys.readouterr().out == (
+            "called check_args with args ('testproj', 'testfile', True)\n"
+            "called run with args ('pedit -r testroot/testfile.py',) {}\n")
+
+    testee.new_predit(c, 'testproj', 'mnem1')
+    assert capsys.readouterr().out == (
+            "called check_args with args ('testproj', 'mnem1', False)\n"
+            "called run with args ('pedit -r xxx yyy',) {}\n")
+
+    testee.new_predit(c, 'testproj', 'mnem2', True)
+    assert capsys.readouterr().out == (
+            "called check_args with args ('testproj', 'mnem2', True)\n"
+            "called run with args ('pedit -r aaa bbb',) {}\n")
+
+    testee.new_predit(c, 'testproj', 'path/to/file')
+    assert capsys.readouterr().out == (
+            "called check_args with args ('testproj', 'path/to/file', False)\n"
+            "called run with args ('pedit path/to/file',) {}\n")
+
+
+def test_new_prfind(monkeypatch, capsys, tmp_path):
+    """unittest for repo.prfind
+    """
+    def mock_check(*args):
+        print('called check_args with args', args)
+        return
+    def mock_check_2(*args):
+        print('called check_args with args', args)
+        (tmp_path / '.sessionrc').write_text("[env]\nmnem1 = xxx yyy\nmnem2 = aaa bbb")
+        (tmp_path / '.rurc').write_text("[testdir]\ntestroot\n\n[testscripts]\ntestfile ="
+                                        " testfile.py\n[testees]\ntestfile = src/file_to_test.py\n")
+        conf = testee.configparser.ConfigParser()
+        conf.read(str(tmp_path / '.sessionrc'))
+        testconf = testee.configparser.ConfigParser(allow_no_value=True)
+        testconf.read(str(tmp_path / '.rurc'))
+        return str(tmp_path), 'testroot', conf, testconf
+    monkeypatch.setattr(testee, 'get_project_dir', lambda x: '')
+    monkeypatch.setattr(testee, 'check_args', mock_check)
+    monkeypatch.setattr(MockContext, 'run', mock_run)
+    c = MockContext()
+
+    testee.new_prfind(c, 'testproj', 'testfile')
+    monkeypatch.setattr(testee, 'check_args', mock_check_2)
+    assert capsys.readouterr().out == (
+            "called check_args with args ('testproj', 'testfile', False)\n")
+    testee.new_prfind(c, 'testproj', 'testfile')
+    assert capsys.readouterr().out == (
+            "called check_args with args ('testproj', 'testfile', False)\n"
+            "called run with args ('afrift -P src/file_to_test.py',) {}\n")
+
+    testee.new_prfind(c, 'testproj', 'testfile', True)
+    assert capsys.readouterr().out == (
+            "called check_args with args ('testproj', 'testfile', True)\n"
+            "called run with args ('afrift -P testroot/testfile.py',) {}\n")
+
+    testee.new_prfind(c, 'testproj', 'mnem1')
+    assert capsys.readouterr().out == (
+            "called check_args with args ('testproj', 'mnem1', False)\n"
+            "called run with args ('afrift -P xxx yyy',) {}\n")
+
+    testee.new_prfind(c, 'testproj', 'mnem2', True)
+    assert capsys.readouterr().out == (
+            "called check_args with args ('testproj', 'mnem2', True)\n"
+            "called run with args ('afrift -P aaa bbb',) {}\n")
+
+    testee.new_prfind(c, 'testproj', 'path/to/file')
+    assert capsys.readouterr().out == (
+            "called check_args with args ('testproj', 'path/to/file', False)\n"
+            "called run with args ('afrift -P path/to/file',) {}\n")
+
+
+def test_check_args(monkeypatch, capsys, tmp_path):
+    """unittest for repo.check_args
+    """
+    monkeypatch.setattr(testee, 'get_project_dir', lambda x: '')
+    assert not testee.check_args('testproj', 'testfile', 'x')
     assert capsys.readouterr().out == "testproj is not a known project\n"
 
     monkeypatch.setattr(testee, 'get_project_dir', lambda x: str(tmp_path))
-    testee.new_predit(c, 'testproj', 'testfile')
+    assert not testee.check_args('testproj', 'testfile', 'x')
     assert capsys.readouterr().out == "could not find session configuration\n"
 
     (tmp_path / '.sessionrc').touch()
-    testee.new_predit(c, 'testproj', 'testfile')
+    assert not testee.check_args('testproj', 'testfile', 'x')
     assert capsys.readouterr().out == "could not find session configuration\n"
 
     (tmp_path / '.sessionrc').write_text("[env]\n\n[options]")
-    testee.new_predit(c, 'testproj', 'testfile')
+    assert not testee.check_args('testproj', 'testfile', 'x')
     assert capsys.readouterr().out == "could not find test configuration\n"
 
     (tmp_path / '.rurc').touch()
-    testee.new_predit(c, 'testproj', 'testfile')
+    assert not testee.check_args('testproj', 'testfile', 'x')
     assert capsys.readouterr().out == "could not find test configuration\n"
+    (tmp_path / '.rurc').write_text("[testscripts]\ntestfile = testfile.py\n"
+                                    "[testees]\ntestfile = src/file_to_test.py\n")
+    assert not testee.check_args('testproj', 'testfile', 'x')
+    assert capsys.readouterr().out == "testdir not configured in test configuration\n"
+    (tmp_path / '.rurc').write_text("[testdir]\n\n\n[testscripts]\ntestfile = testfile.py\n"
+                                    "[testees]\ntestfile = src/file_to_test.py\n")
+    assert not testee.check_args('testproj', 'testfile', 'x')
+    assert capsys.readouterr().out == "testdir not configured in test configuration\n"
 
     (tmp_path / '.sessionrc').write_text("[env]\nmnem1 = xxx yyy\nmnem2 = aaa bbb")
     (tmp_path / '.rurc').write_text("[testdir]\ntestroot\n\n[testscripts]\ntestfile = testfile.py\n"
                                     "[testees]\ntestfile = src/file_to_test.py\n")
-    testee.new_predit(c, 'testproj', '?')
+    assert not testee.check_args('testproj', '?', 'x')
     assert capsys.readouterr().out == "possible mnemonics are: ['mnem1', 'mnem2', 'testfile']\n"
+    result = testee.check_args('testproj', 'testfile', 'x')
+    assert result[:2] == (f'{tmp_path}', 'testroot')
+    assert isinstance(result[2], testee.configparser.ConfigParser)
+    section1 = result[2].sections()[0]
+    assert section1 == 'env'
+    option1, option2 = result[2].options(section1)
+    assert (option1, option2) == ('mnem1', 'mnem2')
+    assert result[2][section1][option1] == 'xxx yyy'
+    assert result[2][section1][option2] == 'aaa bbb'
+    assert isinstance(result[3], testee.configparser.ConfigParser)
+    section1, section2, section3 = result[3].sections()
+    assert (section1, section2, section3) == ('testdir', 'testscripts', 'testees')
+    option = result[3].options(section1)[0]
+    assert option == 'testroot'
+    assert result[3][section1][option] is None
+    option = result[3].options(section2)[0]
+    assert option == 'testfile'
+    assert result[3][section2][option] == 'testfile.py'
+    option = result[3].options(section3)[0]
+    assert option == 'testfile'
+    assert result[3][section3][option] == 'src/file_to_test.py'
 
-    testee.new_predit(c, 'testproj', 'testfile')
-    assert capsys.readouterr().out == "called run with args ('pedit src/file_to_test.py',) {}\n"
-
-    testee.new_predit(c, 'testproj', 'testfile', True)
-    assert capsys.readouterr().out == "called run with args ('pedit -r testroot/testfile.py',) {}\n"
-
-    testee.new_predit(c, 'testproj', 'mnem1')
-    assert capsys.readouterr().out == "called run with args ('pedit -r xxx yyy',) {}\n"
-
-    testee.new_predit(c, 'testproj', 'mnem2', True)
-    assert capsys.readouterr().out == "called run with args ('pedit -r aaa bbb',) {}\n"
-
-    testee.new_predit(c, 'testproj', 'path/to/file')
-    assert capsys.readouterr().out == "called run with args ('pedit path/to/file',) {}\n"
-    (tmp_path / '.rurc').write_text("[testdir]\n\n\n[testscripts]\ntestfile = testfile.py\n"
-                                    "[testees]\ntestfile = src/file_to_test.py\n")
-    testee.new_predit(c, 'testproj', 'testfile.py')
-    assert capsys.readouterr().out == "called run with args ('pedit testfile.py',) {}\n"
-    (tmp_path / '.rurc').write_text("[testdir]\n\n\n[testscripts]\ntestfile = testfile.py\n"
-                                    "[testees]\ntestfile = src/file_to_test.py\n")
-    testee.new_predit(c, 'testproj', 'testfile.py', True)
-    assert capsys.readouterr().out == "testdir not configured in test configuration\n"
+    pwd = os.getcwd()
+    os.chdir(tmp_path)
+    assert testee.check_args('.', 'testfile', 'x') == result
+    os.chdir(pwd)
 
 
 class MockWriter:

@@ -747,6 +747,8 @@ def new_prfind(c, project, name, testmod=False):
 
 def check_args(project, name, testmod):
     "check validity of arguments"
+    if project == '.':
+        project = os.path.basename(os.getcwd())
     where = get_project_dir(project)
     if not where:
         print(f'{project} is not a known project')
@@ -762,11 +764,11 @@ def check_args(project, name, testmod):
         print('could not find test configuration')
         return
 
-    from_conf = list(conf['env'])
-    from_testconf = list(testconf['testees'])
-    if not testconf.has_section('testdir'):
+    if not testconf.has_section('testdir') or not testconf.options('testdir'):
         print('testdir not configured in test configuration')
         return
+    from_conf = list(conf['env'])
+    from_testconf = list(testconf['testees'])
     if name == '?':
         print(f'possible mnemonics are: {from_conf + from_testconf}')
         return
