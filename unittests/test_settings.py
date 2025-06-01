@@ -40,6 +40,9 @@ def test_get_project_dir(monkeypatch):
         """stub for settings.get_project_root
         """
         return 'path/to'
+    def mock_list(name):
+        print(f"called os.listdir with arg '{name}'")
+        return ['aaa', 'bbb']
     monkeypatch.setattr(settings, 'get_project_root', mock_get_root)
     monkeypatch.setattr(settings, 'private_repos', {'name': 'private_name'})
     monkeypatch.setattr(settings.os.path, 'exists', lambda x: True)
@@ -48,3 +51,6 @@ def test_get_project_dir(monkeypatch):
     monkeypatch.setattr(settings.os.path, 'exists', lambda x: False)
     assert settings.get_project_dir('project') == ''
     assert settings.get_project_dir('name') == ''
+    monkeypatch.setattr(settings.os, 'listdir', mock_list)
+    monkeypatch.setattr(settings, 'r2hdata_basedir', 'abcde')
+    assert settings.get_project_dir('aaa') == 'abcde/aaa'

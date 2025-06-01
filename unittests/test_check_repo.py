@@ -201,6 +201,8 @@ def test_startapp(monkeypatch, capsys, tmp_path):
     monkeypatch.setattr(testee, 'HOME', pathlib.Path('/homedir'))
     monkeypatch.setattr(testee, 'root', pathlib.Path('/rootdir'))
     monkeypatch.setattr(testee.settings, 'private_repos', {'tests': 'testscripts'})
+    monkeypatch.setattr(testee.settings, 'r2h_repos', {'r2htests': 'r2hdata'})
+    monkeypatch.setattr(testee.settings, 'r2hdata_basedir', 'r2hbase')
     with pytest.raises(SystemExit):
         testee.startapp(types.SimpleNamespace(project=''))
     assert capsys.readouterr().out == ('called Application.__init__\n'
@@ -217,6 +219,12 @@ def test_startapp(monkeypatch, capsys, tmp_path):
         testee.startapp(types.SimpleNamespace(project='tests'))
     assert capsys.readouterr().out == ('called Application.__init__\n'
             "called Gui.__init__() with args (PosixPath('/homedir/testscripts'), 'git')\n"
+            'called Gui.show()\n'
+            'called Application.exec\n')
+    with pytest.raises(SystemExit):
+        testee.startapp(types.SimpleNamespace(project='r2htests'))
+    assert capsys.readouterr().out == ('called Application.__init__\n'
+            "called Gui.__init__() with args (PosixPath('r2hbase/r2hdata'), 'git')\n"
             'called Gui.show()\n'
             'called Application.exec\n')
     assert capsys.readouterr().out == ''

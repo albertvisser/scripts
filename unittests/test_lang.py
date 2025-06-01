@@ -89,7 +89,7 @@ def test_uses_gettext(tmp_path):
     assert lang.uses_gettext(fname)
 
 
-def test_gettext(monkeypatch, capsys):
+def test_gettext(monkeypatch, capsys, tmp_path):
     """unittest for lang.gettext
     """
     monkeypatch.setattr(lang, 'get_base_dir', lambda x: '')
@@ -97,12 +97,23 @@ def test_gettext(monkeypatch, capsys):
     c = MockContext()
     lang.gettext(c, 'proj', '.')
     assert capsys.readouterr().out == 'unknown project\n'
-    monkeypatch.setattr(lang, 'get_base_dir', lambda x: 'path/to/proj')
+    monkeypatch.setattr(lang, 'get_base_dir', lambda x: str(tmp_path))
+    (tmp_path / '.sessionrc').touch()
+    origdir = lang.os.getcwd()
+    lang.os.chdir(str(tmp_path))
     lang.gettext(c, 'proj', '.')
-    assert capsys.readouterr().out == ('xgettext . in path/to/proj\n'
-                                       'mv messages.pot locale/messages-all.pot in path/to/proj\n'
+    assert capsys.readouterr().out == (f'xgettext *.py in {tmp_path}\n'
+                                       f'mv messages.po locale/messages-all.pot in {tmp_path}\n'
                                        'created locale/messages-all.pot\nremember'
                                        ' that detection only works in modules that import gettext\n')
+    (tmp_path / '.sessionrc').write_text('[env]\nprogs = progdir/xxx\n')
+    lang.gettext(c, 'proj', '.')
+    assert capsys.readouterr().out == (f'xgettext progdir/*.py in {tmp_path}\n'
+                                       f'mv messages.po locale/messages-all.pot in {tmp_path}\n'
+                                       'created locale/messages-all.pot\nremember'
+                                       ' that detection only works in modules that import gettext\n')
+    lang.os.chdir(origdir)
+    monkeypatch.setattr(lang, 'get_base_dir', lambda x: 'path/to/proj')
     lang.gettext(c, 'proj', 'source.ext')
     assert capsys.readouterr().out == 'source.ext is not a python source file\n'
     monkeypatch.setattr(lang, 'uses_gettext', lambda x: False)
@@ -110,16 +121,17 @@ def test_gettext(monkeypatch, capsys):
     assert capsys.readouterr().out == 'sourcefile.py does not import gettext\n'
     monkeypatch.setattr(lang, 'uses_gettext', lambda x: True)
     lang.gettext(c, 'proj', 'sourcefile')
-    assert capsys.readouterr().out == ('xgettext sourcefile.py in path/to/proj\nmv messages.pot'
-                                       ' locale/messages-sourcefile-py.pot in path/to/proj\n'
-                                       'created locale/messages-sourcefile-py.pot\nremember'
-                                       ' that detection only works in modules that import gettext\n')
+    assert capsys.readouterr().out == (
+            'xgettext sourcefile.py in path/to/proj\n'
+            'mv messages.po locale/messages-sourcefile-py.pot in path/to/proj\n'
+            'created locale/messages-sourcefile-py.pot\n'
+            'remember that detection only works in modules that import gettext\n')
     lang.gettext(c, 'proj', 'source.py')
     assert capsys.readouterr().out == (
             'xgettext source.py in path/to/proj\n'
-            'mv messages.pot locale/messages-source-py.pot in path/to/proj\n'
-            'created locale/messages-source-py.pot\nremember'
-            ' that detection only works in modules that import gettext\n')
+            'mv messages.po locale/messages-source-py.pot in path/to/proj\n'
+            'created locale/messages-source-py.pot\n'
+            'remember that detection only works in modules that import gettext\n')
 
 
 def test_merge(monkeypatch, capsys):
