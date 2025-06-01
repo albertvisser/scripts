@@ -78,7 +78,18 @@ def gettext(c, project, source):
     if not base:
         print('unknown project')
         return
-    if source != '.':
+    # argument . werkt niet voor xgettext dus we moeten de plek van de sources gaan zoeken
+    if source == '.':
+       with open('.sessionrc') as f:
+           for line in f:
+               if line.startswith('progs'):
+                   data = line.split(' = ')[1]
+                   sourcedir = data.split('/')[0]
+                   break
+           else:
+               sourcedir = ''
+    # if source != '.':
+    else:
         name, suffix = os.path.splitext(source)
         if not suffix:
             source += '.py'
@@ -89,10 +100,13 @@ def gettext(c, project, source):
             print(f'{source} does not import gettext')
             return
     with c.cd(base):
-        c.run(f"pygettext {source}")
+        toscan = source if source != '.' else sourcedir + '/*.py' if sourcedir else '*.py'
+        # c.run(f"pygettext {source}")
+        c.run(f"xgettext {toscan}")
         source = 'all' if source == '.' else source.replace('.', '-').replace('/', '-')
         outfile = f'locale/messages-{source}.pot'
-        c.run(f'mv messages.pot {outfile}')
+        # c.run(f'mv messages.pot {outfile}')
+        c.run(f'mv messages.po {outfile}')
         print(f'created {outfile}')
         print('remember that detection only works in modules that import gettext')
 
