@@ -782,6 +782,8 @@ def startapp(args):
         args.project = '.'
     if args.project == '.':
         path = pathlib.Path.cwd()  # .resolve()
+    elif args.project in settings.r2h_repos:
+        path = pathlib.Path(settings.r2hdata_basedir) / settings.r2h_repos[args.project]
     elif args.project in settings.private_repos:
         path = HOME / settings.private_repos[args.project]
     elif args.project in settings.private_repos.values():

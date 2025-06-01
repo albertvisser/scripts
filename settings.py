@@ -1,6 +1,6 @@
 """settings for fabfile
 """
-import os.path
+import os
 import pathlib
 # server data locations
 server_root = '/usr/share/nginx/html'
@@ -10,6 +10,7 @@ apache_root = '/var/www/html'
 # project/session management
 PROJECTS_BASE = os.path.expanduser('~/projects')
 GITLOC = os.path.expanduser('~/git-repos')
+r2hdata_basedir = os.path.join(PROJECTS_BASE, 'rst2html', 'rst2html-data')
 
 # repository management
 cherrypy_repos = ['logviewer', 'rst2html', 'magiokis-cherry']
@@ -24,6 +25,8 @@ sf_repos = ['apropos']
 # git_repos = ['mylinter', 'lminstreloc', 'sdvmm', 'mockgui'] + bb_repos
 git_repos = ['lintergui', 'lminstreloc', 'sdvmm', 'mockgui'] + bb_repos
 non_bb_repos = []  # non_deploy_repos
+r2h_repos = {'magiokis-web': 'magiokis', 'magiokis-docs': 'magiokis-docs',
+             'magiokis-docs-en': 'magiokis-docs-en'}
 all_repos = git_repos + list(private_repos) + non_bb_repos
 frozen_repos = fcgi_repos + [cherrypy_repos[-1], django_repos[-1]]
 DO_NOT_LINT = frozen_repos + non_deploy_repos  # + private_repos
@@ -103,6 +106,8 @@ def get_project_root(name, context='local'):
 
 def get_project_dir(name):
     "private repos don't live in PROJECTS_BASE"
+    if name in os.listdir(r2hdata_basedir):
+        return os.path.join(r2hdata_basedir, name)
     base = get_project_root(name)
     # if name in private_repos:
     #     name = private_repos[name]
