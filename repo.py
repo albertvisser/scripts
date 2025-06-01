@@ -285,166 +285,174 @@ def push_remote(c, exclude=None, include=None):   # , dry_run=False):
     Check(c, 'remote', push=True, exclude=exclude, include=include).run()  # , dry_run=dry_run)
 
 
-@task(help={'names': 'comma separated list of repostories to list',
-            'outtype': 'format for output list - `csv` (default) or `txt`'})
-def overview(c, names=None, outtype=''):
-    """Try to build a history file from one or more repository logs
-    meant to help me decide on tags or versions
+@task(help={'name': 'name of repostory to list'})
+def overview(c, name):
     """
-    # print('gemaakt voor oude hg repo, moet herschreven worden o.a. naar gebruik van git')
-    # print('niet uitgevoerd, moet herschreven worden o.a. naar gebruik van git')
-    # return
-    outtype = outtype or 'csv'
-    if outtype not in ('txt', 'csv'):
-        print('wrong spec for output type')
-        return
-    root = get_project_root('bb')  # '/home/albert/hg_repos'
-    # root = get_project_root('git')  # '/home/albert/git_repos'
-    # root = get_project_root('local')  # '/home/albert/projects'
-    names = list(os.listdir(root)) if not names else names.split(',')
-    for item in names:
-        path = os.path.join(root, item)
-        outdir = repo_overzicht(c, item, path, outtype)
-    print(f'output in {outdir}')  # os.path.join(os.path.dirname(path), ".overzicht")))
-
-
-def repo_overzicht(c, name, path, outtype):
-    """Try to build a history file from a repository log
-    currently it shows which commits contain which files
     """
-    # repotype = ''
-    if not os.path.isdir(path):
-        return ''
-    if '.hg' in os.listdir(path):
-        outdict = make_repolist_hg(c, path)
-        # repotype = 'hg'
-    elif '.git' in os.listdir(path):
-        outdict = make_repolist_git(c, path)
-        # repotype = 'git'
-    else:
-        return ''
-    outdir = os.path.join(os.path.dirname(path), ".overzicht")
-    if outtype == 'txt':
-        outfile = os.path.join(outdir, f"{name}_repo.ovz")
-        make_repo_ovz(outdict, outfile)
-    elif outtype == 'csv':
-        outfile = os.path.join(outdir, f"{name}_repo.csv")
-        make_repocsv(outdict, outfile)
-    return outdir
+    check_and_run_for_project(c, name, "git log --pretty=format:'%ad %s' --date=iso")
+    print()
 
 
-def make_repolist_hg(c, path):
-    """turn the repo log into a history - mercurial version
-
-    input: pathname to the repository
-    output: dictionary containing the history
-    """
-    ## logging.info('processing {}'.format(item))
-    with c.cd(path):
-        result = c.run('hg log -v', hide=True)
-        data = result.stdout
-    outdict = collections.defaultdict(dict)
-    in_description = False
-    key = ''  # just to satisfy the linters
-    for line in data.split('\n'):
-        line = line.strip()
-        words = line.split()
-        if line == '':
-            in_description = False
-        elif in_description:
-            outdict[key]['desc'].append(line)
-        elif words[0] == 'changeset:':
-            key, _ = words[1].split(':', 1)
-            key = int(key)
-        elif words[0] == 'date:':
-            outdict[key]['date'] = ' '.join(words[1:4] + [words[5], words[4], words[6]])
-        elif words[0] == 'files:':
-            outdict[key]['files'] = words[1:]
-        elif words[0] == 'description:':
-            in_description = True
-            outdict[key]['desc'] = []
-    return outdict
-
-
-def make_repolist_git(c, path):
-    """turn the repo log into a history - git version
-
-    input: pathname to the repository
-    output: dictionary containing the history
-    """
-    with c.cd(path):
-        result = c.run('git log --pretty="%h; %ad; %s" --stat', hide=True)
-        data = result.stdout
-    outdict = collections.defaultdict(dict)
-    key, date, desc, files = '', '', '', []
-    for line in data.split('\n'):
-        line = line.strip()
-        if ';' in line:
-            if key:
-                outdict[key]['date'] = date
-                outdict[key]['description'] = desc
-                outdict[key]['files'] = files
-            key, date, desc = line.split('; ')
-            files = []
-        elif '|' in line:
-            file, rest = line.split('|')
-            files.append(file.strip())
-    if key:
-        outdict[key]['date'] = date
-        outdict[key]['description'] = desc
-        outdict[key]['files'] = files
-    return outdict
-
-
-def make_repo_ovz(outdict, outfile):
-    """write the history to a file
-
-    input: history in the form of a dictionary, output filename
-    output: the specified file as written to disk
-    """
-    with open(outfile, "w") as _out:
-        for key in outdict:
-            _out.write('{}: {}\n'.format(outdict[key]['date'], '\n'.join(outdict[key]['desc'])))
-            try:
-                for item in outdict[key]['files']:
-                    _out.write(f'    {item}\n')
-            except KeyError:
-                pass
-
-
-def make_repocsv(outdict, outfile):
-    """turn the repo history into a comma delimited file
-
-    input: history in the form of a dictionary, output filename
-    output: the specified file as written to disk
-    """
-    def listnn(count):
-        "build list of empty strings"
-        return count * [""]
-    date_headers, desc_headers = [" \\ date"], ["filename \\ description"]
-    in_changeset_dict = collections.defaultdict(
-        functools.partial(listnn, len(outdict.keys())))
-    for key in sorted(outdict.keys()):
-        date_headers.append(outdict[key]['date'])
-        desc = "\n".join(outdict[key]['desc'])
-        if ',' in desc or ';' in desc:
-            desc = f'"{desc}"'
-        desc_headers.append(desc)
-        try:
-            filelist = outdict[key]['files']
-        except KeyError:
-            continue
-        for item in filelist:
-            if '/' not in item:
-                item = './' + item
-            in_changeset_dict[item][int(key) - 1] = "x"
-    with open(outfile, "w") as _out:
-        writer = csv.writer(_out)
-        writer.writerow(date_headers)
-        writer.writerow(desc_headers)
-        for key in sorted(in_changeset_dict):
-            out = [key] + in_changeset_dict[key]
-            writer.writerow(out)
+# @task(help={'names': 'comma separated list of repostories to list',
+#             'outtype': 'format for output list - `csv` (default) or `txt`'})
+# def old_overview(c, names=None, outtype=''):
+#     """Try to build a history file from one or more repository logs
+#     meant to help me decide on tags or versions
+#     """
+#     # print('gemaakt voor oude hg repo, moet herschreven worden o.a. naar gebruik van git')
+#     # print('niet uitgevoerd, moet herschreven worden o.a. naar gebruik van git')
+#     # return
+#     outtype = outtype or 'csv'
+#     if outtype not in ('txt', 'csv'):
+#         print('wrong spec for output type')
+#         return
+#     root = get_project_root('bb')  # '/home/albert/hg_repos'
+#     # root = get_project_root('git')  # '/home/albert/git_repos'
+#     # root = get_project_root('local')  # '/home/albert/projects'
+#     names = list(os.listdir(root)) if not names else names.split(',')
+#     for item in names:
+#         path = os.path.join(root, item)
+#         outdir = repo_overzicht(c, item, path, outtype)
+#     print(f'output in {outdir}')  # os.path.join(os.path.dirname(path), ".overzicht")))
+#
+#
+# def repo_overzicht(c, name, path, outtype):
+#     """Try to build a history file from a repository log
+#     currently it shows which commits contain which files
+#     """
+#     # repotype = ''
+#     if not os.path.isdir(path):
+#         return ''
+#     if '.hg' in os.listdir(path):
+#         outdict = make_repolist_hg(c, path)
+#         # repotype = 'hg'
+#     elif '.git' in os.listdir(path):
+#         outdict = make_repolist_git(c, path)
+#         # repotype = 'git'
+#     else:
+#         return ''
+#     outdir = os.path.join(os.path.dirname(path), ".overzicht")
+#     if outtype == 'txt':
+#         outfile = os.path.join(outdir, f"{name}_repo.ovz")
+#         make_repo_ovz(outdict, outfile)
+#     elif outtype == 'csv':
+#         outfile = os.path.join(outdir, f"{name}_repo.csv")
+#         make_repocsv(outdict, outfile)
+#     return outdir
+#
+#
+# def make_repolist_hg(c, path):
+#     """turn the repo log into a history - mercurial version
+#
+#     input: pathname to the repository
+#     output: dictionary containing the history
+#     """
+#     ## logging.info('processing {}'.format(item))
+#     with c.cd(path):
+#         result = c.run('hg log -v', hide=True)
+#         data = result.stdout
+#     outdict = collections.defaultdict(dict)
+#     in_description = False
+#     key = ''  # just to satisfy the linters
+#     for line in data.split('\n'):
+#         line = line.strip()
+#         words = line.split()
+#         if line == '':
+#             in_description = False
+#         elif in_description:
+#             outdict[key]['desc'].append(line)
+#         elif words[0] == 'changeset:':
+#             key, _ = words[1].split(':', 1)
+#             key = int(key)
+#         elif words[0] == 'date:':
+#             outdict[key]['date'] = ' '.join(words[1:4] + [words[5], words[4], words[6]])
+#         elif words[0] == 'files:':
+#             outdict[key]['files'] = words[1:]
+#         elif words[0] == 'description:':
+#             in_description = True
+#             outdict[key]['desc'] = []
+#     return outdict
+#
+#
+# def make_repolist_git(c, path):
+#     """turn the repo log into a history - git version
+#
+#     input: pathname to the repository
+#     output: dictionary containing the history
+#     """
+#     with c.cd(path):
+#         result = c.run('git log --pretty="%h; %ad; %s" --stat', hide=True)
+#         data = result.stdout
+#     outdict = collections.defaultdict(dict)
+#     key, date, desc, files = '', '', '', []
+#     for line in data.split('\n'):
+#         line = line.strip()
+#         if ';' in line:
+#             if key:
+#                 outdict[key]['date'] = date
+#                 outdict[key]['description'] = desc
+#                 outdict[key]['files'] = files
+#             key, date, desc = line.split('; ')
+#             files = []
+#         elif '|' in line:
+#             file, rest = line.split('|')
+#             files.append(file.strip())
+#     if key:
+#         outdict[key]['date'] = date
+#         outdict[key]['description'] = desc
+#         outdict[key]['files'] = files
+#     return outdict
+#
+#
+# def make_repo_ovz(outdict, outfile):
+#     """write the history to a file
+#
+#     input: history in the form of a dictionary, output filename
+#     output: the specified file as written to disk
+#     """
+#     with open(outfile, "w") as _out:
+#         for key in outdict:
+#             _out.write('{}: {}\n'.format(outdict[key]['date'], '\n'.join(outdict[key]['desc'])))
+#             try:
+#                 for item in outdict[key]['files']:
+#                     _out.write(f'    {item}\n')
+#             except KeyError:
+#                 pass
+#
+#
+# def make_repocsv(outdict, outfile):
+#     """turn the repo history into a comma delimited file
+#
+#     input: history in the form of a dictionary, output filename
+#     output: the specified file as written to disk
+#     """
+#     def listnn(count):
+#         "build list of empty strings"
+#         return count * [""]
+#     date_headers, desc_headers = [" \\ date"], ["filename \\ description"]
+#     in_changeset_dict = collections.defaultdict(
+#         functools.partial(listnn, len(outdict.keys())))
+#     for key in sorted(outdict.keys()):
+#         date_headers.append(outdict[key]['date'])
+#         desc = "\n".join(outdict[key]['desc'])
+#         if ',' in desc or ';' in desc:
+#             desc = f'"{desc}"'
+#         desc_headers.append(desc)
+#         try:
+#             filelist = outdict[key]['files']
+#         except KeyError:
+#             continue
+#         for item in filelist:
+#             if '/' not in item:
+#                 item = './' + item
+#             in_changeset_dict[item][int(key) - 1] = "x"
+#     with open(outfile, "w") as _out:
+#         writer = csv.writer(_out)
+#         writer.writerow(date_headers)
+#         writer.writerow(desc_headers)
+#         for key in sorted(in_changeset_dict):
+#             out = [key] + in_changeset_dict[key]
+#             writer.writerow(out)
 
 
 @task(help={'name': 'repository name'})
