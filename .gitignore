@@ -118,3 +118,15 @@ tview
 count-locs
 
 treedocsp
+binfab
+build-bin-scripts
+build-unittests
+check-repo
+dtree
+fabsrv
+list2scite
+list2vi
+mee-bezig
+rename-files
+run-unittests
+runwithlog

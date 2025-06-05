@@ -9,9 +9,11 @@ from configparser import ConfigParser, DuplicateSectionError
 
 @task(help={'name': 'name of the script or symlink to add',
             'section': 'name of the section to add the script or symlink into'})
-def add(c, name, section):
+def add(c, name, section=''):
     "voeg de inhoud van een bestaand scriptlet toe aan de library"
     lib = ScriptLib()
+    if not section:
+        section = determine_section(name)
     if section.startswith('symlinks'):
         retval = lib.add_link(name, section)
     else:
@@ -27,6 +29,22 @@ def add(c, name, section):
         ignore_file.write_text('\n'.join(ignores))
         print(f"'{name}' successfully added to library and .gitignore")
         print("Don't forget to also add it to readme.rst")
+
+def determine_section(name):
+    "try to deduce the script type by looking if it contains a shebang line"
+    filepath = pathlib.Path(f'~/bin/{name}').expanduser()
+    if filepath.is_symlink():
+        section = 'symlinks'
+    else:
+        line = filepath.read_text().split('\n')[0]
+        if line.startswith('#!'):
+            section = line.removeprefix('#!').rsplit('/')
+            section = section[-1] if len(section) > 1 else section[0]
+            # ervan uitgaande dat python scripts altijd ge-symlinked zijn
+            section = f'scripts-{section}'
+        else:
+            section = 'scripts'
+    return section
 
 
 @task(help={'name': 'name of the script or symlink to compare - use "all" for the entire library'})
@@ -303,7 +321,7 @@ class ScriptLib:
         if not path.is_file() or path.is_symlink():
             return 'not a valid file'
         if section not in ('scripts', 'scripts-sh', 'scripts-bash'):
-            return 'wrong section'
+            return f'unknown section name: {section}'
         script = path.read_text()  # .replace('\n', '\n\t'  - )not sure if I need this
         if not script:
             return 'file is empty'
