@@ -631,11 +631,15 @@ class TestGui:
         testobj.outtype = ''
         assert testobj.get_selected_files() == [('', 'M  item1'), ('', '?? item2')]
         assert capsys.readouterr().out == ("called ListItem.__init__ with args ('M  item1',)\n"
-                                           "called ListItem.__init__ with args ('?? item2',)\n")
+                                           "called ListItem.__init__ with args ('?? item2',)\n"
+                                           'called ListItem.text\n'
+                                           'called ListItem.text\n')
         testobj.outtype = 'status'
         assert testobj.get_selected_files() == [['M', 'item1'], ['??', 'item2']]
         assert capsys.readouterr().out == ("called ListItem.__init__ with args ('M  item1',)\n"
-                                           "called ListItem.__init__ with args ('?? item2',)\n")
+                                           "called ListItem.__init__ with args ('?? item2',)\n"
+                                           'called ListItem.text\n'
+                                           'called ListItem.text\n')
 
     def test_edit_selected(self, monkeypatch, capsys, testobj):
         """unittest for Gui.edit_selected
