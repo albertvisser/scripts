@@ -108,6 +108,7 @@ def stage(c, sitename, new_only=False, filename='', list_only=False):
 
     # bepaal en controleer de te stagen files
     newfiles = [line.split()[1] for line in result.stdout.split('\n') if line and line[0] == '?']
+    chgfiles = [line.split()[1] for line in result.stdout.split('\n') if line and line[0] == 'M']
     if filename:
         if not os.path.exists(os.path.join(root, filename)):
             print('No such file')
@@ -119,8 +120,7 @@ def stage(c, sitename, new_only=False, filename='', list_only=False):
     elif new_only:
         files = newfiles
     else:
-        files = [line.split()[1] for line in result.stdout.split('\n')
-                 if line and line[0] not in ('?', '!')]
+        files = chgfiles
     if not files:
         print('Nothing to stage')
         return
@@ -133,8 +133,9 @@ def stage(c, sitename, new_only=False, filename='', list_only=False):
         return
 
     # kopieer naar staging locatie
+    staging = os.path.join(root, '.staging')
+    amend = os.path.exists(staging) and bool(os.listdir(staging))
     for item in files:
-        staging = os.path.join(root, '.staging')
         dest = os.path.join(staging, item)
         if not os.path.exists(os.path.dirname(dest)):
             os.makedirs(os.path.dirname(dest), exist_ok=True)
@@ -144,9 +145,17 @@ def stage(c, sitename, new_only=False, filename='', list_only=False):
     # commit de gestagede files zodat ze niet nog een keer geselecteerd worden
 
     with c.cd(root):
-        stage_message = f"staged on {datetime.datetime.today().strftime('%d-%m-%Y %H:%M')}"
-        result = c.run('zenity --entry --title="Stage" --text="Enter commit message"'
-                       f' --entry-text="{stage_message}"', hide=True, warn=True)
+        if not amend:
+            stage_message = f"staged on {datetime.datetime.today().strftime('%d-%m-%Y %H:%M')}"
+            amendflag = ''
+            ctype = 'new'
+        else:
+            result = c.run('hg heads -T "{desc}"', hide=True, warn=True)
+            stage_message = result.stdout.strip()
+            amendflag = ' --amend'
+            ctype = 'existing'
+        result = c.run(f'zenity --entry --title="Stage: {ctype} commit" --text="Enter'
+                       f' commit message" --entry-text="{stage_message}"', hide=True, warn=True)
         new_message = result.stdout.strip()
         if not new_message:
             for item in files:
@@ -155,15 +164,15 @@ def stage(c, sitename, new_only=False, filename='', list_only=False):
             print('Afgebroken')
             return
         message = new_message or stage_message  # message mag niet leeg zijn
-        cfiles = ''
-        if filename:
-            c.run(f'hg add {filename}')
-        elif new_only:
-            c.run(f'hg add {" ".join(newfiles)}')
-        else:
-            cfiles = " ".join(files)
+        # cfiles = ''
+        # if filename:
+        #     c.run(f'hg add {filename}')
+        # elif new_only:
+        #     c.run(f'hg add {" ".join(newfiles)}')
+        # else:
+        #     cfiles = " ".join(files)
         # c.run(f'hg ci -m "staged on {now}"')
-        c.run(f'hg ci {cfiles} -m "{message}"')
+        c.run(f'hg ci {' '.join(files)} {amendflag} -m "{message}"')
     print(f'{len(files)} files staged')
 
 
