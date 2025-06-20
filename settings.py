@@ -73,7 +73,13 @@ DO_NOT_LINT = frozen_repos + non_deploy_repos  # + private_repos
 # deze zijn op de nieuwe manier gemaakt (chromium api?)
 webapps = {'cgit': {'appid': 'aihbdennncljibneldlcadheboalahee', 'start_server': False},
            'gitweb': {'appid': 'nhlpkodndoiadgldeanohldkpfoeahan', 'start_server': False},
-           'tickets': {'appid': 'ddmclccmlegfljocpmghoodmgmmbcneh', 'start_server': 'trac'}}
+           'tickets': {'appid': 'ddmclccmlegfljocpmghoodmgmmbcneh', 'start_server': 'trac'},
+           'magiokis-web': {'appid': 'ccchclgdaokgeepoigdblhenppifabcb',
+                            'start_server': 'rst2html_fs'},
+           'magiokis-docs': {'appid': 'hbhjmhilnfcgofdnligbbhkkdlfbolai',
+                             'start_server': 'rst2html_mongo'},
+           'magiokis-docs-en': {'appid': 'hjnlopoojlljlgogkadaimjeopiggaae',
+                                'start_server': 'rst2html_postgres'}}
 
 
 def get_project_root(name, context='local'):
