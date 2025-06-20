@@ -87,7 +87,7 @@ def permits(c, name, do_files=False):
             'new_only': 'only stage new files',
             'filename': 'only stage this (new) file',
             'list-only': 'do not actually stage, just show the names'})
-def stage(c, sitename, new_only=False, filename='', list_only=False):
+def stage(c, sitename, new_only=False, changed_only=False, filename='', list_only=False):
     """voor site gemaakt met rst2html: zet gewijzigde files in staging en commit
 
     standaard werking is om alleen gewijzigde documenten te stagen
@@ -119,16 +119,19 @@ def stage(c, sitename, new_only=False, filename='', list_only=False):
         files = [filename]
     elif new_only:
         files = newfiles
-    else:
+    elif changed_only:
         files = chgfiles
+    else:
+        files = newfiles + chgfiles
     if not files:
         print('Nothing to stage')
         return
 
     # bij list optie: toon namen en exit
     if list_only:
-        for item in files:
-            print(item)
+        for item in sorted(files):
+            mod = ' (new)' if item in newfiles and not new_only else ''
+            print(f'{item}{mod}')
         print(f'\n{len(files)} files to be staged')
         return
 
@@ -146,7 +149,7 @@ def stage(c, sitename, new_only=False, filename='', list_only=False):
 
     with c.cd(root):
         if not amend:
-            stage_message = f"staged on {datetime.datetime.today().strftime('%d-%m-%Y %H:%M')}"
+            stage_message = ''  # f"staged on {datetime.datetime.today().strftime('%d-%m-%Y %H:%M')}"
             amendflag = ''
             ctype = 'new'
         else:
@@ -156,24 +159,29 @@ def stage(c, sitename, new_only=False, filename='', list_only=False):
             ctype = 'existing'
         result = c.run(f'zenity --entry --title="Stage: {ctype} commit" --text="Enter'
                        f' commit message" --entry-text="{stage_message}"', hide=True, warn=True)
-        new_message = result.stdout.strip()
-        if not new_message:
-            for item in files:
-                dest = os.path.join(root, '.staging', item)
-                os.remove(dest)
+        stage_message = result.stdout.strip()
+        failed = False
+        if not stage_message:
+            failed = True
             print('Afgebroken')
-            return
-        message = new_message or stage_message  # message mag niet leeg zijn
-        # cfiles = ''
-        # if filename:
-        #     c.run(f'hg add {filename}')
-        # elif new_only:
-        #     c.run(f'hg add {" ".join(newfiles)}')
-        # else:
-        #     cfiles = " ".join(files)
-        # c.run(f'hg ci -m "staged on {now}"')
-        c.run(f'hg ci {' '.join(files)} {amendflag} -m "{message}"')
-    print(f'{len(files)} files staged')
+        else:
+            to_add = ''
+            if filename:
+                to_add = " ".join(files)
+            elif not changed_only:
+                to_add = " ".join(newfiles)
+            if to_add:
+                result = c.run(f'hg add {to_add}')
+                failed = result.failed
+            if not failed:
+                result = c.run(f'hg ci {' '.join(files)} {amendflag} -m "{stage_message}"')
+                failed = result.failed
+    if failed:
+        for item in files:
+            dest = os.path.join(root, '.staging', item)
+            os.remove(dest)
+    else:
+        print(f'{len(files)} files staged')
 
 
 @task(help={'sitename': 'name of site as used in rst2html config',
@@ -204,16 +212,19 @@ def list_staged(c, sitename, full=False):
                     # print(list(os.scandir(subitem)))
                     for entry in sorted(os.scandir(subitem), key=lambda x: x.name):
                         if entry.is_file():
-                            if full or (has_seflinks_true(sitename)
-                                    and os.path.splitext(entry.name)[1] == '.html'):
+                            if full:
                                 filelist.append(os.path.join(item.name, subitem.name, entry.name))
-                                subdircount += 1
+                            #     subdircount += 1
+                            # filelist.append(os.path.join(item.name, subitem.name, entry.name))
+                            subdircount += 1
                         # else:  # currently not possible
                 else:  # if subitem.is_file:
                     if full or (has_seflinks_true(sitename)
                                 and os.path.splitext(subitem.name)[1] == '.html'):
                         filelist.append(os.path.join(item.name, subitem.name))
-                        subdircount += 1
+                    #     subdircount += 1
+                    # filelist.append(os.path.join(item.name, subitem.name))
+                    subdircount += 1
             if subdircount and not full:
                 subdirlist.append(f'{subdircount} file(s) in {item.name}/')
             stagecount += subdircount

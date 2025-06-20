@@ -173,6 +173,7 @@ def test_stage(monkeypatch, capsys, tmp_path):
             return types.SimpleNamespace(failed=False, stdout='? somefile\n')
         if args[0].startswith('zenity'):
             return types.SimpleNamespace(failed=False, stdout='a message\n')
+        return types.SimpleNamespace(failed=False)
     def mock_run_4(self, *args, **kwargs):
         """stub
         """
@@ -183,6 +184,7 @@ def test_stage(monkeypatch, capsys, tmp_path):
             return types.SimpleNamespace(failed=False, stdout='commit message')
         if args[0].startswith('zenity'):
             return types.SimpleNamespace(failed=False, stdout='a message\n')
+        return types.SimpleNamespace(failed=False)
     def mock_run_5(self, *args, **kwargs):
         """stub
         """
@@ -191,6 +193,29 @@ def test_stage(monkeypatch, capsys, tmp_path):
             return types.SimpleNamespace(failed=False, stdout='M file1\n? file2\n? file3\nM file4\n')
         if args[0].startswith('zenity'):
             return types.SimpleNamespace(failed=True, stdout='')
+        return types.SimpleNamespace(failed=False)
+    def mock_run_6(self, *args, **kwargs):
+        """stub
+        """
+        print('called c.run with args', *args, kwargs)
+        if args[0] == 'hg st':
+            return types.SimpleNamespace(failed=False, stdout='M file1\n? file2\n? file3\nM file4\n')
+        if args[0].startswith('zenity'):
+            return types.SimpleNamespace(failed=False, stdout='commit message')
+        if args[0].startswith('hg add'):
+            return types.SimpleNamespace(failed=True)
+    def mock_run_7(self, *args, **kwargs):
+        """stub
+        """
+        print('called c.run with args', *args, kwargs)
+        if args[0] == 'hg st':
+            return types.SimpleNamespace(failed=False, stdout='M file1\n? file2\n? file3\nM file4\n')
+        if args[0].startswith('zenity'):
+            return types.SimpleNamespace(failed=False, stdout='commit message')
+        if args[0].startswith('hg add'):
+            return types.SimpleNamespace(failed=False)
+        if args[0].startswith('hg ci'):
+            return types.SimpleNamespace(failed=True)
     def mock_remove(fname):
         print(f'called os.remove with arg {fname}')
     class MockDateTime:
@@ -213,7 +238,6 @@ def test_stage(monkeypatch, capsys, tmp_path):
     testee.stage(c, 'testsite')
     assert capsys.readouterr().out == ("called c.run with args hg st {'hide': 'out', 'warn': True}\n"
                                        'Mirror location should be a Mercurial repository\n')
-
     monkeypatch.setattr(MockContext, 'run', mock_run_2)
     c = MockContext()
     testee.stage(c, 'testsite')
@@ -231,7 +255,7 @@ def test_stage(monkeypatch, capsys, tmp_path):
     c = MockContext()
     testee.stage(c, 'testsite', filename='somefile', list_only=True)
     assert capsys.readouterr().out == ("called c.run with args hg st {'hide': 'out', 'warn': True}\n"
-                                       'somefile\n\n'
+                                       'somefile (new)\n\n'
                                        '1 files to be staged\n')
     stagingdir = siteroot / '.staging'
     assert not stagingdir.exists()
@@ -241,8 +265,9 @@ def test_stage(monkeypatch, capsys, tmp_path):
             "called c.run with args hg st {'hide': 'out', 'warn': True}\n"
             'called c.run with args cp somefile .staging/somefile {}\n'
             'called c.run with args zenity --entry --title="Stage: new commit"'
-            ' --text="Enter commit message" --entry-text="staged on today"'
+            ' --text="Enter commit message" --entry-text=""'
             " {'hide': True, 'warn': True}\n"
+            'called c.run with args hg add somefile {}\n'
             'called c.run with args hg ci somefile  -m "a message" {}\n'
             '1 files staged\n')
     stagingdir.touch()
@@ -254,12 +279,13 @@ def test_stage(monkeypatch, capsys, tmp_path):
             'called c.run with args cp file2 .staging/file2 {}\n'
             'called c.run with args cp file3 .staging/file3 {}\n'
             'called c.run with args zenity --entry --title="Stage: new commit"'
-            ' --text="Enter commit message" --entry-text="staged on today"'
+            ' --text="Enter commit message" --entry-text=""'
             " {'hide': True, 'warn': True}\n"
+            'called c.run with args hg add file2 file3 {}\n'
             'called c.run with args hg ci file2 file3  -m "a message" {}\n'
             '2 files staged\n')
     (stagingdir / 'file').touch()
-    testee.stage(c, 'testsite')
+    testee.stage(c, 'testsite', changed_only=True)
     assert capsys.readouterr().out == (
             "called c.run with args hg st {'hide': 'out', 'warn': True}\n"
             'called c.run with args cp file1 .staging/file1 {}\n'
@@ -270,6 +296,20 @@ def test_stage(monkeypatch, capsys, tmp_path):
             " {'hide': True, 'warn': True}\n"
             'called c.run with args hg ci file1 file4  --amend -m "a message" {}\n'
             '2 files staged\n')
+    testee.stage(c, 'testsite')
+    assert capsys.readouterr().out == (
+            "called c.run with args hg st {'hide': 'out', 'warn': True}\n"
+            'called c.run with args cp file2 .staging/file2 {}\n'
+            'called c.run with args cp file3 .staging/file3 {}\n'
+            'called c.run with args cp file1 .staging/file1 {}\n'
+            'called c.run with args cp file4 .staging/file4 {}\n'
+            "called c.run with args hg heads -T \"{desc}\" {'hide': True, 'warn': True}\n"
+            'called c.run with args zenity --entry --title="Stage: existing commit"'
+            ' --text="Enter commit message" --entry-text="commit message"'
+            " {'hide': True, 'warn': True}\n"
+            'called c.run with args hg add file2 file3 {}\n'
+            'called c.run with args hg ci file2 file3 file1 file4  --amend -m "a message" {}\n'
+            '4 files staged\n')
 
     (stagingdir / 'file').unlink()
     monkeypatch.setattr(testee.os, 'remove', mock_remove)
@@ -278,14 +318,53 @@ def test_stage(monkeypatch, capsys, tmp_path):
     testee.stage(c, 'testsite')
     assert capsys.readouterr().out == (
             "called c.run with args hg st {'hide': 'out', 'warn': True}\n"
+            'called c.run with args cp file2 .staging/file2 {}\n'
+            'called c.run with args cp file3 .staging/file3 {}\n'
             'called c.run with args cp file1 .staging/file1 {}\n'
             'called c.run with args cp file4 .staging/file4 {}\n'
             'called c.run with args zenity --entry --title="Stage: new commit"'
-            ' --text="Enter commit message" --entry-text="staged on today"'
+            ' --text="Enter commit message" --entry-text=""'
             " {'hide': True, 'warn': True}\n"
+            'Afgebroken\n'
+            f'called os.remove with arg {stagingdir}/file2\n'
+            f'called os.remove with arg {stagingdir}/file3\n'
             f'called os.remove with arg {stagingdir}/file1\n'
-            f'called os.remove with arg {stagingdir}/file4\n'
-            'Afgebroken\n')
+            f'called os.remove with arg {stagingdir}/file4\n')
+    monkeypatch.setattr(MockContext, 'run', mock_run_6)
+    c = MockContext()
+    testee.stage(c, 'testsite')
+    assert capsys.readouterr().out == (
+            "called c.run with args hg st {'hide': 'out', 'warn': True}\n"
+            'called c.run with args cp file2 .staging/file2 {}\n'
+            'called c.run with args cp file3 .staging/file3 {}\n'
+            'called c.run with args cp file1 .staging/file1 {}\n'
+            'called c.run with args cp file4 .staging/file4 {}\n'
+            'called c.run with args zenity --entry --title="Stage: new commit"'
+            ' --text="Enter commit message" --entry-text=""'
+            " {'hide': True, 'warn': True}\n"
+            'called c.run with args hg add file2 file3 {}\n'
+            f'called os.remove with arg {stagingdir}/file2\n'
+            f'called os.remove with arg {stagingdir}/file3\n'
+            f'called os.remove with arg {stagingdir}/file1\n'
+            f'called os.remove with arg {stagingdir}/file4\n')
+    monkeypatch.setattr(MockContext, 'run', mock_run_7)
+    c = MockContext()
+    testee.stage(c, 'testsite')
+    assert capsys.readouterr().out == (
+            "called c.run with args hg st {'hide': 'out', 'warn': True}\n"
+            'called c.run with args cp file2 .staging/file2 {}\n'
+            'called c.run with args cp file3 .staging/file3 {}\n'
+            'called c.run with args cp file1 .staging/file1 {}\n'
+            'called c.run with args cp file4 .staging/file4 {}\n'
+            'called c.run with args zenity --entry --title="Stage: new commit"'
+            ' --text="Enter commit message" --entry-text=""'
+            " {'hide': True, 'warn': True}\n"
+            'called c.run with args hg add file2 file3 {}\n'
+            'called c.run with args hg ci file2 file3 file1 file4  -m "commit message" {}\n'
+            f'called os.remove with arg {stagingdir}/file2\n'
+            f'called os.remove with arg {stagingdir}/file3\n'
+            f'called os.remove with arg {stagingdir}/file1\n'
+            f'called os.remove with arg {stagingdir}/file4\n')
 
 
 def test_list_staged(monkeypatch, capsys, tmp_path):
@@ -306,26 +385,56 @@ def test_list_staged(monkeypatch, capsys, tmp_path):
     testee.list_staged(c, 'testsite')
     assert capsys.readouterr().out == '0 file(s) staged\n'
     (stagingloc / 'index.html').touch()
+    (stagingloc / 'pic.png').touch()
+    (stagingloc / 'extra.html').touch()
     (stagingloc / 'xxx').mkdir()
+    (stagingloc / 'xxx/other.html').touch()
+    (stagingloc / 'xxx/lalala.png').touch()
+    testee.list_staged(c, 'testsite')
+    assert capsys.readouterr().out == ("extra.html\n"
+                                       "index.html\n"
+                                       "pic.png\n"
+                                       # "xxx/lalala.png\n"   # deze had hier weggelaten moeten worden
+                                       # "xxx/other.html\n"   # deze ook
+                                       "2 file(s) in xxx/\n"
+                                       "5 file(s) staged\n")
+    testee.list_staged(c, 'testsite', full=True)
+    assert capsys.readouterr().out == ("extra.html\n"
+                                       "index.html\n"
+                                       "pic.png\n"
+                                       "xxx/lalala.png\n"
+                                       "xxx/other.html\n"
+                                       "5 file(s) staged\n")
+    monkeypatch.setattr(testee, 'has_seflinks_true', lambda x: True)
+    # (stagingloc / 'index.html').touch()
+    # (stagingloc / 'pic.png').touch()
+    (stagingloc / 'extra.html').unlink()
+    # (stagingloc / 'xxx').mkdir()
     (stagingloc / 'xxx/index.html').touch()
+    # (stagingloc / 'xxx/lalala.png').touch()
     (stagingloc / 'xxx/yyy').mkdir()
+    (stagingloc / 'xxx/other.html').unlink()
     (stagingloc / 'xxx/yyy/index.html').touch()
+    (stagingloc / 'xxx/yyy/gargl.png').touch()
     (stagingloc / 'xxx/yyy/zzz').mkdir()
     testee.list_staged(c, 'testsite')
     assert capsys.readouterr().out == ("index.html\n"
-                                       "1 file(s) staged\n")
+                                       "pic.png\n"
+                                       "xxx/index.html\n"
+                                       # "xxx/lalala.png\n"
+                                       # "xxx/yyy/gargl.png\n"
+                                       # "xxx/yyy/index.html\n"
+                                       "4 file(s) in xxx/\n"
+                                       "6 file(s) staged\n")
     testee.list_staged(c, 'testsite', full=True)
     assert capsys.readouterr().out == ("index.html\n"
+                                       "pic.png\n"
                                        "xxx/index.html\n"
+                                       "xxx/lalala.png\n"
+                                       "xxx/yyy/gargl.png\n"
                                        "xxx/yyy/index.html\n"
-                                       "3 file(s) staged\n")
+                                       "6 file(s) staged\n")
     monkeypatch.setattr(testee, 'has_seflinks_true', lambda x: True)
-    testee.list_staged(c, 'testsite')
-    assert capsys.readouterr().out == ("index.html\n"
-                                       "xxx/index.html\n"
-                                       "xxx/yyy/index.html\n"
-                                       "2 file(s) in xxx/\n"
-                                       "3 file(s) staged\n")
 
 
 # heb ik met de bovenstaande test de volgende twee nog wel nodig?
