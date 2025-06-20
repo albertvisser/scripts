@@ -579,7 +579,7 @@ def test_check_process():
     testproc = types.SimpleNamespace(info={'name': 'bash'})
     assert testee.check_process(testproc, True) == (True, False, True)  # niet (False, True, True)
     testproc = types.SimpleNamespace(info={'name': 'bash'})
-    assert testee.check_process(testproc, False) == (False, True, True)
+    assert testee.check_process(testproc, False) == (False, False, True)
 
 
 def test_get_input_from_user(monkeypatch):

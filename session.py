@@ -265,7 +265,7 @@ def check_process(proc, found_bash):
             invalid = True
         else:
             found_bash = True
-            kill = True
+            # kill = True
     return invalid, kill, found_bash
 
 
