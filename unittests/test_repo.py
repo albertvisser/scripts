@@ -498,7 +498,7 @@ def test_overview(monkeypatch, capsys):
     #                                    "\"git log --pretty=format:'%ad %s' --date=iso\"\n")
     testee.overview(c, 'name')
     assert capsys.readouterr().out == ("call check_and_run_for_project() with args ('name',"
-                                       " \"git log --pretty=format:'%ad %s' --date=iso\")\n")
+                                       " \"git log --pretty=format:'%ad %s' --date=iso\")\n\n")
 
 
 # def test_old_overview(monkeypatch, capsys):

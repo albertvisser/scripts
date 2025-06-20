@@ -287,7 +287,7 @@ def push_remote(c, exclude=None, include=None):   # , dry_run=False):
 
 @task(help={'name': 'name of repostory to list'})
 def overview(c, name):
-    """
+    """Build a history list consistion of one line per commit
     """
     check_and_run_for_project(c, name, "git log --pretty=format:'%ad %s' --date=iso")
     print()
