@@ -22,6 +22,11 @@ class MockLib:
         self.data.read_dict({'section1': {'key1': 'value1', 'key2': 'value2'},
                              'section2': {'key3': 'value3'}})
 
+    def sections(self):
+        "stub"
+        print('called Scriptlib.sections')
+        return ('section1', 'section2')
+
     def read_file(self, *args):
         """stub
         """
@@ -77,6 +82,9 @@ class MockLib:
 def test_add(monkeypatch, capsys):
     """unittest for scriptlib.add
     """
+    def mock_determine(name):
+        print(f'called determine_section with arg {name}')
+        return 'section name'
     def mock_read(*args):
         """stub
         """
@@ -94,7 +102,19 @@ def test_add(monkeypatch, capsys):
     monkeypatch.setattr(testee.pathlib.Path, 'read_text', mock_read)
     monkeypatch.setattr(testee.pathlib.Path, 'write_text', mock_write)
     monkeypatch.setattr(testee, 'ScriptLib', MockLib)
+    monkeypatch.setattr(testee, 'determine_section', mock_determine)
     c = MockContext()
+    testee.add(c, 'test')
+    assert capsys.readouterr().out == (
+            "called ScriptLib.__init__\n"
+            "called determine_section with arg test\n"
+            "called ScriptLib.add_script with args ('test', 'section name')\n"
+            "called ScriptLib.update\n"
+            "called path.read_text with args (PosixPath('x/.gitignore'),)\n"
+            "called shutil.copyfile with args ('x/.gitignore', 'x/.gitignore~')\n"
+            "called path.write_text with args (PosixPath('x/.gitignore'), 'harry\\nsally\\ntest')\n"
+            "'test' successfully added to library and .gitignore\n"
+            "Don't forget to also add it to readme.rst\n")
     testee.add(c, 'test', 'symlinks')
     assert capsys.readouterr().out == (
             "called ScriptLib.__init__\n"
@@ -124,6 +144,58 @@ def test_add(monkeypatch, capsys):
     testee.add(c, 'test', 'scripts')
     assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
                                        "error adding script\n")
+
+
+def test_determine_section(monkeypatch, capsys):
+    """unittest for scriptlib.determine_section
+    """
+    def mock_islink(arg):
+        print(f'called path.is_link with arg {arg}')
+        return True
+    def mock_islink2(arg):
+        print(f'called path.is_link with arg {arg}')
+        return False
+    def mock_read(arg):
+        print(f'called path.read_text with arg {arg}')
+        return 'bladibla'
+    def mock_read2(arg):
+        print(f'called path.read_text with arg {arg}')
+        return "#! this"
+    def mock_read3(arg):
+        print(f'called path.read_text with arg {arg}')
+        return "#! /this"
+    def mock_read4(arg):
+        print(f'called path.read_text with arg {arg}')
+        return "#! /this/that"
+    def mock_read5(arg):
+        print(f'called path.read_text with arg {arg}')
+        return "#! this/that"
+    monkeypatch.setattr(testee.pathlib.Path, 'expanduser',
+                        lambda x: testee.pathlib.Path(str(x).replace('~', '/home')))
+    monkeypatch.setattr(testee.pathlib.Path, 'is_symlink', mock_islink)
+    assert testee.determine_section('name') == "symlinks"
+    assert capsys.readouterr().out == ("called path.is_link with arg /home/bin/name\n")
+    monkeypatch.setattr(testee.pathlib.Path, 'is_symlink', mock_islink2)
+    monkeypatch.setattr(testee.pathlib.Path, 'read_text', mock_read)
+    assert testee.determine_section('name') == "scripts"
+    assert capsys.readouterr().out == ("called path.is_link with arg /home/bin/name\n"
+                                       "called path.read_text with arg /home/bin/name\n")
+    monkeypatch.setattr(testee.pathlib.Path, 'read_text', mock_read2)
+    assert testee.determine_section('name') == "scripts-this"
+    assert capsys.readouterr().out == ("called path.is_link with arg /home/bin/name\n"
+                                       "called path.read_text with arg /home/bin/name\n")
+    monkeypatch.setattr(testee.pathlib.Path, 'read_text', mock_read3)
+    assert testee.determine_section('name') == "scripts-this"
+    assert capsys.readouterr().out == ("called path.is_link with arg /home/bin/name\n"
+                                       "called path.read_text with arg /home/bin/name\n")
+    monkeypatch.setattr(testee.pathlib.Path, 'read_text', mock_read4)
+    assert testee.determine_section('name') == "scripts-that"
+    assert capsys.readouterr().out == ("called path.is_link with arg /home/bin/name\n"
+                                       "called path.read_text with arg /home/bin/name\n")
+    monkeypatch.setattr(testee.pathlib.Path, 'read_text', mock_read5)
+    assert testee.determine_section('name') == "scripts-that"
+    assert capsys.readouterr().out == ("called path.is_link with arg /home/bin/name\n"
+                                       "called path.read_text with arg /home/bin/name\n")
 
 
 def test_check(monkeypatch, capsys):
@@ -409,6 +481,32 @@ def test_enable(monkeypatch, capsys):
                                        'key3 enabled\n')
 
 
+def test_list(monkeypatch, capsys):
+    """unittest for scriptlib.list_
+    """
+    monkeypatch.setattr(testee, 'ScriptLib', MockLib)
+    c = MockContext()
+    testee.list_(c)
+    assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
+                                       "called ScriptLib.get_all_names with args"
+                                       " {'skip_inactive': True, 'filter': ''}\n"
+                                       "tom\n"
+                                       "dick\n"
+                                       "harry\n"
+                                       "sally\n")
+    testee.list_(c, 'yoink')
+    assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
+                                       "unknown filter yoink\n")
+    testee.list_(c, 'section1')
+    assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
+                                       "called ScriptLib.get_all_names with args"
+                                       " {'skip_inactive': True, 'filter': 'section1'}\n"
+                                       "tom\n"
+                                       "dick\n"
+                                       "harry\n"
+                                       "sally\n")
+
+
 def test_list_disabled(monkeypatch, capsys):
     """unittest for scriptlib.list_disabled
     """
@@ -687,6 +785,7 @@ def test_scriptlib_get_all_names(monkeypatch, capsys):
                             'section2': {'key2': 'value2'},
                             'section2.disabled': {'key4': 'value4'}})
     assert testobj.get_all_names() == ['key1', 'key3', 'key2', 'key4']
+    assert testobj.get_all_names(filter='section1') == ['key1']
     assert testobj.get_all_names(skip_inactive=True) == ['key1', 'key2']
     assert testobj.get_all_names(skip_active=True) == ['key3', 'key4']
 
@@ -781,7 +880,7 @@ def test_scriptlib_add_script(monkeypatch, capsys):
     assert capsys.readouterr().out == ('called path.is_file on x/test\n'
                                        'called path.is_link on x/test\n'
                                        'called path.read_text on x/test\n')
-    assert testobj.add_script('test', 'scripts2') == 'wrong section'
+    assert testobj.add_script('test', 'scripts2') == 'unknown section name: scripts2'
     monkeypatch.setattr(testee.pathlib.Path, 'is_file', lambda *x: False)
     assert testobj.add_script('test', 'scripts') == 'not a valid file'
     monkeypatch.setattr(testee.pathlib.Path, 'is_file', lambda *x: True)

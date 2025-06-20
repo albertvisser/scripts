@@ -41,7 +41,7 @@ def determine_section(name):
             section = line.removeprefix('#!').rsplit('/')
             section = section[-1] if len(section) > 1 else section[0]
             # ervan uitgaande dat python scripts altijd ge-symlinked zijn
-            section = f'scripts-{section}'
+            section = f'scripts-{section.strip()}'
         else:
             section = 'scripts'
     return section
@@ -172,6 +172,17 @@ def enable(c, name):
     print(f'{name} enabled')
 
 
+@task(help={'filter': 'scriptlib category'})
+def list_(c, filter=''):
+    "toon alle disabled scriptlets om desgewenst te kunnen enablen"
+    lib = ScriptLib()
+    if filter and filter not in lib.data.sections():
+        print(f'unknown filter {filter}')
+        return
+    for name in lib.get_all_names(skip_inactive=True, filter=filter):
+        print(name)
+
+
 @task
 def list_disabled(c):
     "toon alle disabled scriptlets om desgewenst te kunnen enablen"
@@ -291,10 +302,12 @@ class ScriptLib:
                 return section
         return None
 
-    def get_all_names(self, skip_inactive=False, skip_active=False):
+    def get_all_names(self, skip_inactive=False, skip_active=False, filter=''):
         "maak een lijst van alle script- en symlink namen"
         names = []
         for section in self.data:
+            if filter and section != filter:
+                continue
             if skip_inactive and section.endswith('disabled'):
                 continue
             if skip_active and not section.endswith('disabled'):
