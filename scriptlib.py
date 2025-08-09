@@ -6,6 +6,8 @@ import contextlib
 from invoke import task
 from configparser import ConfigParser, DuplicateSectionError
 
+binpath = pathlib.Path(f'~/bin').expanduser()
+
 
 @task(help={'name': 'name of the script or symlink to add',
             'section': 'name of the section to add the script or symlink into'})
@@ -32,7 +34,7 @@ def add(c, name, section=''):
 
 def determine_section(name):
     "try to deduce the script type by looking if it contains a shebang line"
-    filepath = pathlib.Path(f'~/bin/{name}').expanduser()
+    filepath = binpath / 'name'
     if filepath.is_symlink():
         section = 'symlinks'
     else:
@@ -103,6 +105,28 @@ def update(c, name):
             print('verschil gevonden en bijgewerkt')
         else:
             print('geen verschillen gevonden')
+
+
+@task(help={'name': 'name of the script to revert (not for symlinks)'})
+def revert(c, name):
+    "zet een gewijzigd script terug naar de versie in de library"
+    filename = binpath / name
+    if filename.is_symlink():
+        print('"revert" is not implemented for symlinks')
+        return
+    lib = ScriptLib()
+    section = lib.find(name)
+    if section.startswith('symlinks'):
+        print('"revert" is not implemented for symlinks')
+        return
+    library_version, actual_version = check_file(lib, name)
+    if library_version != actual_version:
+        shutil.copyfile(name, str(filename.with_suffix('.orig')))
+        filename.write_text(library_version)
+        print(f'{name} reverted to scriptlib version')
+    else:
+        print('no changes')
+
 
 
 @task(help={'name': ('name of the script or symlink to add to the ignore file'
@@ -208,9 +232,10 @@ def check_file(lib, name):
         return None, None
     if section.endswith('disabled'):
         return 'ignore', 'ignore'
-    library_version = str(pathlib.Path(lib.data[section][name]).expanduser())
+    library_version = lib.data[section][name]
     path = lib.basepath / name
     if section.startswith('symlinks'):
+        library_version = str(pathlib.Path(library_version).expanduser())
         try:
             actual_version = str(path.readlink())
         except OSError:
@@ -278,7 +303,7 @@ class ScriptLib:
         symlinks-last: als eerste sectie, voor symlinks naar scripts
     """
     def __init__(self):
-        self.basepath = pathlib.Path('~/bin').expanduser()
+        self.basepath = binpath
         self.libname = 'bin-scripts.conf'
         self.libpath = self.basepath / self.libname
         self.data = ConfigParser()

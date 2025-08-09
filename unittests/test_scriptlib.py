@@ -170,32 +170,34 @@ def test_determine_section(monkeypatch, capsys):
     def mock_read5(arg):
         print(f'called path.read_text with arg {arg}')
         return "#! this/that"
-    monkeypatch.setattr(testee.pathlib.Path, 'expanduser',
-                        lambda x: testee.pathlib.Path(str(x).replace('~', '/home')))
+    # monkeypatch.setattr(testee.pathlib.Path, 'expanduser',
+    #                     lambda x: testee.pathlib.Path(str(x).replace('~', '/home')))
+    expandedname = testee.pathlib.Path('~/bin/name').expanduser()
     monkeypatch.setattr(testee.pathlib.Path, 'is_symlink', mock_islink)
     assert testee.determine_section('name') == "symlinks"
-    assert capsys.readouterr().out == ("called path.is_link with arg /home/bin/name\n")
+
+    assert capsys.readouterr().out == (f"called path.is_link with arg {expandedname}\n")
     monkeypatch.setattr(testee.pathlib.Path, 'is_symlink', mock_islink2)
     monkeypatch.setattr(testee.pathlib.Path, 'read_text', mock_read)
     assert testee.determine_section('name') == "scripts"
-    assert capsys.readouterr().out == ("called path.is_link with arg /home/bin/name\n"
-                                       "called path.read_text with arg /home/bin/name\n")
+    assert capsys.readouterr().out == (f"called path.is_link with arg {expandedname}\n"
+                                       f"called path.read_text with arg {expandedname}\n")
     monkeypatch.setattr(testee.pathlib.Path, 'read_text', mock_read2)
     assert testee.determine_section('name') == "scripts-this"
-    assert capsys.readouterr().out == ("called path.is_link with arg /home/bin/name\n"
-                                       "called path.read_text with arg /home/bin/name\n")
+    assert capsys.readouterr().out == (f"called path.is_link with arg {expandedname}\n"
+                                       f"called path.read_text with arg {expandedname}\n")
     monkeypatch.setattr(testee.pathlib.Path, 'read_text', mock_read3)
     assert testee.determine_section('name') == "scripts-this"
-    assert capsys.readouterr().out == ("called path.is_link with arg /home/bin/name\n"
-                                       "called path.read_text with arg /home/bin/name\n")
+    assert capsys.readouterr().out == (f"called path.is_link with arg {expandedname}\n"
+                                       f"called path.read_text with arg {expandedname}\n")
     monkeypatch.setattr(testee.pathlib.Path, 'read_text', mock_read4)
     assert testee.determine_section('name') == "scripts-that"
-    assert capsys.readouterr().out == ("called path.is_link with arg /home/bin/name\n"
-                                       "called path.read_text with arg /home/bin/name\n")
+    assert capsys.readouterr().out == (f"called path.is_link with arg {expandedname}\n"
+                                       f"called path.read_text with arg {expandedname}\n")
     monkeypatch.setattr(testee.pathlib.Path, 'read_text', mock_read5)
     assert testee.determine_section('name') == "scripts-that"
-    assert capsys.readouterr().out == ("called path.is_link with arg /home/bin/name\n"
-                                       "called path.read_text with arg /home/bin/name\n")
+    assert capsys.readouterr().out == (f"called path.is_link with arg {expandedname}\n"
+                                       f"called path.read_text with arg {expandedname}\n")
 
 
 def test_check(monkeypatch, capsys):
@@ -322,6 +324,57 @@ def test_update_all(monkeypatch, capsys):
     assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
                                        "called ScriptLib.get_all_names with args {}\n"
                                        'geen verschillen gevonden\n')
+
+
+def test_revert(monkeypatch, capsys, tmp_path):
+    """unittest for scriptlib.revert
+    """
+    def mock_find(self, name):
+        print(f'called scriptlib.find with arg {name}')
+        return 'symlinks.'
+    def mock_find_2(self, name):
+        print(f'called scriptlib.find with arg {name}')
+        return 'qqq'
+    def mock_check(lib, name):
+        print(f'called check_file with arg {name}')
+        return 'abcdefgh', 'abcdefgh'
+    def mock_check_2(lib, name):
+        print(f'called check_file with arg {name}')
+        return 'abcdefgh', 'ijklmnop'
+    def mock_copy(*args):
+        """stub
+        """
+        print('called shutil.copyfile with args', args)
+    c = MockContext()
+    monkeypatch.setattr(testee.shutil, 'copyfile', mock_copy)
+    monkeypatch.setattr(testee, 'binpath', tmp_path)
+    monkeypatch.setattr(testee, 'check_file', mock_check)
+    monkeypatch.setattr(testee, 'ScriptLib', MockLib)
+    monkeypatch.setattr(MockLib, 'find', mock_find)
+    (tmp_path / 'xxx.py').touch()
+    (tmp_path / 'xxx').symlink_to(tmp_path / 'xxx.py')
+    testee.revert(c, 'xxx')
+    assert capsys.readouterr().out == '"revert" is not implemented for symlinks\n'
+    (tmp_path / 'xxx').unlink()
+    (tmp_path / 'xxx').touch()
+    testee.revert(c, 'xxx')
+    assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
+                                       "called scriptlib.find with arg xxx\n"
+                                       '"revert" is not implemented for symlinks\n')
+    monkeypatch.setattr(MockLib, 'find', mock_find_2)
+    testee.revert(c, 'xxx')
+    assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
+                                       "called scriptlib.find with arg xxx\n"
+                                       "called check_file with arg xxx\n"
+                                       "no changes\n")
+    monkeypatch.setattr(testee, 'check_file', mock_check_2)
+    testee.revert(c, 'xxx')
+    assert capsys.readouterr().out == (
+            "called ScriptLib.__init__\n"
+            "called scriptlib.find with arg xxx\n"
+            "called check_file with arg xxx\n"
+            f"called shutil.copyfile with args ('xxx', '{tmp_path}/xxx.orig')\n"
+            "xxx reverted to scriptlib version\n")
 
 
 def test_check_ignore(monkeypatch, capsys):
