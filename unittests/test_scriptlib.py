@@ -534,12 +534,12 @@ def test_enable(monkeypatch, capsys):
                                        'key3 enabled\n')
 
 
-def test_list(monkeypatch, capsys):
-    """unittest for scriptlib.list_
+def test_list_active(monkeypatch, capsys):
+    """unittest for scriptlib.list_active
     """
     monkeypatch.setattr(testee, 'ScriptLib', MockLib)
     c = MockContext()
-    testee.list_(c)
+    testee.list_active(c)
     assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
                                        "called ScriptLib.get_all_names with args"
                                        " {'skip_inactive': True, 'filter': ''}\n"
@@ -547,10 +547,10 @@ def test_list(monkeypatch, capsys):
                                        "dick\n"
                                        "harry\n"
                                        "sally\n")
-    testee.list_(c, 'yoink')
+    testee.list_active(c, 'yoink')
     assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
                                        "unknown filter yoink\n")
-    testee.list_(c, 'section1')
+    testee.list_active(c, 'section1')
     assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
                                        "called ScriptLib.get_all_names with args"
                                        " {'skip_inactive': True, 'filter': 'section1'}\n"
@@ -573,6 +573,89 @@ def test_list_disabled(monkeypatch, capsys):
                                        'dick\n'
                                        'harry\n'
                                        'sally\n')
+
+
+def test_lint(monkeypatch, capsys):
+    """unittest for scriptlib.lint
+    """
+    class MockLib:
+        """stub for scriptlib.ScriptLib
+        """
+        def __init__(self):
+            print('called ScriptLib.__init__')
+            self.basepath = testee.pathlib.Path('x')
+            self.data = testee.ConfigParser()
+            self.data.read_dict({'symlinks*': {},
+                                 'section1': {'key1': 'value1', 'key2': 'value2'},
+                                 'section2-xxx-yyy': {'key3': 'value3'},
+                                 'section3-zzz-disabled': {'key4': 'value4'}})
+        def find(self, name):
+            print(f'called scriptlib.find with arg {name}')
+            return 'symlinks*'
+        def get_all_names(self, **kwargs):
+            print('called ScriptLib.get_all_names with args', kwargs)
+            return'xxx', 'yyy', 'zzz'
+    def mock_find(self, name):
+        print(f'called scriptlib.find with arg {name}')
+        return 'scripts'
+    def mock_find_2(self, name):
+        print(f'called scriptlib.find with arg {name}')
+        return 'scripts-xxx-yyy'
+    def mock_run(self, *args, **kwargs):
+        """stub for invoke.Context.run under "with invoke.Contect.cd"
+        """
+        print(*args, 'in', self.cwd)
+        return types.SimpleNamespace(stdout=f"resultaat van {args}\n")
+    monkeypatch.setattr(testee, 'ScriptLib', MockLib)
+    c = MockContext()
+    monkeypatch.setattr(MockContext, 'run', mock_run)
+    # monkeypatch.setattr(MockLib, 'find', mock_find)
+    testee.lint(c, 'qqq')
+    assert capsys.readouterr().out == ('called ScriptLib.__init__\n'
+                                       "called scriptlib.find with arg qqq\n"
+                                       "not a script\n")
+    monkeypatch.setattr(MockLib, 'find', mock_find)
+    testee.lint(c, 'qqq')
+    assert capsys.readouterr().out == ('called ScriptLib.__init__\n'
+                                       "called scriptlib.find with arg qqq\n"
+                                       "shellcheck -s bash qqq in /home/albert/bin\n")
+    monkeypatch.setattr(MockLib, 'find', mock_find_2)
+    testee.lint(c, 'qqq')
+    assert capsys.readouterr().out == ('called ScriptLib.__init__\n'
+                                       "called scriptlib.find with arg qqq\n"
+                                       "shellcheck  qqq in /home/albert/bin\n")
+    # naam is niet bekend als script maar ook niet als sectie - afhandeling kan beter
+    testee.lint(c, 'not-in-lib')
+    assert capsys.readouterr().out == ('called ScriptLib.__init__\n'
+                                       "called scriptlib.find with arg not-in-lib\n"
+                                       "shellcheck  not-in-lib in /home/albert/bin\n")
+
+    testee.lint(c, 'symlinks*')
+    assert capsys.readouterr().out == ('called ScriptLib.__init__\n'
+                                       "not a script section\n")
+    testee.lint(c, 'section1')
+    assert capsys.readouterr().out == (
+            'called ScriptLib.__init__\n'
+            "checking items in section section1\n"
+            "called ScriptLib.get_all_names with args {'filter': 'section1'}\n"
+            "shellcheck -s bash xxx yyy zzz in /home/albert/bin\n")
+    testee.lint(c, 'section2-xxx-yyy')
+    assert capsys.readouterr().out == (
+            'called ScriptLib.__init__\n'
+            "checking items in section section2-xxx-yyy\n"
+            "called ScriptLib.get_all_names with args {'filter': 'section2-xxx-yyy'}\n"
+            "shellcheck  xxx yyy zzz in /home/albert/bin\n")
+    testee.lint(c, 'all')
+    assert capsys.readouterr().out == (
+            'called ScriptLib.__init__\n'
+            "checking items in section section1\n"
+            "called ScriptLib.get_all_names with args {'filter': 'section1'}\n"
+            "shellcheck -s bash xxx yyy zzz in /home/albert/bin\n"
+            "checking items in section section2-xxx-yyy\n"
+            "called ScriptLib.get_all_names with args {'filter': 'section2-xxx-yyy'}\n"
+            "shellcheck  xxx yyy zzz in /home/albert/bin\n"
+            "resultaat van ('shellcheck -s bash xxx yyy zzz',)\n"
+            "resultaat van ('shellcheck  xxx yyy zzz',)\n\n")
 
 
 def test_check_and_update(monkeypatch, capsys):

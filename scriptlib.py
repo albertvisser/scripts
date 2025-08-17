@@ -32,6 +32,7 @@ def add(c, name, section=''):
         print(f"'{name}' successfully added to library and .gitignore")
         print("Don't forget to also add it to readme.rst")
 
+
 def determine_section(name):
     "try to deduce the script type by looking if it contains a shebang line"
     filepath = binpath / 'name'
@@ -128,7 +129,6 @@ def revert(c, name):
         print('no changes')
 
 
-
 @task(help={'name': ('name of the script or symlink to add to the ignore file'
                      ' - use "all" to check the entire library'),
             'list_only': "don't update the ignore file"})
@@ -197,7 +197,7 @@ def enable(c, name):
 
 
 @task(help={'filter': 'scriptlib category'})
-def list_(c, filter=''):
+def list_active(c, filter=''):
     "toon alle disabled scriptlets om desgewenst te kunnen enablen"
     lib = ScriptLib()
     if filter and filter not in lib.data.sections():
@@ -213,6 +213,58 @@ def list_disabled(c):
     lib = ScriptLib()
     for name in lib.get_all_names(skip_active=True):
         print(name)
+
+
+@task(help={'name': 'name of the script to lint - use "all" for the entire library,'
+            ' or a section name for all items in a section'})
+def lint(c, name):
+    "controleer de syntax van een scriptlet zonder het uit te voeren"
+    lib = ScriptLib()
+    dialect = ''
+    if name == 'all':
+        out = ""
+        for name in lib.data.sections():
+            if name.startswith('symlinks'):
+                continue
+            splits = name.split('-')
+            if len(splits) > 1:
+                dialect = splits[1]
+            if splits[-1] == 'disabled':
+                continue
+            print(f'checking items in section {name}')
+            names = ' '.join(lib.get_all_names(filter=name))
+            option = '' if dialect else '-s bash'
+            command = f'shellcheck {option} {names}'
+            with c.cd(binpath):
+                result = c.run(command, hide=True, warn=True)
+                out += result.stdout
+        print(out)
+
+    elif name in lib.data.sections():
+        if name.startswith('symlinks'):
+            print('not a script section')
+            return
+        print(f'checking items in section {name}')
+        names = ' '.join(lib.get_all_names(filter=name))
+        splits = name.split('-')
+        if len(splits) > 1:
+            dialect = splits[1]
+        option = '' if dialect else '-s bash'
+        command = f'shellcheck {option} {names}'
+        with c.cd(binpath):
+            c.run(command)
+    else:
+        section = lib.find(name)
+        if section.startswith('symlinks'):
+            print('not a script')
+            return
+        splits = section.split('-')
+        if len(splits) > 1:
+            dialect = splits[1]
+        option = '' if dialect else '-s bash'
+        command = f'shellcheck {option} {name}'
+        with c.cd(binpath):
+            c.run(command)
 
 
 def check_and_update(lib, name):
