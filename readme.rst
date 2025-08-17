@@ -169,7 +169,9 @@ but in the form of a script that generates these symlinks and invocations.
 **scriptlib.py**
 
     ``invoke`` functions for working with my scriptlet collection, a.k.a. my attempt to keep all my
-    short scripts version-controlled without having to add them each to the repo individually
+    short scripts version-controlled without having to add them each to the repo individually. 
+    The idea behind this is to start with building the script and when it's small or simple enough,
+    add it to the scriptlib instead of committing it seperately.
 
 **session.py**
 
@@ -177,8 +179,8 @@ but in the form of a script that generates these symlinks and invocations.
  
 **settings.py**
 
-    Configuration values for the the tasks files in this directory,
-    mostly for the mercurial repo stuff.
+    Configuration values for the the tasks files in this directory, as well as some general helper
+    functions.
 
 **setup-nginx**
 
@@ -235,6 +237,7 @@ Requirements
 - Invoke where applicable
 - PyQt(5) for check-repo
 - Git and/or Mercurial (for the check and push scripts)
+- `shellcheck` for the ``scriptlib.lint`` command
 
 
 Extra scripts to be created using ``build-bin-scripts``:
