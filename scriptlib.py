@@ -78,7 +78,7 @@ def check(c, name):
         else:
             print('--- library version:')
             print(in_lib)
-            print('+++ version in scripts:')
+            print('+++ file version:')
             print(actual)
 
 
