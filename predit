@@ -1,5 +1,5 @@
 #! /bin/sh
-if [ "$1" = "-h" ] || [ "$1" == "--help" ]; then
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 	echo "without -p as first argument:"
  	echo "When in programming session, opens files as defined in current project's .sessionrc"
 	echo "with -p as first argument:"
