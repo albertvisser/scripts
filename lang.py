@@ -1,9 +1,20 @@
 """Invoke language support stuff
 """
+# in commit b58dc6b2 van 1 juni 2025 heb ik wijzigingen vastgelegd voor het gebruik van xgettext
+# in plaats van pygettext, omdat ik die niet meer kon aanroepen
+# maar het script pygettext.py bestaat nog wel, namelijk in /usr/lib/Tools/i17n/pygettext.py
+# ik heb deze gesymlinkt in ~/bin als pygettext
+# gelijksoortig heb ik msgfmt gesymlinkt als pymsgfmt
+# dus ik zou de oorspronkelijke code die dit gebruikt terug kunnen ztten
+# ik heb in elk geval een routine gemaakt die controleert of de symlinks (bestaan en) correct zijn
 import os
 import os.path
+import sys
 from invoke import task
 from session import get_project_dir
+
+pydir = f'/usr/{sys.platlibdir}/python{sys.version_info[0]}.{sys.version_info[1]}'
+bindir = os.path.expanduser('~/bin')
 
 
 def get_base_dir(project):
@@ -66,6 +77,35 @@ def uses_gettext(filename):
     return use_gettext
 
 
+@task(help={'check': 'check only', 'fix': 'fix only'})
+def check_symlinks(c, check=True, fix=False):
+    """check and/or build symlinks to the scripts in Tools/i18n
+    """
+    scriptnames = {'pygettext': 'pygettext.py', 'pymsgfmt': 'msgfmt.py'}
+    if check:
+        for name in scriptnames:
+            result = pyversion_found(c, name)
+            if not result:
+                print(f'~/bin/{name} is not a symlink or broken')
+            else:
+                print(f'~/bin/{name} is ok')
+    if fix:
+        for name, origin in scriptnames.items():
+            with c.cd(bindir):
+                c.run(f'rm -f {name}')  # nog controleren op resultaat?
+                c.run(f'ln -s {pydir}/{origin} {name}')
+
+
+def pyversion_found(c, name):
+    """can we work witn pygettext scripts?
+    """
+    with c.cd(bindir):
+        result = c.run(f'readlink {name}', hide=True)
+    if result:
+        result = os.path.exists(result.stdout.strip())
+    return result
+
+
 @task(help={'project': 'project name',
             'source': 'file to gather texts from (specify "." to check the entire project'})
 def gettext(c, project, source):
@@ -78,19 +118,11 @@ def gettext(c, project, source):
     if not base:
         print('unknown project')
         return
-    # argument . werkt niet voor xgettext dus we moeten de plek van de sources gaan zoeken
+    use_pyversion = pyversion_found(c, 'pygettext')
     if source == '.':
-       with open('.sessionrc') as f:
-           for line in f:
-               if line.startswith('progs'):
-                   data = line.split(' = ')[1]
-                   sourcedir = data.split('/')[0]
-                   break
-           else:
-               sourcedir = ''
-    # if source != '.':
+        sourcedir = determine_sourcedir(base)
     else:
-        name, suffix = os.path.splitext(source)
+        suffix = os.path.splitext(source)[1]
         if not suffix:
             source += '.py'
         elif suffix != '.py':
@@ -100,15 +132,31 @@ def gettext(c, project, source):
             print(f'{source} does not import gettext')
             return
     with c.cd(base):
-        toscan = source if source != '.' else sourcedir + '/*.py' if sourcedir else '*.py'
-        # c.run(f"pygettext {source}")
-        c.run(f"xgettext {toscan}")
-        source = 'all' if source == '.' else source.replace('.', '-').replace('/', '-')
-        outfile = f'locale/messages-{source}.pot'
-        # c.run(f'mv messages.pot {outfile}')
-        c.run(f'mv messages.po {outfile}')
+        out = 'all' if source == '.' else source.replace('.', '-').replace('/', '-')
+        outfile = f'locale/messages-{out}.pot'
+        if use_pyversion:
+            c.run(f"pygettext {source}")
+            c.run(f'mv messages.pot {outfile}')
+        else:
+            toscan = source if source != '.' else sourcedir + '/*.py' if sourcedir else '*.py'
+            c.run(f"xgettext {toscan}")
+            c.run(f'mv messages.po {outfile}')
         print(f'created {outfile}')
         print('remember that detection only works in modules that import gettext')
+
+
+def determine_sourcedir(base):
+    """try to discover where the source files live
+    """
+    with open(os.path.join(base, '.sessionrc')) as f:
+        for line in f:
+            if line.startswith('progs'):
+                data = line.split(' = ')[1]
+                sourcedir = data.split('/')[0] if '/' in data else ''
+                break
+        else:
+            sourcedir = ''
+    return sourcedir
 
 
 @task(help={'project': 'project name',
@@ -160,20 +208,22 @@ def place(c, project, language, appname):
     if not base:
         print('unknown project')
         return
+    use_pyversion = pyversion_found(c, 'pymsgfmt')
     if appname == '*':
         appname = os.path.basename(base)
     elif appname == '!':
         appname = os.path.basename(base).title()
     fromname = language + '.po'
-    toname = os.path.join(language, 'LC_MESSAGES', appname + '.mo')
-    # kijken of er al een werkend .mo file bestaat, voor het geval die eigenlijk in mixed-case is
-    # helaas werkt dit nog niet  waarschijnlijk omdat ik de hele splitext uitvroeg i.p.v. deel 2
     loc = os.path.join(language, 'LC_MESSAGES')
     for name in os.listdir(os.path.join(base, 'locale', loc)):
-        print(name)
         if os.path.splitext(name)[1] == '.mo':
             toname = os.path.join(loc, name)
             break
-    command = f'msgfmt {fromname} -o {toname}'
+    else:
+        toname = os.path.join(loc, appname + '.mo')
+    if use_pyversion:
+        command = f'pymsgfmt -o {toname} {fromname}'
+    else:
+        command = f'msgfmt {fromname} -o {toname}'
     with c.cd(os.path.join(base, 'locale')):
         c.run(command)
