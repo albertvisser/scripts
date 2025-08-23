@@ -479,14 +479,14 @@ def add2gitweb(c, name, frozen=False):
         olddesc = ''
     gitr_desc = origdescfile.read_text() if origdescfile.exists() else ''
     if olddesc == '':
-        desc = gitr_desc or get_repodesc()
+        desc = gitr_desc or get_input_from_user('enter short repo description: ')
     if olddesc == '':
         c.run(f'echo "{desc}" > {descfile}')
 
 
-def get_repodesc():
+def get_input_from_user(prompt):
     "simple wrapper around input() to make unit testing easier"
-    return input('enter short repo description: ')
+    return input(prompt)
 
 
 def check_and_run_for_project(c, name, command):

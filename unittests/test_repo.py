@@ -1,6 +1,7 @@
 """unittests for ./repo.py
 """
 import os
+from io import StringIO
 import pytest
 import types
 from invoke import MockContext
@@ -722,25 +723,25 @@ def test_add2gitweb(monkeypatch, capsys):
         if counter2 == 1:
             return "orig description"
         return "description"
-    def mock_get_desc():
+    def mock_get_input(prompt):
         """stub
         """
-        print('called testee.get_repodesc')
+        print(f'called testee.get_input_from_user with arg `{prompt}`')
         return 'repodesc'
-    monkeypatch.setattr(testee, 'get_repodesc', mock_get_desc)
+    monkeypatch.setattr(testee, 'get_input_from_user', mock_get_input)
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
     monkeypatch.setattr(testee.pathlib.Path, 'exists', lambda *x: False)
     testee.add2gitweb(c, 'name')
     assert capsys.readouterr().out == (
         f"called run with args ('touch {testee.GITLOC}/name/.git/git-daemon-export-ok',) {{}}\n"
-        'called testee.get_repodesc\n'
+        'called testee.get_input_from_user with arg `enter short repo description: `\n'
         f'called run with args (\'echo "repodesc" > {testee.GITLOC}/name/.git/description\',) {{}}\n')
     testee.add2gitweb(c, 'name', frozen=True)
     assert capsys.readouterr().out == (
         f"called run with args ('touch {testee.GITLOC}/.frozen/name/.git/git-daemon-export-ok',)"
         " {}\n"
-        'called testee.get_repodesc\n'
+        'called testee.get_input_from_user with arg `enter short repo description: `\n'
         f'called run with args (\'echo "repodesc" > {testee.GITLOC}/.frozen/name/.git/description\',)'
         ' {}\n')
     monkeypatch.setattr(testee.pathlib.Path, 'exists', lambda *x: True)
@@ -754,7 +755,7 @@ def test_add2gitweb(monkeypatch, capsys):
     monkeypatch.setattr(testee.pathlib.Path, 'read_text', mock_read)
     testee.add2gitweb(c, 'name')
     assert capsys.readouterr().out == (
-        'called testee.get_repodesc\n'
+        'called testee.get_input_from_user with arg `enter short repo description: `\n'
         f'called run with args (\'echo "repodesc" > {testee.GITLOC}/name/.git/description\',)'
         ' {}\n')
     counter = counter2 = 0
@@ -771,9 +772,12 @@ def test_add2gitweb(monkeypatch, capsys):
         ' {}\n')
 
 
-def _test_get_repodesc(monkeypatch, capsys):  # mogelijk te onbenullig en lastig om te testen
-    """unittest for repo.get_repodesc
+def test_get_input_from_user(monkeypatch, capsys):
+    """unittest for repo.get_input_from_user
     """
+    test_input = StringIO('x\n')
+    monkeypatch.setattr('sys.stdin', test_input)
+    assert testee.get_input_from_user('prompt') == 'x'
 
 
 def test_check_and_run(monkeypatch, capsys):
