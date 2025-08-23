@@ -460,7 +460,8 @@ def test_end(monkeypatch, capsys):
     monkeypatch.setattr(testee, 'select_name_for_session', mock_select)
     testee.end(c)
     assert capsys.readouterr().out == (f'called select_name_for_session with args ({c},'
-                                       " ['xx-session-pids-start-at-12345'])\n")
+                                       " ['xx-session-pids-start-at-12345'])\n"
+                                       "canceled.\n")
 
     monkeypatch.setattr(testee, 'select_name_for_session', mock_select_2)
     testee.end(c)
@@ -521,15 +522,57 @@ def test_select_name_for_session(monkeypatch, capsys):
     def mock_run(self, *args, **kwargs):
         print('called context.run with args', args, kwargs)
         return types.SimpleNamespace(stdout='result')
+    def mock_input(prompt):
+        nonlocal counter
+        print(f"called get_input_from_user with arg '{prompt}'")
+        counter += 1
+        if counter == 1:
+            return ''
+        elif counter == 2:
+            return 'x'
+        return 0
+    def mock_input_2(prompt):
+        print(f"called get_input_from_user with arg '{prompt}'")
+        return 1
+    def mock_input_3(prompt):
+        nonlocal counter
+        print(f"called get_input_from_user with arg '{prompt}'")
+        counter += 1
+        if counter == 1:
+            return 3
+        return 2
     monkeypatch.setattr(MockContext, 'run', mock_run)
+    monkeypatch.setattr(testee, 'get_input_from_user', mock_input)
     c = MockContext()
     assert testee.select_name_for_session(c, ['xxx-yyy']) == 'xxx-yyy'
     assert capsys.readouterr().out == ""
-    assert testee.select_name_for_session(c, ['xxx-aaa', 'yyy-bbb']) == 'result'
-    assert capsys.readouterr().out == ('called context.run with args (\'zenity --list'
-                                       ' --title="Choose which session to terminate"'
-                                       ' --column="Session name" xxx-aaa yyy-bbb\',)'
-                                       ' {\'warn\': True, \'hide\': True}\n')
+    counter = 0
+    # assert testee.select_name_for_session(c, ['xxx-aaa', 'yyy-bbb']) == 'result'
+    # assert capsys.readouterr().out == ('called context.run with args (\'zenity --list'
+    #                                    ' --title="Choose which session to terminate"'
+    #                                    ' --column="Session name" xxx-aaa yyy-bbb\',)'
+    #                                    ' {\'warn\': True, \'hide\': True}\n')
+    assert not testee.select_name_for_session(c, ['xxx-aaa', 'yyy-bbb'])
+    assert capsys.readouterr().out == (
+            "called get_input_from_user with arg 'Multiple sessions found,"
+            " choose which one to terminate\n\n  1    xxx-aaa\n  2    yyy-bbb\n\n  '\n"
+            "called get_input_from_user with arg"
+            " 'Please enter a number between 1 and {len(paths)}, 0 to cancel:  '\n"
+            "called get_input_from_user with arg"
+            " 'Please enter a number between 1 and {len(paths)}, 0 to cancel:  '\n")
+    monkeypatch.setattr(testee, 'get_input_from_user', mock_input_2)
+    assert testee.select_name_for_session(c, ['xxx-aaa', 'yyy-bbb']) == 'xxx-aaa'
+    assert capsys.readouterr().out == (
+            "called get_input_from_user with arg 'Multiple sessions found,"
+            " choose which one to terminate\n\n  1    xxx-aaa\n  2    yyy-bbb\n\n  '\n")
+    counter = 0
+    monkeypatch.setattr(testee, 'get_input_from_user', mock_input_3)
+    assert testee.select_name_for_session(c, ['xxx-aaa', 'yyy-bbb']) == 'yyy-bbb'
+    assert capsys.readouterr().out == (
+            "called get_input_from_user with arg 'Multiple sessions found,"
+            " choose which one to terminate\n\n  1    xxx-aaa\n  2    yyy-bbb\n\n  '\n"
+            "called get_input_from_user with arg"
+            " 'Please enter a number between 1 and {len(paths)}, 0 to cancel:  '\n")
 
 
 def test_get_start_end_pids():

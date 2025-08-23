@@ -5,7 +5,8 @@ import shutil
 import glob
 import psutil
 import configparser
-import subprocess  # voor die ene die niet met invoke lukt
+import subprocess
+import contextlib
 from invoke import task
 # from repo import check_and_run_for_project
 from settings import PROJECTS_BASE, get_project_dir, all_repos  # , private_repos
@@ -118,6 +119,7 @@ def create(c, name, light_background=False):
                 f.write(f'{item} &\n')
     print(f'done; start the session using "source {name}.session"')
 
+
 @task(help={'name': 'project name'})
 def get_info(c, name=''):
     """get info about started processes for project or all open sessions (list all session pidfiles)
@@ -158,7 +160,10 @@ def _get_session_info(name):
 def delete(c, name):
     """remove any pidfile for this project
     """
-    for file in glob.glob(f'{sessionfile_root}/{name}-{sessionfile_mid}*'):
+    # breakpoint()
+    # mylist =  glob.glob(f'{sessionfile_root}/{name}{sessionfile_mid}*')
+    # for file in mylist:
+    for file in glob.glob(f'{sessionfile_root}/{name}{sessionfile_mid}*'):
         os.unlink(file)
 
 
@@ -171,13 +176,15 @@ def end(c, name=''):
     if not name:
         name = select_name_for_session(c, paths)
         if not name:
+            print('canceled.')
             return
-    nope = True
+    # nope = True
     for line in paths:
         if line.startswith(name):
-            nope = False
+            # nope = False
             break
-    if nope:
+    # if nope:
+    else:
         print('No session found for this project')
         return
     # determine processes to terminate
@@ -218,9 +225,22 @@ def select_name_for_session(c, names):
     paths = [x.split(f'{sessionfile_mid}', 1)[0] for x in names]
     if len(paths) == 1:
         return paths[0]
-    result = c.run('zenity --list --title="Choose which session to terminate"'
-                   ' --column="Session name" ' + ' '.join(paths), warn=True, hide=True)
-    return result.stdout
+    # result = c.run('zenity --list --title="Choose which session to terminate"'
+    #                ' --column="Session name" ' + ' '.join(paths), warn=True, hide=True)
+    # return result.stdout
+    prompt = ["Multiple sessions found, choose which one to terminate", ""]
+    for ix, item in enumerate(paths):
+        prompt.append(f'  {ix + 1}    {paths[ix]}')
+    prompt = '\n'.join(prompt) + '\n\n  '
+    while True:
+        choice = get_input_from_user(prompt)
+        with contextlib.suppress(ValueError):
+            num = int(choice)
+            if num in range(len(paths) + 1):
+                break
+        prompt = 'Please enter a number between 1 and {len(paths)}, 0 to cancel:  '
+    if num > 0:
+        return paths[num - 1]
 
 
 def get_start_end_pids(paths, name):
@@ -320,7 +340,7 @@ def edittestconf(c, name=''):
     c.run(f'pedit {fname}')
 
 
-def get_input_from_user(prompt, default_answer):
+def get_input_from_user(prompt, default_answer=None):
     "wrapper around input function to facilitate unit testing"
     response = input(prompt)
     if not response:
