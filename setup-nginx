@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 
 # prerequisites:
 # install nginx, fcgiwrap, python-django, python-cherrypy, php, php-fpm, php-sqlite, php-pgsql,
@@ -64,3 +64,7 @@ sudo chmod +x /home/albert
 # binfab restore-pg <laatste-backup>
 
 # fabsrv nginx.restart
+
+# toevoegen gnome-terminal profiles en custom global keybindings
+dconf load ~/bin/keybindings-backup.dconf
+dconf load ~/bin/gnome-terminal-profiles.dconf

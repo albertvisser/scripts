@@ -1,0 +1,115 @@
+[/]
+custom-list=['custom15', 'custom14', 'custom13', 'custom11', 'custom9', 'custom7', 'custom6', 'custom4', 'custom2', 'custom0', 'custom1', 'custom3', 'custom5', 'custom8', 'custom10', 'custom12', 'custom16', 'custom17', 'custom18', 'custom19', '__dummy__']
+
+[custom-keybindings/custom0]
+binding=['<Super>v']
+command='vstable'
+name='Vivaldi'
+
+[custom-keybindings/custom1]
+binding=['<Super>m']
+command='bstart'
+name='Music'
+
+[custom-keybindings/custom10]
+binding=['<Super>r']
+command='open-reader'
+name='Start Reading'
+
+[custom-keybindings/custom11]
+binding=['<Primary><Super>g']
+command='start-gaming'
+name='Start Gaming'
+
+[custom-keybindings/custom12]
+binding=['<Shift><Super>t']
+command='tedit'
+name='VI - text'
+
+[custom-keybindings/custom13]
+binding=['<Super>w']
+command='wstart'
+name='Write'
+
+[custom-keybindings/custom14]
+binding=['<Super>g']
+command='start-gaming-native'
+name='Native Gaming'
+
+[custom-keybindings/custom15]
+binding=['<Primary><Super>e']
+command='dc4sdv'
+name='DC for SDV'
+
+[custom-keybindings/custom16]
+binding=['<Super>Tab']
+command='gnome-system-monitor'
+name='System Monitor'
+
+[custom-keybindings/custom17]
+binding=['<Super>i']
+command='idle'
+name='Idle (Python)'
+
+[custom-keybindings/custom18]
+binding=['<Primary><Super>p']
+command='gnome-terminal --geometry=132x43+4+40 -- python'
+name='Python'
+
+[custom-keybindings/custom19]
+binding=['<Shift><Super>g']
+command='gamestuff'
+name='GameStuff'
+
+[custom-keybindings/custom2]
+binding=['<Super>t']
+command='pedit'
+name='Vi'
+
+[custom-keybindings/custom3]
+binding=['<Primary><Super>t']
+command='scite'
+name='SciTE'
+
+[custom-keybindings/custom4]
+binding=['<Super>d']
+command='doctree'
+name='DocTree'
+
+[custom-keybindings/custom5]
+binding=['<Super>a']
+command='a-propos'
+name='A Propos'
+
+[custom-keybindings/custom6]
+binding=['<Primary><Super>a']
+command='scratch_pad'
+name='ScratchPad'
+
+[custom-keybindings/custom7]
+binding=['<Super>k']
+command='hotkeys'
+name='HotKeys'
+
+[custom-keybindings/custom8]
+binding=['<Primary><Super>k']
+command='hotrefs'
+name='HotRefs'
+
+[custom-keybindings/custom9]
+binding=['<Primary><Super>l']
+command='lstart'
+name='LMMS'
+
+[wm]
+activate-window-menu=['<Super>space']
+begin-move=['<Super>F7']
+begin-resize=['<Super>F8']
+move-to-workspace-right=['<Control><Shift><Alt>Right', '<Primary><Shift><Alt>KP_Right']
+show-desktop=@as []
+switch-to-workspace-down=['<Control><Alt>Down', '<Primary><Alt>KP_Down']
+switch-to-workspace-left=['<Control><Alt>Left', '<Primary><Alt>KP_Left']
+switch-to-workspace-right=['<Control><Alt>Right', '<Primary><Alt>KP_Right']
+switch-to-workspace-up=['<Control><Alt>Up', '<Alt>F1', '<Primary><Alt>KP_Up']
+toggle-maximized=['<Super>F10']
+unmaximize=['<Super>F5']
