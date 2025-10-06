@@ -35,7 +35,7 @@ def add(c, name, section=''):
 
 def determine_section(name):
     "try to deduce the script type by looking if it contains a shebang line"
-    filepath = binpath / 'name'
+    filepath = binpath / name
     if filepath.is_symlink():
         section = 'symlinks'
     else:
@@ -198,7 +198,7 @@ def enable(c, name):
 
 @task(help={'filter': 'scriptlib category'})
 def list_active(c, filter=''):
-    "toon alle disabled scriptlets om desgewenst te kunnen enablen"
+    "toon alle enabled scriptlets (in een section) om desgewenst te kunnen disablen"
     lib = ScriptLib()
     if filter and filter not in lib.data.sections():
         print(f'unknown filter {filter}')
