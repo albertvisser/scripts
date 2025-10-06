@@ -502,190 +502,6 @@ def test_overview(monkeypatch, capsys):
                                        " \"git log --pretty=format:'%ad %s' --date=iso\")\n\n")
 
 
-# def test_old_overview(monkeypatch, capsys):
-#     """unittest for repo.overview
-#     """
-#     def mock_repo_overzicht(c, *args):
-#         """stub
-#         """
-#         print('call overzicht met args', args)
-#         return 'output directory'
-#     # monkeypatch.setattr(repo.os.path, 'isdir', lambda x: False)
-#     c = MockContext()
-#     testee.overview(c, 'proj', 'x')
-#     assert capsys.readouterr().out == 'wrong spec for output type\n'
-#
-#     monkeypatch.setattr(testee, 'get_project_root', lambda x: 'project_root')
-#     monkeypatch.setattr(testee.os, 'listdir', lambda x: ['oink'])
-#     monkeypatch.setattr(testee, 'repo_overzicht', mock_repo_overzicht)
-#     testee.overview(c, outtype='txt')
-#     assert capsys.readouterr().out == ("call overzicht met args ('oink', 'project_root/oink', 'txt')\n"
-#                                        "output in output directory\n")
-#     testee.overview(c, 'name,proj', 'csv')
-#     assert capsys.readouterr().out == ("call overzicht met args ('name', 'project_root/name', 'csv')\n"
-#                                        "call overzicht met args ('proj', 'project_root/proj', 'csv')\n"
-#                                        "output in output directory\n")
-#
-#
-# def test_repo_overzicht(monkeypatch, capsys):
-#     """unittest for repo.repo_overzicht
-#     """
-#     def mock_repolist_hg(*args):
-#         """stub
-#         """
-#         print('called make_repolist_hg()')
-#         return {'.hg': 'outdict_hg'}
-#     def mock_repolist_git(*args):
-#         """stub
-#         """
-#         print('called make_repolist_git()')
-#         return {'.git': 'outdict_git'}
-#     def mock_repo_ovz(*args):
-#         """stub
-#         """
-#         print('called make_repo_ovz with args', args)
-#     def mock_repocsv(*args):
-#         """stub
-#         """
-#         print('called make_repocsv with args', args)
-#     monkeypatch.setattr(testee, 'make_repolist_hg', mock_repolist_hg)
-#     monkeypatch.setattr(testee, 'make_repolist_git', mock_repolist_git)
-#     monkeypatch.setattr(testee, 'make_repo_ovz', mock_repo_ovz)
-#     monkeypatch.setattr(testee, 'make_repocsv', mock_repocsv)
-#     monkeypatch.setattr(MockContext, 'run', run_in_dir)
-#     c = MockContext()
-#     monkeypatch.setattr(testee.os, 'listdir', lambda x: ['oink'])
-#     monkeypatch.setattr(testee.os.path, 'isdir', lambda x: False)
-#     assert testee.repo_overzicht(c, 'name', 'path/to/repo', 'txt') == ''
-#     monkeypatch.setattr(testee.os.path, 'isdir', lambda x: True)
-#     assert testee.repo_overzicht(c, 'name', 'path/to/repo', 'txt') == ''
-#     # assert capsys.readouterr().out == ""
-#     monkeypatch.setattr(testee.os, 'listdir', lambda x: ['.hg'])
-#     assert testee.repo_overzicht(c, 'name', 'path/to/repo', 'txt') == 'path/to/.overzicht'
-#     assert capsys.readouterr().out == ("called make_repolist_hg()\n"
-#                                        "called make_repo_ovz with args ({'.hg': 'outdict_hg'},"
-#                                        " 'path/to/.overzicht/name_repo.ovz')\n")
-#     monkeypatch.setattr(testee.os, 'listdir', lambda x: ['.git'])
-#     assert testee.repo_overzicht(c, 'name', 'path/to/repo', 'txt') == 'path/to/.overzicht'
-#     assert capsys.readouterr().out == ("called make_repolist_git()\n"
-#                                        "called make_repo_ovz with args ({'.git': 'outdict_git'},"
-#                                        " 'path/to/.overzicht/name_repo.ovz')\n")
-#     assert testee.repo_overzicht(c, 'name', 'path/to/repo', 'csv') == 'path/to/.overzicht'
-#     assert capsys.readouterr().out == ("called make_repolist_git()\n"
-#                                        "called make_repocsv with args ({'.git': 'outdict_git'},"
-#                                        " 'path/to/.overzicht/name_repo.csv')\n")
-#     assert testee.repo_overzicht(c, 'name', 'path/to/repo', '') == 'path/to/.overzicht'
-#     assert capsys.readouterr().out == "called make_repolist_git()\n"
-#
-#
-# def test_make_repolist_hg(monkeypatch, capsys):
-#     """unittest for repo.make_repolist_hg
-#     """
-#     def mock_run(c, *args, **kwargs):
-#         """stub
-#         """
-#         print(*args, 'in', c.cwd)
-#         return types.SimpleNamespace(stdout=("changeset:   01:hash\n"
-#                                              "user:        author name\n"
-#                                              "date:        Mon Oct 28 21:36:28 2019 +0100\n"
-#                                              "description:\n"
-#                                              "line\n"
-#                                              "another line\n\n"
-#                                              "changeset:   02:hash\n"
-#                                              "user:        author name\n"
-#                                              "date:        Mon Oct 28 22:36:28 2019 +0100\n"
-#                                              "files:       file1.py file2.py\n"
-#                                              "description:\n"
-#                                              "yet another line\n"))
-#     monkeypatch.setattr(MockContext, 'run', mock_run)
-#     c = MockContext()
-#     assert testee.make_repolist_hg(c, 'path/to/repo') == {1: {'date': 'Mon Oct 28 2019 21:36:28 +0100',
-#                                                             'desc': ['line', 'another line']},
-#                                                         2: {'date': 'Mon Oct 28 2019 22:36:28 +0100',
-#                                                             'desc': ['yet another line'],
-#                                                             'files': ['file1.py', 'file2.py']}}
-#     assert capsys.readouterr().out == "hg log -v in path/to/repo\n"
-#
-#
-# def test_make_repolist_git(monkeypatch, capsys):
-#     """unittest for repo.make_repolist_git
-#     """
-#     def mock_run(c, *args, **kwargs):
-#         """stub
-#         """
-#         print(*args, 'in', c.cwd)
-#         return types.SimpleNamespace(stdout=(
-#                 "d98e1b0; Sun Jul 24 12:57:55 2022 +0200; tooltips toegevoegd\n"
-#                 "\n"
-#                 " check_repo.py          | 25 +++++++++++++++++++++++++\n"
-#                 " check_repo_tooltips.py | 31 +++++++++++++++++++++++++++++++\n"
-#                 " 2 files changed, 56 insertions(+)\n"
-#                 "7937ac5; Sun Jul 24 12:54:46 2022 +0200; foutje gecorrigeerd\n"
-#                 "\n"
-#                 " list2scite.py | 4 ++--\n"
-#                 " 1 file changed, 2 insertions(+), 2 deletions(-)\n"
-#                 "f89d785; Mon Jun 6 20:50:06 2022 +0200; updated readme, unittests and more\n"
-#                 "\n"
-#                 " 2panefm                        |   1 -\n"
-#                 " bstart                         |   1 -\n"
-#                 " build-bin-scripts              |  70 +++++++++++++++++++++\n"))
-#     def mock_run_2(c, *args, **kwargs):
-#         """stub
-#         """
-#         print(*args, 'in', c.cwd)
-#         return types.SimpleNamespace(stdout='')
-#     monkeypatch.setattr(MockContext, 'run', mock_run)
-#     c = MockContext()
-#     assert testee.make_repolist_git(c, 'path/to/repo') == {
-#         "d98e1b0": {'date': "Sun Jul 24 12:57:55 2022 +0200",
-#                     'description': "tooltips toegevoegd",
-#                     'files': ['check_repo.py', 'check_repo_tooltips.py']},
-#         "7937ac5": {'date': "Sun Jul 24 12:54:46 2022 +0200",
-#                     'description': "foutje gecorrigeerd",
-#                     'files': ['list2scite.py']},
-#         "f89d785": {'date': "Mon Jun 6 20:50:06 2022 +0200",
-#                     'description': "updated readme, unittests and more",
-#                     'files': ['2panefm', 'bstart', 'build-bin-scripts']}}
-#     assert capsys.readouterr().out == 'git log --pretty="%h; %ad; %s" --stat in path/to/repo\n'
-#     monkeypatch.setattr(MockContext, 'run', mock_run_2)  # output git log leeg - erg onwaarschijnlijk
-#     assert testee.make_repolist_git(c, 'path/to/repo') == {}
-#     assert capsys.readouterr().out == 'git log --pretty="%h; %ad; %s" --stat in path/to/repo\n'
-#
-#
-# def test_make_repo_ovz(tmp_path):
-#     """unittest for repo.make_repo_ovz
-#     """
-#     filename = tmp_path / 'repo_ovz_outfile'
-#     testee.make_repo_ovz({'naam1': {'date': 'ddd', 'desc': ['xx', 'x'], 'files': ['file1', 'file2']},
-#                         'naam2': {'date': 'eee', 'desc': ['yy', 'y']}}, filename)
-#     with open(filename) as f:
-#         data = f.read()
-#     assert data == ('ddd: xx\nx\n    file1\n    file2\neee: yy\ny\n')
-#
-#
-# def test_make_repocsv(monkeypatch, capsys, tmp_path):
-#     """unittest for repo.make_repocsv
-#     """
-#     monkeypatch.setattr(testee.csv, 'writer', MockWriter)
-#     filename = tmp_path / 'repo_ovz_outfile'
-#     if filename.exists():
-#         filename.unlink()
-#     testee.make_repocsv({'1': {'date': 'ddd', 'desc': ['x;x', 'x'], 'files': ['file1', 'file2']},
-#                          '2': {'date': 'eee', 'desc': ['y,y', 'y']},
-#                          '3': {'date': 'fff', 'desc': ['zzz'], 'files': ['dir/file']}}, filename)
-#     assert filename.exists()
-#     assert capsys.readouterr().out == (
-#             f"create writer to file <_io.TextIOWrapper name='{filename}'"
-#             " mode='w' encoding='UTF-8'>\n"
-#             r"call writer.writerow for data [' \\ date', 'ddd', 'eee', 'fff']""\n"
-#             r"call writer.writerow for data ['filename \\ description',"
-#             """ '"x;x\\nx"', '"y,y\\ny"', 'zzz']"""
-#             "\n"
-#             "call writer.writerow for data ['./file1', 'x', '', '']\n"
-#             "call writer.writerow for data ['./file2', 'x', '', '']\n"
-#             "call writer.writerow for data ['dir/file', '', '', 'x']\n")
-
-
 def test_add2gitweb(monkeypatch, capsys):
     """unittest for repo.add2gitweb
     """
@@ -1320,13 +1136,62 @@ def test_check_args(monkeypatch, capsys, tmp_path):
     assert testee.check_args('.', 'testfile', 'x') == result
     os.chdir(pwd)
 
-
-class MockWriter:
-    """stub for csv.Writer object
+def test_setgui(monkeypatch, capsys, tmp_path):
+    """unittest for repo.setgui
     """
-    def __init__(self, filename):
-        print('create writer to file', filename)
-    def writerow(self, data):
-        """stub
-        """
-        print('call writer.writerow for data', data)
+    monkeypatch.setattr(testee, 'get_project_dir', lambda x: '')
+    monkeypatch.setattr(MockContext, 'run', mock_run)  # not that we need it
+    c = MockContext()
+
+    testee.setgui(c, 'testproj', 'x')
+    assert capsys.readouterr().out == "testproj is not a known project\n"
+
+    monkeypatch.setattr(testee, 'get_project_dir', lambda x: str(tmp_path))
+    monkeypatch.setattr(testee, 'gui_choices', ['xx', 'yy', '?'])
+    testee.setgui(c, 'testproj', 'x')
+    assert capsys.readouterr().out == (
+            "invalid gui toolkit specification, possible values are ['xx', 'yy', '?']\n")
+
+    (tmp_path / '.rurc').touch()
+    testee.setgui(c, 'testproj', '?')
+    assert capsys.readouterr().out == "incomplete project configuration\n"
+
+    (tmp_path / 'src').mkdir()
+    (tmp_path / '.rurc').write_text("[testscripts]\ntestfile = testfile.py\n"
+                                    "[testees]\ntestfile = src/file_to_test.py\n")
+    testee.setgui(c, 'testproj', '?')
+    assert capsys.readouterr().out == (
+            "testproj is not a gui project or does not support toolkit switching\n")
+
+    (tmp_path / 'src' / 'toolkit.py').touch()
+    testee.setgui(c, 'testproj', '?')
+    assert capsys.readouterr().out == (
+            "testproj is not a gui project or does not support toolkit switching\n")
+
+    (tmp_path / 'src' / 'toolkit.py').write_text('\ntoolkit xx\n')
+    with pytest.raises(IndexError):
+        testee.setgui(c, 'testproj', '?')
+    # assert capsys.readouterr().out == "\n"
+
+    (tmp_path / 'src' / 'toolkit.py').write_text("toolkit = 'xx'\n")
+    testee.setgui(c, 'testproj', '?')
+    assert capsys.readouterr().out == "toolkit for testproj is currently 'xx'\n"
+
+    (tmp_path / 'src' / 'toolkit.py').unlink()
+    (tmp_path / 'src' / 'settings.py').touch()
+    testee.setgui(c, 'testproj', '?')
+    assert capsys.readouterr().out == (
+            "testproj is not a gui project or does not support toolkit switching\n")
+
+    (tmp_path / 'src' / 'settings.py').write_text("toolkit = 'xx'\n")
+    testee.setgui(c, 'testproj', '?')
+    assert capsys.readouterr().out == "toolkit for testproj is currently 'xx'\n"
+
+    testee.setgui(c, 'testproj', 'yy')
+    assert capsys.readouterr().out == "changed toolkit for testproj to 'yy'\n"
+
+    oldcwd = os.getcwd()
+    tmp_path.chdir()
+    testee.setgui(c, '.', '?')
+    assert capsys.readouterr().out == f"toolkit for {tmp_path.stem} is currently 'yy'\n"
+    os.chdir(oldcwd)

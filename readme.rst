@@ -272,7 +272,7 @@ This script creates the following symlinks and short starter scripts for my own 
 **dt_print**
     starts up a program to print the contents of a doctree file
 **end-session**
-    slightly simpler way to say "binfab session.end"
+slightly simpler way to say ``binfab session.end``
 **flarden**
     points notetree to a collection of text snippets
 **gamestuff**
@@ -349,6 +349,8 @@ This script creates the following symlinks and short starter scripts for my own 
     start a-propos using a file in /tmp (which is not saved over Linux sessions)
 **sdv-modman**
     starts up my Stardew Valley Mod Manager
+**setgui**
+    calls ``binfab repo.setgui`` to easily set the gui toolkit for a given project
 **start-session**
     slightly simpler way to start a programming session for a project
 **tickets**
