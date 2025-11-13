@@ -6,8 +6,8 @@ import pathlib  # makkelijk unittesten van add2gitweb, ook bruikbaar voor andere
 import datetime
 import configparser
 from invoke import task
-from settings import (PROJECTS_BASE, GITLOC, get_project_dir, get_project_root, all_repos,
-                      git_repos, private_repos, frozen_repos)
+from settings import (PROJECTS_BASE, GITLOC, get_project_dir,
+                      all_repos, git_repos, private_repos, non_web_repos, frozen_repos)
 
 HOME = os.path.expanduser('~')
 TODAY = datetime.datetime.today()
@@ -347,6 +347,7 @@ def check_and_run_for_project(c, name, command):
 def dtree(c, name=''):
     "Open project docs using treedocs, forcing qt mode"
     check_and_run_for_project(c, name, '~/projects/doctree/ensure-qt projdocs.trd')
+    # check_and_run_for_project(c, name, '~/git-repos/doctree/ensure-qt projdocs.trd')
 
 
 @task(help={'name': 'repository name'})
@@ -367,6 +368,7 @@ def mee_bezig(c):  # , name=''):
     # check_and_run_for_project(c, name, "a-propos -n 'Mee Bezig ({})' -f mee_bezig.apo".format(
     #     name or os.path.basename(os.getcwd())))
     c.run('treedocs ~/projects/projects.trd')
+    # c.run('treedocs-stable ~/projects/projects.trd')
 
 
 @task(help={'name': 'repository name'})
@@ -462,6 +464,38 @@ def find_test_errors(c, name=''):
         if project not in frozen_repos:
             print(f'=== running tests for {project}')
             c.run(f"run-unittests -p {project} all | grep -B 2 ^ERROR", warn=True)
+
+
+@task(help={'name': 'gui toolkit short name (qt, wx or tk'})
+def find_gui_test_errors(c, name):
+    """execute unittests and report the tests that have errors
+    """
+    def run_guitests(project, test):
+        "run specific testmodules"
+        print(f'=== running tests for {project} {test}')
+        c.run(f"run-unittests -p {project} {test} | grep -B 2 ^ERROR", warn=True)
+        c.run(f"run-unittests -p {project} {test} | grep ^FAILED", warn=True)
+    if name not in ('qt', 'wx', 'tk'):
+        print('invalid toolkit name')
+        return
+    for project in non_web_repos:
+        testconf = pathlib.Path(PROJECTS_BASE) / project / '.rurc'
+        if not testconf.exists():
+            continue
+        reading = False
+        for line in testconf.read_text().split('\n'):
+            if reading:
+                if not line or 'testees' in line:
+                    break
+                test = line.split()[0]
+                if name in test:
+                    run_guitests(project, test)
+            elif 'testscripts' in line:
+                reading = True
+    if name == 'qt':
+        for test in ('main', 'matcher', 'smallgui'):
+            run_guitests('albumsgui', test)
+        run_guitests('scripts', 'check')
 
 
 @task(help={'name': 'repository name'})

@@ -917,6 +917,68 @@ def test_find_test_errors(monkeypatch, capsys):
             "called run with args ('run-unittests -p xxx all | grep -B 2 ^ERROR',) {'warn': True}\n")
 
 
+def test_find_gui_test_errors(monkeypatch, capsys, tmp_path):
+    """unittest for repo.find_test_errors
+    """
+    # def mock_exists(self):
+    #     print(f'called path.exists with arg {self}')
+    #     return False
+    # def mock_exists(self):
+    #     print(f'called path.exists with arg {self}')
+    #     return True
+    monkeypatch.setattr(testee, 'PROJECTS_BASE', tmp_path)
+    monkeypatch.setattr(testee, 'non_web_repos', ['qqq', 'rrr'])
+    monkeypatch.setattr(MockContext, 'run', mock_run)
+    c = MockContext()
+    testee.find_gui_test_errors(c, 'xxx')
+    assert capsys.readouterr().out == "invalid toolkit name\n"
+    (tmp_path / 'rrr').mkdir()
+    (tmp_path / 'rrr' / '.rurc').touch()
+    testee.find_gui_test_errors(c, 'wx')
+    assert capsys.readouterr().out == ""
+    (tmp_path / 'rrr' / '.rurc').write_text('oink\n\n[testscripts]\ngui_wx\nqt_gui\ntkgui\n\nzz.py')
+    testee.find_gui_test_errors(c, 'wx')
+    assert capsys.readouterr().out == (
+        "=== running tests for rrr gui_wx\n"
+        "called run with args ('run-unittests -p rrr gui_wx | grep -B 2 ^ERROR',) {'warn': True}\n"
+        "called run with args ('run-unittests -p rrr gui_wx | grep ^FAILED',) {'warn': True}\n")
+    (tmp_path / 'qqq').mkdir()
+    (tmp_path / 'qqq' / '.rurc') .write_text("oink\n\n[testscripts]\ngui_wx\nqt_gui\ntkgui\n"
+                                             "[testees]\ncc.py")
+    testee.find_gui_test_errors(c, 'tk')
+    assert capsys.readouterr().out == (
+        "=== running tests for qqq tkgui\n"
+        "called run with args ('run-unittests -p qqq tkgui | grep -B 2 ^ERROR',) {'warn': True}\n"
+        "called run with args ('run-unittests -p qqq tkgui | grep ^FAILED',) {'warn': True}\n"
+        "=== running tests for rrr tkgui\n"
+        "called run with args ('run-unittests -p rrr tkgui | grep -B 2 ^ERROR',) {'warn': True}\n"
+        "called run with args ('run-unittests -p rrr tkgui | grep ^FAILED',) {'warn': True}\n")
+    testee.find_gui_test_errors(c, 'qt')
+    assert capsys.readouterr().out == (
+        "=== running tests for qqq qt_gui\n"
+        "called run with args ('run-unittests -p qqq qt_gui | grep -B 2 ^ERROR',) {'warn': True}\n"
+        "called run with args ('run-unittests -p qqq qt_gui | grep ^FAILED',) {'warn': True}\n"
+        "=== running tests for rrr qt_gui\n"
+        "called run with args ('run-unittests -p rrr qt_gui | grep -B 2 ^ERROR',) {'warn': True}\n"
+        "called run with args ('run-unittests -p rrr qt_gui | grep ^FAILED',) {'warn': True}\n"
+        "=== running tests for albumsgui main\n"
+        "called run with args"
+        " ('run-unittests -p albumsgui main | grep -B 2 ^ERROR',) {'warn': True}\n"
+        "called run with args ('run-unittests -p albumsgui main | grep ^FAILED',) {'warn': True}\n"
+        "=== running tests for albumsgui matcher\n"
+        "called run with args"
+        " ('run-unittests -p albumsgui matcher | grep -B 2 ^ERROR',) {'warn': True}\n"
+        "called run with args ('run-unittests -p albumsgui matcher | grep ^FAILED',) {'warn': True}\n"
+        "=== running tests for albumsgui smallgui\n"
+        "called run with args"
+        " ('run-unittests -p albumsgui smallgui | grep -B 2 ^ERROR',) {'warn': True}\n"
+        "called run with args"
+        " ('run-unittests -p albumsgui smallgui | grep ^FAILED',) {'warn': True}\n"
+        "=== running tests for scripts check\n"
+        "called run with args ('run-unittests -p scripts check | grep -B 2 ^ERROR',) {'warn': True}\n"
+        "called run with args ('run-unittests -p scripts check | grep ^FAILED',) {'warn': True}\n")
+
+
 def test_find_test_stats(monkeypatch, capsys):
     """unittest for repo.find_test_stats
     """
@@ -1191,7 +1253,7 @@ def test_setgui(monkeypatch, capsys, tmp_path):
     assert capsys.readouterr().out == "changed toolkit for testproj to 'yy'\n"
 
     oldcwd = os.getcwd()
-    tmp_path.chdir()
+    os.chdir(tmp_path)
     testee.setgui(c, '.', '?')
     assert capsys.readouterr().out == f"toolkit for {tmp_path.stem} is currently 'yy'\n"
     os.chdir(oldcwd)
