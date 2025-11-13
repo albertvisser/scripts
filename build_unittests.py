@@ -95,7 +95,7 @@ class Main:
         classname = classname.split('(', 1)[0]
         self.testscriptlines.extend([
             f'\n\nclass Test{classname}:\n',
-            f'    """unittest for {self.testee}.{classname}\n    """\n',
+            f'    """unittests for {self.testee}.{classname}\n    """\n',
             f'    def setup_testobj(self, monkeypatch, capsys):\n',
             f'        """stub for {self.testee}.{classname} object\n\n',
             '        create the object skipping the normal initialization\n',
