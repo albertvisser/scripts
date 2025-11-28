@@ -7,7 +7,7 @@ called dialog.__init()__ with args ()
 called dialog.setWindowTitle() with args ('title',)
 called VBox.__init__
 called HBox.__init__
-called CheckBox.__init__ with text 'Add selected files to the last commit'
+called CheckBox.__init__ with args ('Add selected files to the last commit', {testobj})
 called HBox.addWidget with arg MockCheckBox
 called VBox.addLayout with arg MockHBoxLayout
 called HBox.__init__
@@ -101,7 +101,7 @@ called VBox.addSpacing
 called Label.__init__ with args ('* Did you test the files to be committed?',)
 called VBox.addWidget with arg MockLabel
 called VBox.addSpacing
-called CheckBox.__init__ with text 'Yes, I know what I'm doing'
+called CheckBox.__init__ with args ("Yes, I know what I'm doing", {testobj})
 called VBox.addWidget with arg MockCheckBox
 called HBox.__init__
 called HBox.addStretch
