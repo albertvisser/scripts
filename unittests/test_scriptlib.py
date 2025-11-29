@@ -85,24 +85,11 @@ def test_add(monkeypatch, capsys):
     def mock_determine(name):
         print(f'called determine_section with arg {name}')
         return 'section name'
-    def mock_read(*args):
-        """stub
-        """
-        print('called path.read_text with args', args)
-        return 'harry\nsally'
-    def mock_copy(*args):
-        """stub
-        """
-        print('called shutil.copyfile with args', args)
-    def mock_write(*args):
-        """stub
-        """
-        print('called path.write_text with args', args)
-    monkeypatch.setattr(testee.shutil, 'copyfile', mock_copy)
-    monkeypatch.setattr(testee.pathlib.Path, 'read_text', mock_read)
-    monkeypatch.setattr(testee.pathlib.Path, 'write_text', mock_write)
+    def mock_update(*args):
+        print("called update_ignore_file with args", args[0].__class__, args[1:])
     monkeypatch.setattr(testee, 'ScriptLib', MockLib)
     monkeypatch.setattr(testee, 'determine_section', mock_determine)
+    monkeypatch.setattr(testee, 'update_ignore_file', mock_update)
     c = MockContext()
     testee.add(c, 'test')
     assert capsys.readouterr().out == (
@@ -110,9 +97,7 @@ def test_add(monkeypatch, capsys):
             "called determine_section with arg test\n"
             "called ScriptLib.add_script with args ('test', 'section name')\n"
             "called ScriptLib.update\n"
-            "called path.read_text with args (PosixPath('x/.gitignore'),)\n"
-            "called shutil.copyfile with args ('x/.gitignore', 'x/.gitignore~')\n"
-            "called path.write_text with args (PosixPath('x/.gitignore'), 'harry\\nsally\\ntest')\n"
+            "called update_ignore_file with args <class 'test_scriptlib.MockLib'> ('test',)\n"
             "'test' successfully added to library and .gitignore\n"
             "Don't forget to also add it to readme.rst\n")
     testee.add(c, 'test', 'symlinks')
@@ -120,9 +105,7 @@ def test_add(monkeypatch, capsys):
             "called ScriptLib.__init__\n"
             "called ScriptLib.add_link with args ('test', 'symlinks')\n"
             "called ScriptLib.update\n"
-            "called path.read_text with args (PosixPath('x/.gitignore'),)\n"
-            "called shutil.copyfile with args ('x/.gitignore', 'x/.gitignore~')\n"
-            "called path.write_text with args (PosixPath('x/.gitignore'), 'harry\\nsally\\ntest')\n"
+            "called update_ignore_file with args <class 'test_scriptlib.MockLib'> ('test',)\n"
             "'test' successfully added to library and .gitignore\n"
             "Don't forget to also add it to readme.rst\n")
     testee.add(c, 'test', 'scripts')
@@ -130,9 +113,7 @@ def test_add(monkeypatch, capsys):
             "called ScriptLib.__init__\n"
             "called ScriptLib.add_script with args ('test', 'scripts')\n"
             "called ScriptLib.update\n"
-            "called path.read_text with args (PosixPath('x/.gitignore'),)\n"
-            "called shutil.copyfile with args ('x/.gitignore', 'x/.gitignore~')\n"
-            "called path.write_text with args (PosixPath('x/.gitignore'), 'harry\\nsally\\ntest')\n"
+            "called update_ignore_file with args <class 'test_scriptlib.MockLib'> ('test',)\n"
             "'test' successfully added to library and .gitignore\n"
             "Don't forget to also add it to readme.rst\n")
     monkeypatch.setattr(MockLib, 'add_link', lambda *x: 'error adding link')
@@ -217,7 +198,7 @@ def test_check(monkeypatch, capsys):
                                        " <class 'test_scriptlib.MockLib'> name\n"
                                        "--- library version:\n"
                                        "in_lib\n"
-                                       "+++ version in scripts:\n"
+                                       "+++ file version:\n"
                                        "actual\n")
     monkeypatch.setattr(testee, 'check_file', lambda *x: ('equal', 'equal'))
     testee.check(c, 'name')
@@ -325,6 +306,281 @@ def test_update_all(monkeypatch, capsys):
                                        "called ScriptLib.get_all_names with args {}\n"
                                        'geen verschillen gevonden\n')
 
+
+def test_rename(monkeypatch, capsys, tmp_path):
+    """unittest for scriptlib.rename
+    """
+    def mock_run(self, *args, **kwargs):
+        """stub for invoke.Context.run under "with invoke.Contect.cd"
+        """
+        print(*args, 'in', self.cwd)
+        return types.SimpleNamespace(stdout=f"resultaat van {args}\n", failed=True)
+    def mock_run_2(self, *args, **kwargs):
+        """stub for invoke.Context.run under "with invoke.Contect.cd"
+        """
+        print(*args, 'in', self.cwd)
+        return types.SimpleNamespace(stdout=f"resultaat van {args}\n", failed=False)
+    class MockLib:
+        """stub for scriptlib.ScriptLib
+        """
+        def __init__(self):
+            print('called ScriptLib.__init__')
+            self.basepath = tmp_path
+            self.data = testee.ConfigParser()
+            self.data.read_dict({'section': {'oldname': 'value'}})
+        def find(self, name):
+            if name in self.data['section']:
+                return 'section'
+        def update(self):
+            print(f"called Scriptlib.update, {self.data.options('section')=}")
+    class MockLib2:
+        """stub for scriptlib.ScriptLib
+        """
+        def __init__(self):
+            print('called ScriptLib.__init__')
+            self.basepath = tmp_path
+            self.data = testee.ConfigParser()
+            self.data.read_dict({'section': {'newname': 'value'}})
+        def find(self, name):
+            if name in self.data['section']:
+                return 'section'
+        def update(self):
+            print('called Scriptlib.update')
+    class MockLib3:
+        """stub for scriptlib.ScriptLib
+        """
+        def __init__(self):
+            print('called ScriptLib.__init__')
+            self.basepath = tmp_path
+            self.data = testee.ConfigParser()
+            self.data.read_dict({'section': {'noname': 'value'}})
+        def find(self, name):
+            if name in self.data['section']:
+                return 'section'
+        def update(self):
+            print('called Scriptlib.update')
+    class MockLib4:
+        """stub for scriptlib.ScriptLib
+        """
+        def __init__(self):
+            print('called ScriptLib.__init__')
+            self.basepath = tmp_path
+            self.data = testee.ConfigParser()
+            self.data.read_dict({'section': {'oldname': 'value', 'newname': 'value2'}})
+        def find(self, name):
+            if name in self.data['section']:
+                return 'section'
+        def update(self):
+            print('called Scriptlib.update')
+    def mock_update(*args):
+        print("called update_ignore_file with args", args[0].__class__.__name__, args[1:])
+    monkeypatch.setattr(testee, 'binpath', tmp_path)
+    monkeypatch.setattr(testee, 'update_ignore_file', mock_update)
+    c = MockContext()
+    monkeypatch.setattr(MockContext, 'run', mock_run)
+    monkeypatch.setattr(testee, 'ScriptLib', MockLib)  # old_in_lib and not new_in_lib
+    # not old_exists and not new_exists
+    # - geen van beide bestaat maar in de lib oud wel en nieuw niet
+    testee.rename(c, 'oldname', 'newname')
+    assert capsys.readouterr().out == (
+            "called ScriptLib.__init__\n"
+            # "oud bestaat niet en nieuw bestaat niet, oud zit in lib en nieuw zit niet in lib,"
+            # " library_only=False\n")
+            # "rename is niet in overeenstemmng met scripts in directory (1)\n"
+            # "beide bestaan niet en niet library_only, wordt door mv commando afgekeurd\n")
+            f"mv oldname newname in {tmp_path}\n")
+    monkeypatch.setattr(MockContext, 'run', mock_run_2)
+    testee.rename(c, 'oldname', 'newname')
+    assert capsys.readouterr().out == (
+            "called ScriptLib.__init__\n"
+            f"mv oldname newname in {tmp_path}\n"
+            "called Scriptlib.update, self.data.options('section')=['newname']\n"
+            "called update_ignore_file with args MockLib ('newname', 'oldname')\n")
+    monkeypatch.setattr(MockContext, 'run', mock_run)
+    testee.rename(c, 'oldname', 'newname', True)
+    assert capsys.readouterr().out == (
+            "called ScriptLib.__init__\n"
+            "rename in library is niet in overeenstemmng met scripts in directory\n")
+    # old_exists and not new_exists
+    (tmp_path / 'oldname').touch()
+    testee.rename(c, 'oldname', 'newname')
+    assert capsys.readouterr().out == (
+            "called ScriptLib.__init__\n"
+            # "oud bestaat en nieuw bestaat niet, oud zit in lib en nieuw zit niet in lib,"
+            # " library_only=False\n")
+            f"mv oldname newname in {tmp_path}\n")
+    monkeypatch.setattr(MockContext, 'run', mock_run_2)
+    testee.rename(c, 'oldname', 'newname')
+    assert capsys.readouterr().out == (
+            "called ScriptLib.__init__\n"
+            f"mv oldname newname in {tmp_path}\n"
+            "called Scriptlib.update, self.data.options('section')=['newname']\n"
+            "called update_ignore_file with args MockLib ('newname', 'oldname')\n")
+    monkeypatch.setattr(MockContext, 'run', mock_run)
+    testee.rename(c, 'oldname', 'newname', True)
+    assert capsys.readouterr().out == (
+            "called ScriptLib.__init__\n"
+            "rename in library is niet in overeenstemmng met scripts in directory\n")
+    # old_exists and new_exists
+    # als ze allebei bestaan kan het zijn dat je de rename in de lib achteraf uitvoert nadat je
+    # een nieuwe versie van het oude script hebt toegevoegd maar dan moet library_only aan staan
+    (tmp_path / 'newname').touch()
+    testee.rename(c, 'oldname', 'newname')
+    assert capsys.readouterr().out == (
+            "called ScriptLib.__init__\n"
+            # "beide bestaan en niet library_only, wordt door mv commando afgekeurd\n")
+            f"mv oldname newname in {tmp_path}\n")
+    testee.rename(c, 'oldname', 'newname', True)
+    assert capsys.readouterr().out == (
+            "called ScriptLib.__init__\n"
+            # "oud bestaat en nieuw bestaat, oud zit in lib en nieuw zit niet in lib,"
+            # " library_only=True\n")
+            "called Scriptlib.update, self.data.options('section')=['newname']\n"
+            "called update_ignore_file with args MockLib ('newname', 'oldname')\n")
+    # new_exists and not old_exists
+    (tmp_path / 'oldname').unlink()
+    testee.rename(c, 'oldname', 'newname')
+    assert capsys.readouterr().out == (
+            "called ScriptLib.__init__\n"
+            # "alleen after-the-fact rename mogelijk (gebruik -l optie)\n")
+            f"mv oldname newname in {tmp_path}\n")
+    testee.rename(c, 'oldname', 'newname', True)
+    assert capsys.readouterr().out == (
+            "called ScriptLib.__init__\n"
+            # "oud bestaat niet en nieuw bestaat, oud zit in lib en nieuw zit niet in lib,"
+            # " library_only=True\n")
+            "called Scriptlib.update, self.data.options('section')=['newname']\n"
+            "called update_ignore_file with args MockLib ('newname', 'oldname')\n")
+
+    monkeypatch.setattr(testee, 'ScriptLib', MockLib2)  # new_in_lib and not old_in_lib
+    # not old_exists and not new_exists
+    (tmp_path / 'newname').unlink()
+    testee.rename(c, 'oldname', 'newname')
+    assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
+                                       "rename in library niet mogelijk\n")
+    testee.rename(c, 'oldname', 'newname', True)
+    assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
+                                       "rename in library niet mogelijk\n")
+    # old_exists and not new_exists
+    (tmp_path / 'oldname').touch()
+    testee.rename(c, 'oldname', 'newname')
+    assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
+                                       "rename in library niet mogelijk\n")
+    testee.rename(c, 'oldname', 'newname', True)
+    assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
+                                       "rename in library niet mogelijk\n")
+    # old_exists and new_exists
+    (tmp_path / 'newname').touch()
+    testee.rename(c, 'oldname', 'newname')
+    assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
+                                       "rename in library niet mogelijk\n")
+    testee.rename(c, 'oldname', 'newname', True)
+    assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
+                                       "rename in library niet mogelijk\n")
+    # new_exists and not old_exists
+    (tmp_path / 'oldname').unlink()
+    testee.rename(c, 'oldname', 'newname')
+    assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
+                                       "rename in library niet mogelijk\n")
+    testee.rename(c, 'oldname', 'newname', True)
+    assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
+                                       "rename in library niet mogelijk\n")
+
+    monkeypatch.setattr(testee, 'ScriptLib', MockLib3)  # not new_in_lib and not old_in_lib
+    # not old_exists and not new_exists
+    (tmp_path / 'newname').unlink()
+    testee.rename(c, 'oldname', 'newname')
+    assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
+                                       "rename in library niet mogelijk\n")
+    testee.rename(c, 'oldname', 'newname', True)
+    assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
+                                       "rename in library niet mogelijk\n")
+    # old_exists and not new_exists
+    (tmp_path / 'oldname').touch()
+    testee.rename(c, 'oldname', 'newname')
+    assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
+                                       "rename in library niet mogelijk\n")
+    testee.rename(c, 'oldname', 'newname', True)
+    assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
+                                       "rename in library niet mogelijk\n")
+    # old_exists and new_exists
+    (tmp_path / 'newname').touch()
+    testee.rename(c, 'oldname', 'newname')
+    assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
+                                       "rename in library niet mogelijk\n")
+    testee.rename(c, 'oldname', 'newname', True)
+    assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
+                                       "rename in library niet mogelijk\n")
+    # new_exists and not old_exists
+    (tmp_path / 'oldname').unlink()
+    testee.rename(c, 'oldname', 'newname')
+    assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
+                                       "rename in library niet mogelijk\n")
+    testee.rename(c, 'oldname', 'newname', True)
+    assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
+                                       "rename in library niet mogelijk\n")
+
+    monkeypatch.setattr(testee, 'ScriptLib', MockLib4)  # new_in_lib and old_in_lib
+    # not old_exists and not new_exists
+    (tmp_path / 'newname').unlink()
+    testee.rename(c, 'oldname', 'newname')
+    assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
+                                       "rename in library niet mogelijk\n")
+    testee.rename(c, 'oldname', 'newname', True)
+    assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
+                                       "rename in library niet mogelijk\n")
+    # old_exists and not new_exists
+    (tmp_path / 'oldname').touch()
+    testee.rename(c, 'oldname', 'newname')
+    assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
+                                       "rename in library niet mogelijk\n")
+    testee.rename(c, 'oldname', 'newname', True)
+    assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
+                                       "rename in library niet mogelijk\n")
+    # old_exists and new_exists
+    (tmp_path / 'newname').touch()
+    testee.rename(c, 'oldname', 'newname')
+    assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
+                                       "rename in library niet mogelijk\n")
+    testee.rename(c, 'oldname', 'newname', True)
+    assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
+                                       "rename in library niet mogelijk\n")
+    # new_exists and not old_exists
+    (tmp_path / 'oldname').unlink()
+    testee.rename(c, 'oldname', 'newname')
+    assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
+                                       "rename in library niet mogelijk\n")
+    testee.rename(c, 'oldname', 'newname', True)
+    assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
+                                       "rename in library niet mogelijk\n")
+
+
+def test_update_ignore_file(monkeypatch, capsys, tmp_path):
+    """unittest for scriptlib.update_ignore_file
+    """
+    def mock_copy(*args):
+        """stub
+        """
+        print('called shutil.copyfile with args', args)
+    ignorefile = tmp_path / '.gitignore'
+    ignorefile.touch()
+    monkeypatch.setattr(testee.shutil, 'copyfile', mock_copy)
+    lib = types.SimpleNamespace(basepath=tmp_path)
+    testee.update_ignore_file(lib, 'myname')
+    assert ignorefile.read_text() == 'myname'
+    assert capsys.readouterr().out == (
+            f"called shutil.copyfile with args ('{ignorefile}', '{ignorefile}~')\n")
+    testee.update_ignore_file(lib, 'yourname')
+    assert ignorefile.read_text() == 'myname\nyourname'
+    assert capsys.readouterr().out == (
+            f"called shutil.copyfile with args ('{ignorefile}', '{ignorefile}~')\n")
+    testee.update_ignore_file(lib, 'myname')
+    assert ignorefile.read_text() == 'myname\nyourname'
+    assert capsys.readouterr().out == ""
+    testee.update_ignore_file(lib, 'noname', 'myname')
+    assert ignorefile.read_text() == 'noname\nyourname'
+    assert capsys.readouterr().out == (
+            f"called shutil.copyfile with args ('{ignorefile}', '{ignorefile}~')\n")
 
 def test_revert(monkeypatch, capsys, tmp_path):
     """unittest for scriptlib.revert
@@ -594,7 +850,7 @@ def test_lint(monkeypatch, capsys):
             return 'symlinks*'
         def get_all_names(self, **kwargs):
             print('called ScriptLib.get_all_names with args', kwargs)
-            return'xxx', 'yyy', 'zzz'
+            return 'xxx', 'yyy', 'zzz'
     def mock_find(self, name):
         print(f'called scriptlib.find with arg {name}')
         return 'scripts'

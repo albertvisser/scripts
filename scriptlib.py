@@ -6,7 +6,7 @@ import contextlib
 from invoke import task
 from configparser import ConfigParser, DuplicateSectionError
 
-binpath = pathlib.Path(f'~/bin').expanduser()
+binpath = pathlib.Path('~/bin').expanduser()
 
 
 @task(help={'name': 'name of the script or symlink to add',
@@ -24,11 +24,7 @@ def add(c, name, section=''):
         print(retval)
     else:
         lib.update()
-        ignore_file = lib.basepath / '.gitignore'
-        ignores = ignore_file.read_text().strip().split('\n')
-        ignores.append(name)
-        shutil.copyfile(str(ignore_file), str(ignore_file) + '~')
-        ignore_file.write_text('\n'.join(ignores))
+        update_ignore_file(lib, name)
         print(f"'{name}' successfully added to library and .gitignore")
         print("Don't forget to also add it to readme.rst")
 
@@ -106,6 +102,80 @@ def update(c, name):
             print('verschil gevonden en bijgewerkt')
         else:
             print('geen verschillen gevonden')
+
+
+@task(help={'oldname': 'name of the script or symlink to update', 'newname': 'new name',
+            'library-only': 'after-the-fact rename, just in the library'})
+def rename(c, oldname, newname, library_only=False):
+    """wijzig de naam van een scriptlet
+
+    gebruik de -l switch als hernoemen alleen in de library nodig is
+    """
+    lib = ScriptLib()
+    old_exists = (binpath / oldname).exists()
+    new_exists = (binpath / newname).exists()
+    old_in_lib = lib.find(oldname)
+    new_in_lib = lib.find(newname)
+    msg = ''
+    # if not old_exists and not new_exists:
+    #     if library_only:
+    #         msg = "rename is niet in overeenstemmng met scripts in directory (1)"
+    #     else:
+    #         # msg = "beide bestaan niet en niet library_only, wordt door mv commando afgekeurd"
+    #         pass
+    # elif new_in_lib or not old_in_lib:
+    #     msg = "rename in library niet mogelijk"
+    # elif library_only and not new_exists:
+    #     msg = "rename is niet in overeenstemmng met scripts in directory (2)"
+    # elif old_exists and new_exists and not library_only:
+    #     # msg = "beide bestaan en niet library_only, wordt door mv commando afgekeurd"
+    #     pass
+    # elif new_exists and not old_exists and not library_only:
+    #     msg = "alleen after-the-fact rename mogelijk (gebruik -l optie)"
+    if new_in_lib or not old_in_lib:
+        msg = "rename in library niet mogelijk"
+    elif library_only and not new_exists:
+        msg = "rename in library is niet in overeenstemmng met scripts in directory"
+    # loc = ('scripts directory' if not (library_only and (binpath / oldname).exists()) else
+    #        'script library' if not section else '')
+    # if loc:
+    #     print(f'{oldname} not found in {loc}')
+    if msg:
+        print(msg)
+        return
+    # print(f"oud bestaat{'' if old_exists else ' niet'}"
+    #       f" en nieuw bestaat{'' if new_exists else ' niet'},"
+    #       f" oud zit{'' if old_in_lib else ' niet'} in lib"
+    #       f" en nieuw zit{'' if new_in_lib else ' niet'} in lib,"
+    #       f" {library_only=}")
+    # return
+    if not library_only:
+        with c.cd(binpath):
+            result = c.run(f'mv {oldname} {newname}')
+            if result.failed:
+                return
+    section = old_in_lib
+    script = lib.data[section].pop(oldname)
+    lib.data[section][newname] = script
+    lib.update()
+    update_ignore_file(lib, newname, oldname)
+
+
+def update_ignore_file(lib, newname, oldname=''):
+    """add new or renamed script to ignore file if not present
+    """
+    ignore_file = lib.basepath / '.gitignore'
+    ignores = ignore_file.read_text().strip().split('\n')
+    update = False
+    if oldname in ignores:
+        ignores[ignores.index(oldname)] = newname
+        update = True
+    elif newname not in ignores:
+        ignores.append(newname)
+        update = True
+    if update:
+        shutil.copyfile(str(ignore_file), str(ignore_file) + '~')
+        ignore_file.write_text('\n'.join(ignores))
 
 
 @task(help={'name': 'name of the script to revert (not for symlinks)'})
