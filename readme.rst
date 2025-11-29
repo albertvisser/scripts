@@ -26,6 +26,13 @@ but in the form of a script that generates these symlinks and invocations.
 **arcstuff.conf.example**
 
     example config file for ``binfab arcstuff`` command
+ 
+**afrift** / **a-propos** / **treedocs**
+
+    one-stop switches between the version in "projects" (devel) or in "git-repos" (stable).
+    These are utilities I use while working on my software. 
+    When I work on one of these utilities itself, I can edit this file to point to the stable version
+    and when I'm done with the changes I can change it back to see if everything works.
 
 **binfab**
 
@@ -245,14 +252,14 @@ Extra scripts to be created using ``build-bin-scripts``:
 
 This script creates the following symlinks and short starter scripts for my own applications:
 
-**afrift**
+**afrift-devel** / **afrift-stable**
     starts up my 'Find/Replace in Files' tool. Requires no arguments, but all
     options that can be set in the gui can be set from the command line.
 **albums**
     starts up a GUI version of the webapp of the same name
 **albumsgui**
     starts my interface to several media file databases
-**a-propos**
+**apropos-devel** / **apropos-stable**
     starts up my ``apropos`` application. I had to rename it because there appeared
     to be a system tool by that name. No arguments.
 **comparer**
@@ -272,7 +279,9 @@ This script creates the following symlinks and short starter scripts for my own 
 **dt_print**
     starts up a program to print the contents of a doctree file
 **end-session**
-slightly simpler way to say ``binfab session.end``
+    slightly simpler way to say ``binfab session.end``
+**filefindr**
+    alias for afrift
 **flarden**
     points notetree to a collection of text snippets
 **gamestuff**
@@ -355,9 +364,9 @@ slightly simpler way to say ``binfab session.end``
     slightly simpler way to start a programming session for a project
 **tickets**
     starts probreg as my issue tracker, replacing trac.lemoncurry.nl
-**treedocs**
+**treedocs-devel** / **treedocs-stable**
     symlink to the doctree application. Used by the doctree script (among others)
-**treedocsp**
+**treedocs-print**
     symlink to the doctree application's print utility..
 **tview**
     readonly version of tedit, without position options
@@ -470,9 +479,9 @@ It also creates starters for various other programs:
     starter for the wxPython demo program (if available)
 
 
-scripts that were replaced by functions in the fabfile:
--------------------------------------------------------
-(not present in this working directory either)
+scripts that were replaced by functions in the Invoke scripts:
+--------------------------------------------------------------
+(not present in this working directory)
 
 **check-local**
 

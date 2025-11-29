@@ -2,18 +2,18 @@
 __pycache__/
 *.py[cod]
 *$py.class
-
+afrift-stable
 # development stuff
 .coverage
 .coveragerc
 projdocs*
 .sessionrc
 *.session
-
+apropos-stable
 #backups
 .gitignore~
 bin-scripts.conf~
-
+treedocs-stable
 # miscellaneous
 mdi.py
 *vivaldi*
@@ -94,14 +94,12 @@ diary
 pfind-all
 pfind-prog
 pfind-test
-
 teditl
 teditlr
 teditml
 teditmr
 teditr
 repolog
-
 readme
 repotestfail
 repoteststats
@@ -116,8 +114,7 @@ start-session
 end-session
 tview
 count-locs
-
-treedocsp
+treedocs-print
 binfab
 build-bin-scripts
 build-unittests
@@ -131,3 +128,7 @@ rename-files
 run-unittests
 runwithlog
 setgui
+filefindr
+afrift-devel
+apropos-devel
+treedocs-devel
