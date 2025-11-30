@@ -470,14 +470,29 @@ def find_test_errors(c, name=''):
 def find_gui_test_errors(c, name):
     """execute unittests and report the tests that have errors
     """
+    outfile = pathlib.Path('/tmp/repoguitesterr.txt')
+    messages = False
     def run_guitests(project, test):
         "run specific testmodules"
-        print(f'=== running tests for {project} {test}')
-        c.run(f"run-unittests -p {project} {test} | grep -B 2 ^ERROR", warn=True)
-        c.run(f"run-unittests -p {project} {test} | grep ^FAILED", warn=True)
+        nonlocal messages
+        text = f'=== running tests for {project} {test}'
+        print(text)
+        result = c.run(f"run-unittests -p {project} {test} | grep -B 2 ^ERROR", warn=True, hide='out')
+        if result.stdout:
+            print(f"{len(result.stdout.split('\n')) - 1} tests with errors")
+            messages = True
+        result_f = c.run(f"run-unittests -p {project} {test} | grep ^FAILED", warn=True, hide='out')
+        if result_f.stdout:
+            print(f"{len(result_f.stdout.split('\n')) - 1} tests failed")
+            messages = True
+        with outfile.open('a') as f:
+            f.write('\n'.join(("", text, result.stdout, result_f.stdout)))
     if name not in ('qt', 'wx', 'tk'):
         print('invalid toolkit name')
         return
+    if outfile.exists():
+        outfile.unlink()
+    outfile.touch()
     for project in non_web_repos:
         testconf = pathlib.Path(PROJECTS_BASE) / project / '.rurc'
         if not testconf.exists():
@@ -496,6 +511,8 @@ def find_gui_test_errors(c, name):
         for test in ('main', 'matcher', 'smallgui'):
             run_guitests('albumsgui', test)
         run_guitests('scripts', 'check')
+    if messages:
+        print(f"output captured in {outfile}")
 
 
 @task(help={'name': 'repository name'})
@@ -608,18 +625,18 @@ def new_prfind(c, project, name, testmod=False):
         return
     where, testdir, conf, testconf = conf
     if name in conf['env']:
-        command = 'afrift -P ' + conf['env'][name]
+        args = conf['env'][name]
     elif name in testconf['testees']:
         if testmod:
-            command = 'afrift -P ' + os.path.join(testdir, testconf['testscripts'][name])
+            args = os.path.join(testdir, testconf['testscripts'][name])
         else:
-            command = 'afrift -P ' + testconf['testees'][name]
+            args = testconf['testees'][name]
     else:
         sourcedir = os.path.dirname(list(testconf['testees'])[0])
         sourcedir = testdir if testmod else sourcedir
-        command = 'afrift -P ' + os.path.join(sourcedir, name)
+        args = os.path.join(sourcedir, name)
     with c.cd(where):
-        c.run(command)
+        c.run(f'afrift -P {args}')
 
 
 def check_args(project, name, testmod):

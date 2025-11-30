@@ -920,14 +920,31 @@ def test_find_test_errors(monkeypatch, capsys):
 def test_find_gui_test_errors(monkeypatch, capsys, tmp_path):
     """unittest for repo.find_test_errors
     """
-    # def mock_exists(self):
-    #     print(f'called path.exists with arg {self}')
-    #     return False
-    # def mock_exists(self):
-    #     print(f'called path.exists with arg {self}')
-    #     return True
+    def mock_run(self, *args, **kwargs):
+        """stub
+        """
+        print('called run with args', args, kwargs)
+        return types.SimpleNamespace(stdout='test1\ntest2\n')
+    def mock_run_2(self, *args, **kwargs):
+        """stub
+        """
+        print('called run with args', args, kwargs)
+        return types.SimpleNamespace(stdout='')
+    if testee.pathlib.Path('/tmp/repoguitesterr.txt').exists():
+        testee.pathlib.Path('/tmp/repoguitesterr.txt').unlink()
+    orig_exists = testee.pathlib.Path.exists
+    def mock_exists(self):
+        print(f'called path.exists with arg {self}')
+        return orig_exists(self)
+    orig_unlink = testee.pathlib.Path.unlink
+    def mock_unlink(self):
+        print(f'called path.unlink with arg {self}')
+        orig_unlink(self)
     monkeypatch.setattr(testee, 'PROJECTS_BASE', tmp_path)
     monkeypatch.setattr(testee, 'non_web_repos', ['qqq', 'rrr'])
+    monkeypatch.setattr(testee.pathlib.Path, 'exists', mock_exists)
+    monkeypatch.setattr(testee.pathlib.Path, 'unlink', mock_unlink)
+    # lambda *x: True)
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
     testee.find_gui_test_errors(c, 'xxx')
@@ -935,48 +952,89 @@ def test_find_gui_test_errors(monkeypatch, capsys, tmp_path):
     (tmp_path / 'rrr').mkdir()
     (tmp_path / 'rrr' / '.rurc').touch()
     testee.find_gui_test_errors(c, 'wx')
-    assert capsys.readouterr().out == ""
+    assert capsys.readouterr().out == (
+        "called path.exists with arg /tmp/repoguitesterr.txt\n"
+        f"called path.exists with arg {tmp_path}/qqq/.rurc\n"
+        f"called path.exists with arg {tmp_path}/rrr/.rurc\n")
     (tmp_path / 'rrr' / '.rurc').write_text('oink\n\n[testscripts]\ngui_wx\nqt_gui\ntkgui\n\nzz.py')
+    # monkeypatch.setattr(testee.pathlib.Path, 'exists', mock_exists_2)
     testee.find_gui_test_errors(c, 'wx')
     assert capsys.readouterr().out == (
+        "called path.exists with arg /tmp/repoguitesterr.txt\n"
+        "called path.unlink with arg /tmp/repoguitesterr.txt\n"
+        f"called path.exists with arg {tmp_path}/qqq/.rurc\n"
+        f"called path.exists with arg {tmp_path}/rrr/.rurc\n"
         "=== running tests for rrr gui_wx\n"
-        "called run with args ('run-unittests -p rrr gui_wx | grep -B 2 ^ERROR',) {'warn': True}\n"
-        "called run with args ('run-unittests -p rrr gui_wx | grep ^FAILED',) {'warn': True}\n")
+        "called run with args ('run-unittests -p rrr gui_wx | grep -B 2 ^ERROR',)"
+        " {'warn': True, 'hide': 'out'}\n"
+        "2 tests with errors\n"
+        "called run with args ('run-unittests -p rrr gui_wx | grep ^FAILED',)"
+        " {'warn': True, 'hide': 'out'}\n"
+        "2 tests failed\n"
+        "output captured in /tmp/repoguitesterr.txt\n")
     (tmp_path / 'qqq').mkdir()
     (tmp_path / 'qqq' / '.rurc') .write_text("oink\n\n[testscripts]\ngui_wx\nqt_gui\ntkgui\n"
                                              "[testees]\ncc.py")
+    # monkeypatch.setattr(testee.pathlib.Path, 'exists', mock_exists_3)
     testee.find_gui_test_errors(c, 'tk')
     assert capsys.readouterr().out == (
+        "called path.exists with arg /tmp/repoguitesterr.txt\n"
+        "called path.unlink with arg /tmp/repoguitesterr.txt\n"
+        f"called path.exists with arg {tmp_path}/qqq/.rurc\n"
         "=== running tests for qqq tkgui\n"
-        "called run with args ('run-unittests -p qqq tkgui | grep -B 2 ^ERROR',) {'warn': True}\n"
-        "called run with args ('run-unittests -p qqq tkgui | grep ^FAILED',) {'warn': True}\n"
+        "called run with args ('run-unittests -p qqq tkgui | grep -B 2 ^ERROR',)"
+        " {'warn': True, 'hide': 'out'}\n"
+        "2 tests with errors\n"
+        "called run with args ('run-unittests -p qqq tkgui | grep ^FAILED',)"
+        " {'warn': True, 'hide': 'out'}\n"
+        "2 tests failed\n"
+        f"called path.exists with arg {tmp_path}/rrr/.rurc\n"
         "=== running tests for rrr tkgui\n"
-        "called run with args ('run-unittests -p rrr tkgui | grep -B 2 ^ERROR',) {'warn': True}\n"
-        "called run with args ('run-unittests -p rrr tkgui | grep ^FAILED',) {'warn': True}\n")
+        "called run with args ('run-unittests -p rrr tkgui | grep -B 2 ^ERROR',)"
+        " {'warn': True, 'hide': 'out'}\n"
+        "2 tests with errors\n"
+        "called run with args ('run-unittests -p rrr tkgui | grep ^FAILED',)"
+        " {'warn': True, 'hide': 'out'}\n"
+        "2 tests failed\n"
+        "output captured in /tmp/repoguitesterr.txt\n")
+    monkeypatch.setattr(MockContext, 'run', mock_run_2)
     testee.find_gui_test_errors(c, 'qt')
     assert capsys.readouterr().out == (
+        "called path.exists with arg /tmp/repoguitesterr.txt\n"
+        "called path.unlink with arg /tmp/repoguitesterr.txt\n"
+        f"called path.exists with arg {tmp_path}/qqq/.rurc\n"
         "=== running tests for qqq qt_gui\n"
-        "called run with args ('run-unittests -p qqq qt_gui | grep -B 2 ^ERROR',) {'warn': True}\n"
-        "called run with args ('run-unittests -p qqq qt_gui | grep ^FAILED',) {'warn': True}\n"
+        "called run with args ('run-unittests -p qqq qt_gui | grep -B 2 ^ERROR',)"
+        " {'warn': True, 'hide': 'out'}\n"
+        "called run with args ('run-unittests -p qqq qt_gui | grep ^FAILED',)"
+        " {'warn': True, 'hide': 'out'}\n"
+        f"called path.exists with arg {tmp_path}/rrr/.rurc\n"
         "=== running tests for rrr qt_gui\n"
-        "called run with args ('run-unittests -p rrr qt_gui | grep -B 2 ^ERROR',) {'warn': True}\n"
-        "called run with args ('run-unittests -p rrr qt_gui | grep ^FAILED',) {'warn': True}\n"
+        "called run with args ('run-unittests -p rrr qt_gui | grep -B 2 ^ERROR',)"
+        " {'warn': True, 'hide': 'out'}\n"
+        "called run with args ('run-unittests -p rrr qt_gui | grep ^FAILED',)"
+        " {'warn': True, 'hide': 'out'}\n"
         "=== running tests for albumsgui main\n"
         "called run with args"
-        " ('run-unittests -p albumsgui main | grep -B 2 ^ERROR',) {'warn': True}\n"
-        "called run with args ('run-unittests -p albumsgui main | grep ^FAILED',) {'warn': True}\n"
+        " ('run-unittests -p albumsgui main | grep -B 2 ^ERROR',)"
+        " {'warn': True, 'hide': 'out'}\n"
+        "called run with args ('run-unittests -p albumsgui main | grep ^FAILED',)"
+        " {'warn': True, 'hide': 'out'}\n"
         "=== running tests for albumsgui matcher\n"
-        "called run with args"
-        " ('run-unittests -p albumsgui matcher | grep -B 2 ^ERROR',) {'warn': True}\n"
-        "called run with args ('run-unittests -p albumsgui matcher | grep ^FAILED',) {'warn': True}\n"
+        "called run with args ('run-unittests -p albumsgui matcher | grep -B 2 ^ERROR',)"
+        " {'warn': True, 'hide': 'out'}\n"
+        "called run with args ('run-unittests -p albumsgui matcher | grep ^FAILED',)"
+        " {'warn': True, 'hide': 'out'}\n"
         "=== running tests for albumsgui smallgui\n"
-        "called run with args"
-        " ('run-unittests -p albumsgui smallgui | grep -B 2 ^ERROR',) {'warn': True}\n"
-        "called run with args"
-        " ('run-unittests -p albumsgui smallgui | grep ^FAILED',) {'warn': True}\n"
+        "called run with args ('run-unittests -p albumsgui smallgui | grep -B 2 ^ERROR',)"
+        " {'warn': True, 'hide': 'out'}\n"
+        "called run with args ('run-unittests -p albumsgui smallgui | grep ^FAILED',)"
+        " {'warn': True, 'hide': 'out'}\n"
         "=== running tests for scripts check\n"
-        "called run with args ('run-unittests -p scripts check | grep -B 2 ^ERROR',) {'warn': True}\n"
-        "called run with args ('run-unittests -p scripts check | grep ^FAILED',) {'warn': True}\n")
+        "called run with args ('run-unittests -p scripts check | grep -B 2 ^ERROR',)"
+        " {'warn': True, 'hide': 'out'}\n"
+        "called run with args ('run-unittests -p scripts check | grep ^FAILED',)"
+        " {'warn': True, 'hide': 'out'}\n")
 
 
 def test_find_test_stats(monkeypatch, capsys):
