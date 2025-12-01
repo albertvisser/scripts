@@ -173,9 +173,10 @@ class FriendlyReminder(qtw.QDialog):
 
 class Gui(qtw.QWidget):
     """User interface"""
-    def __init__(self, path, repotype):
+    def __init__(self, path, repotype, is_web_repo):
         self.path = path
         self.repotype = repotype
+        self.is_web_repo = is_web_repo
         self.outtype = 'status'
         # self.filelist = self.get_repofiles() deze zit ook in refresh_frame
 
@@ -183,13 +184,13 @@ class Gui(qtw.QWidget):
         self.app = qtw.QApplication(sys.argv)
         super().__init__()
         self.title = f'Uncommitted changes for `{self.project}`'
-        self.setup_visual()
+        self.setup_display()
 
         # start assuming Meld is present
         self.got_meld = True
         self.refresh_frame()
 
-    def setup_visual(self):
+    def setup_display(self):
         """definieer het scherm en een aantal andere zaken
         """
         self.setWindowTitle(self.title)
@@ -468,6 +469,9 @@ class Gui(qtw.QWidget):
 
     def commit_all(self):
         """hg commit uitvoeren - vraag om commit message"""
+        if self.is_web_repo:
+            qtw.QMessageBox.information(self, self._parent.title, "commit d.m.v. binfab www.stage")
+            return
         if FriendlyReminder(self).exec() == qtw.QDialog.DialogCode.Rejected:
             return
         message, ok = qtw.QInputDialog.getText(self, self.title, 'Enter a commit message:')
@@ -479,9 +483,9 @@ class Gui(qtw.QWidget):
 
     def commit_selected(self):
         """hg commit <selected files> uitvoeren - vraag om commit message"""
-        # if FriendlyReminder(self).exec() == qtw.QDialog.DialogCode.Rejected:
-        #     return
-        # filenames = self.filter_tracked(self.get_selected_files())
+        if self.is_web_repo:
+            qtw.QMessageBox.information(self, self._parent.title, "commit d.m.v. binfab www.stage")
+            return
         filelist = self.get_selected_files()
         to_commit = [pathlib.Path(x[1]) for x in filelist]
         if ([y for y in to_commit if y.suffix == '.py' and not y.name.startswith('test_')]
@@ -502,7 +506,7 @@ class Gui(qtw.QWidget):
             qtw.QMessageBox.information(self, self.title, 'Only implemented for git repos')
             return
         out = self.run_and_capture(['git', 'status', '-uno'])[0]
-        if not 'ahead' in out[1]:
+        if 'ahead' not in out[1]:
         # if 'up to date' in out[1]:
             qtw.QMessageBox.information(self, self.title,
                                         'Cannot amend: last commit was already pushed')
@@ -524,7 +528,9 @@ class Gui(qtw.QWidget):
         """
         filenames = self.filter_tracked(self.get_selected_files())
         if filenames:
-            commands = {'git': ['git', 'checkout', '--'], 'hg': ['hg', 'revert']}
+            # commands = {'git': ['git', 'checkout', '--'], 'hg': ['hg', 'revert']}
+            # git status suggereert tegenwoordig "git restore"
+            commands = {'git': ['git', 'restore'], 'hg': ['hg', 'revert']}
             self.run_and_report(commands[self.repotype] + filenames)
             self.refresh_frame()
 
@@ -799,7 +805,8 @@ def startapp(args):
             repotype = 'hg'
     if not repotype:
         return args.project + ' is not a repository'
-    win = Gui(path, repotype)
+    is_web_repo = args.project in settings.r2h_repos.values()
+    win = Gui(path, repotype, is_web_repo)
     win.show()
     sys.exit(win.app.exec())
 

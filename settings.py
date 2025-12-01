@@ -27,7 +27,7 @@ git_repos = ['lintergui', 'lminstreloc', 'sdvmm', 'mockgui'] + bb_repos
 non_bb_repos = []  # non_deploy_repos
 r2h_repos = {'magiokis-web': 'magiokis', 'magiokis-docs': 'magiokis-docs',
              'magiokis-docs-en': 'magiokis-docs-en'}
-all_repos = git_repos + list(private_repos) + non_bb_repos
+all_repos = git_repos + list(private_repos) + non_bb_repos + list(r2h_repos)
 frozen_repos = fcgi_repos + [cherrypy_repos[-1], django_repos[-1]]
 DO_NOT_LINT = frozen_repos + non_deploy_repos  # + private_repos
 

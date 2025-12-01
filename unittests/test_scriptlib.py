@@ -582,6 +582,7 @@ def test_update_ignore_file(monkeypatch, capsys, tmp_path):
     assert capsys.readouterr().out == (
             f"called shutil.copyfile with args ('{ignorefile}', '{ignorefile}~')\n")
 
+
 def test_revert(monkeypatch, capsys, tmp_path):
     """unittest for scriptlib.revert
     """

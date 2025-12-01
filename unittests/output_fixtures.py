@@ -274,7 +274,7 @@ called Gui.refresh_frame()
 setup_app = """\
 called Application.__init__
 called QMainWindow.__init__()
-called Gui.setup_visual()
+called Gui.setup_display()
 called List.__init__
 called ComboBox.__init__
 """

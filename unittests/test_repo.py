@@ -204,16 +204,23 @@ def test_get_locations(monkeypatch):
     monkeypatch.setattr(testee, 'HOME', 'homedir')
     monkeypatch.setattr(testee, 'git_repos', ['name'])
     monkeypatch.setattr(testee, 'private_repos', {'name': 'same_or_other_name'})
+    monkeypatch.setattr(testee, 'r2h_repos', {'name': 'web_name'})
     # monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
     testobj = testee.Check(c, 'local')
     testobj.is_gitrepo, testobj.is_private = True, True
     assert testobj.get_locations('name') == ('homedir/same_or_other_name', 'homedir')
-    testobj.is_gitrepo, testobj.is_private = True, False
+    testobj.is_gitrepo, testobj.is_private, testobj.is_web = True, False, True
+    assert testobj.get_locations('name') == ('homedir/projects/rst2html/rst2html-data/web_name',
+                                             'homedir')
+    testobj.is_gitrepo, testobj.is_private, testobj.is_web = True, False, False
     assert testobj.get_locations('name') == ('homedir/projects/name', 'homedir')
     testobj.is_gitrepo, testobj.is_private = False, True
     assert testobj.get_locations('name') == ('homedir/same_or_other_name', 'homedir')
-    testobj.is_gitrepo, testobj.is_private = False, False
+    testobj.is_gitrepo, testobj.is_private, testobj.is_web = False, False, True
+    assert testobj.get_locations('name') == ('homedir/projects/rst2html/rst2html-data/web_name',
+                                             'homedir')
+    testobj.is_gitrepo, testobj.is_private, testobj.is_web = False, False, False
     assert testobj.get_locations('name') == ('homedir/projects/name', 'homedir')
     c = MockContext()
     testobj = testee.Check(c, 'remote')
@@ -223,7 +230,9 @@ def test_get_locations(monkeypatch):
     assert testobj.get_locations('name') == ('homedir/git-repos/name', 'homedir/git-repos')
     testobj.is_gitrepo, testobj.is_private = False, True
     assert testobj.get_locations('name') == ('homedir/git-repos/name', 'homedir/git-repos')
-    testobj.is_gitrepo, testobj.is_private = False, False
+    testobj.is_gitrepo, testobj.is_private, testobj.is_web = False, False, True
+    assert testobj.get_locations('name') == ('homedir/hg_repos/name', 'homedir/hg_repos')
+    testobj.is_gitrepo, testobj.is_private, testobj.is_web = False, False, False
     assert testobj.get_locations('name') == ('homedir/hg_repos/name', 'homedir/hg_repos')
 
 
@@ -358,35 +367,59 @@ def test_execute_push(monkeypatch, capsys):
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
     testobj = testee.Check(c, 'local')
-    testobj.is_gitrepo, testobj.is_private = True, True
+    testobj.is_gitrepo, testobj.is_private, testobj.is_web = True, True, True
+    assert testobj.execute_push('name', 'root', 'pwd') == 'web repo name not processed\n'
+    assert capsys.readouterr().out == 'name: no local push for rst2html webpages\n'
+    testobj.is_gitrepo, testobj.is_private, testobj.is_web = True, True, False
     assert testobj.execute_push('name', 'root', 'pwd') == 'ready.\n'
     assert capsys.readouterr().out == 'git push  origin master\n'
-    testobj.is_gitrepo, testobj.is_private = False, True
+    testobj.is_gitrepo, testobj.is_private, testobj.is_web = False, True, True
+    assert testobj.execute_push('name', 'root', 'pwd') == 'web repo name not processed\n'
+    assert capsys.readouterr().out == 'name: no local push for rst2html webpages\n'
+    testobj.is_gitrepo, testobj.is_private, testobj.is_web = False, True, False
     assert testobj.execute_push('name', 'root', 'pwd') == 'ready.\n'
     assert capsys.readouterr().out == 'git push  origin master\n'
-    testobj.is_gitrepo, testobj.is_private = True, False
+    testobj.is_gitrepo, testobj.is_private, testobj.is_web = True, False, True
+    assert testobj.execute_push('name', 'root', 'pwd') == 'web repo name not processed\n'
+    assert capsys.readouterr().out == 'name: no local push for rst2html webpages\n'
+    testobj.is_gitrepo, testobj.is_private, testobj.is_web = True, False, False
     assert testobj.execute_push('name', 'root', 'pwd') == 'ready.\n'
     assert capsys.readouterr().out == 'git push  origin master\n'
-    testobj.is_gitrepo, testobj.is_private = False, False
+    testobj.is_gitrepo, testobj.is_private, testobj.is_web = False, False, True
+    assert testobj.execute_push('name', 'root', 'pwd') == 'web repo name not processed\n'
+    assert capsys.readouterr().out == 'name: no local push for rst2html webpages\n'
+    testobj.is_gitrepo, testobj.is_private, testobj.is_web = False, False, False
     assert testobj.execute_push('name', 'root', 'pwd') == 'ready.\nready.\n'
     assert capsys.readouterr().out == 'hg push\nhg up\n'
     testobj = testee.Check(c, 'remote')
-    testobj.is_gitrepo, testobj.is_private = True, True
+    testobj.is_gitrepo, testobj.is_private, testobj.is_web = True, True, True
+    assert testobj.execute_push('name', 'root', 'pwd') == 'web repo name not processed\n'
+    assert capsys.readouterr().out == 'name: use FTP to "push" rst2html webpages\n'
+    testobj.is_gitrepo, testobj.is_private, testobj.is_web = True, True, False
     assert testobj.execute_push('name', 'root', 'pwd') == 'ready.\n'
     assert capsys.readouterr().out == 'git push -u origin master\n'
-    testobj.is_gitrepo, testobj.is_private = False, True
+    testobj.is_gitrepo, testobj.is_private, testobj.is_web = False, True, True
+    assert testobj.execute_push('name', 'root', 'pwd') == 'web repo name not processed\n'
+    assert capsys.readouterr().out == 'name: use FTP to "push" rst2html webpages\n'
+    testobj.is_gitrepo, testobj.is_private, testobj.is_web = False, True, False
     assert testobj.execute_push('name', 'root', 'pwd') == 'ready.\n'
     assert capsys.readouterr().out == 'git push -u origin master\n'
-    testobj.is_gitrepo, testobj.is_private = True, False
+    testobj.is_gitrepo, testobj.is_private, testobj.is_web = True, False, True
+    assert testobj.execute_push('name', 'root', 'pwd') == 'web repo name not processed\n'
+    assert capsys.readouterr().out == 'name: use FTP to "push" rst2html webpages\n'
+    testobj.is_gitrepo, testobj.is_private, testobj.is_web = True, False, False
     assert testobj.execute_push('name', 'root', 'pwd') == 'ready.\n'
     assert capsys.readouterr().out == 'git push -u origin master\n'
-    testobj.is_gitrepo, testobj.is_private = False, False
+    testobj.is_gitrepo, testobj.is_private, testobj.is_web = False, False, True
+    assert testobj.execute_push('name', 'root', 'pwd') == 'web repo name not processed\n'
+    assert capsys.readouterr().out == 'name: use FTP to "push" rst2html webpages\n'
+    testobj.is_gitrepo, testobj.is_private, testobj.is_web = False, False, False
     assert testobj.execute_push('name', 'root', 'pwd') == 'ready.\n'
     assert capsys.readouterr().out == 'hg push\nhg tip > root/name_tip\n'
     monkeypatch.setattr(MockContext, 'run', mock_run_2)
     c = MockContext()
     testobj = testee.Check(c, 'local')
-    testobj.is_gitrepo, testobj.is_private = True, True
+    testobj.is_gitrepo, testobj.is_private, testobj.is_web = True, True, False
     assert testobj.execute_push('name', 'root', 'pwd') == ''
     assert capsys.readouterr().out == 'git push  origin master\n'
 

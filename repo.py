@@ -7,7 +7,7 @@ import datetime
 import configparser
 from invoke import task
 from settings import (PROJECTS_BASE, GITLOC, get_project_dir,
-                      all_repos, git_repos, private_repos, non_web_repos, frozen_repos)
+                      all_repos, git_repos, private_repos, r2h_repos, non_web_repos, frozen_repos)
 
 HOME = os.path.expanduser('~')
 TODAY = datetime.datetime.today()
@@ -78,6 +78,7 @@ class Check:
                     continue
                 self.is_gitrepo = name in git_repos
                 self.is_private = name in private_repos
+                self.is_web = name in r2h_repos
                 pwd, root = self.get_locations(name)
                 stats = []
                 uncommitted, stats_append, writestuff = self.register_uncommitted(pwd)
@@ -118,6 +119,8 @@ class Check:
                 root = root.replace('hg_', 'git-')
         elif self.is_private:
             pwd = os.path.join(root, private_repos[name])
+        elif self.is_web:
+            pwd = os.path.join(root, 'projects/rst2html/rst2html-data', r2h_repos[name])
         else:
             pwd = os.path.join(root, 'projects', name)
         return pwd, root
@@ -189,6 +192,10 @@ class Check:
     def execute_push(self, name, root, pwd):
         """"actually push the commit
         """
+        if self.is_web:
+            msg = 'use FTP to "push"' if self.context == 'remote' else 'no local push for'
+            print(f'{name}: {msg} rst2html webpages')
+            return f'web repo {name} not processed\n'
         not_hg = self.is_gitrepo or self.is_private
         if not_hg:
             ref = '-u' if self.context == 'remote' else ''
