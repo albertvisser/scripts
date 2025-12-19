@@ -4,7 +4,8 @@
 developed for Double Commander
 """
 
-import json5 as json
+import json
+# import json5 as json
 
 
 def check_usage(args, toolname):
