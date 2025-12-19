@@ -137,7 +137,7 @@ def test_check_init(monkeypatch):
     assert not checker.is_private
 
 
-def test_check_run(monkeypatch, capsys):
+def test_check_run(monkeypatch, capsys, tmp_path):
     """unittest for repo.check_run
 
     eigenlijk test op de sturing binnen de run() methode
@@ -149,6 +149,8 @@ def test_check_run(monkeypatch, capsys):
     monkeypatch.setattr(testee, 'git_repos', ['check-it'])
     monkeypatch.setattr(testee, 'private_repos', ['check-it'])
     monkeypatch.setattr(testee, 'TODAY', 'today')
+    monkeypatch.setattr(testee, 'REPOCHG', tmp_path / 'changes')
+    monkeypatch.setattr(testee, 'LOCALCHG', tmp_path / 'local-changes')
     c = MockContext()
     testee.Check(c).run()
     with open(testee.LOCALCHG) as f:
@@ -167,25 +169,34 @@ def test_check_run(monkeypatch, capsys):
     testee.Check(c).run()
     with open(testee.LOCALCHG) as f:
         data = f.read()
-    assert data == 'check local repos on today\n\naaa\n\n'
-    assert capsys.readouterr().out == 'xxx for check-it\n\nfor details see /tmp/repo_local_changes\n'
+    assert data == 'check local repos on today\n\naaa\n\n---\n'
+    assert capsys.readouterr().out == (
+            f'xxx for check-it\n\nfor details see {tmp_path}/local-changes\n')
 
     monkeypatch.setattr(testee.Check, 'register_uncommitted', lambda *x: (False, '', '\n'))
     monkeypatch.setattr(testee.Check, 'register_outgoing', lambda *x: (True, 'yyy', 'bbb\n'))
     monkeypatch.setattr(testee.Check, 'execute_push', lambda *x: 'ccc')
+    monkeypatch.setattr(testee, 'r2h_repos', ['check-it'])
     testee.Check(c, push=True).run()
     with open(testee.LOCALCHG) as f:
         data = f.read()
-    assert data == 'check local repos on today\n\n\nbbb\nccc'
+    assert data == 'check local repos on today\n\n'
+    assert capsys.readouterr().out == ('check-it: no local push for rst2html webpages\n\n'
+                                       'no change details\n')
+    monkeypatch.setattr(testee, 'r2h_repos', [])
+    testee.Check(c, push=True).run()
+    with open(testee.LOCALCHG) as f:
+        data = f.read()
+    assert data == 'check local repos on today\n\n\n\n---bbb\nccc'
     assert capsys.readouterr().out == ('yyy for check-it\n\n'
-                                       'for details see /tmp/repo_local_changes\n')
+                                       f'for details see {tmp_path}/local-changes\n')
     monkeypatch.setattr(testee.Check, 'execute_push', lambda *x: '')
     testee.Check(c, push=True).run()
     with open(testee.LOCALCHG) as f:
         data = f.read()
-    assert data == 'check local repos on today\n\n\nbbb\n'
+    assert data == 'check local repos on today\n\n\n\n---bbb\n'
     assert capsys.readouterr().out == ('yyy for check-it\n\n'
-                                       'for details see /tmp/repo_local_changes\n')
+                                       f'for details see {tmp_path}/local-changes\n')
 
     monkeypatch.setattr(testee.Check, 'register_uncommitted', lambda *x: (True, 'xxx', 'aaa\n'))
     monkeypatch.setattr(testee.Check, 'register_outgoing', lambda *x: (True, 'yyy', 'bbb\n'))
@@ -193,9 +204,9 @@ def test_check_run(monkeypatch, capsys):
     testee.Check(c, context='remote', exclude='check-not').run()
     with open(testee.REPOCHG) as f:
         data = f.read()
-    assert data == 'check remote repos on today\n\naaa\nbbb\n'
+    assert data == 'check remote repos on today\n\naaa\n\n---bbb\n'
     assert capsys.readouterr().out == ('xxx and yyy for check-it\n\n'
-                                       'for details see /tmp/repo_changes\n')
+                                       f'for details see {tmp_path}/changes\n')
 
 
 def test_get_locations(monkeypatch):
@@ -367,53 +378,29 @@ def test_execute_push(monkeypatch, capsys):
     monkeypatch.setattr(MockContext, 'run', mock_run)
     c = MockContext()
     testobj = testee.Check(c, 'local')
-    testobj.is_gitrepo, testobj.is_private, testobj.is_web = True, True, True
-    assert testobj.execute_push('name', 'root', 'pwd') == 'web repo name not processed\n'
-    assert capsys.readouterr().out == 'name: no local push for rst2html webpages\n'
-    testobj.is_gitrepo, testobj.is_private, testobj.is_web = True, True, False
+    testobj.is_gitrepo, testobj.is_private = True, True
     assert testobj.execute_push('name', 'root', 'pwd') == 'ready.\n'
     assert capsys.readouterr().out == 'git push  origin master\n'
-    testobj.is_gitrepo, testobj.is_private, testobj.is_web = False, True, True
-    assert testobj.execute_push('name', 'root', 'pwd') == 'web repo name not processed\n'
-    assert capsys.readouterr().out == 'name: no local push for rst2html webpages\n'
-    testobj.is_gitrepo, testobj.is_private, testobj.is_web = False, True, False
+    testobj.is_gitrepo, testobj.is_private = False, True
     assert testobj.execute_push('name', 'root', 'pwd') == 'ready.\n'
     assert capsys.readouterr().out == 'git push  origin master\n'
-    testobj.is_gitrepo, testobj.is_private, testobj.is_web = True, False, True
-    assert testobj.execute_push('name', 'root', 'pwd') == 'web repo name not processed\n'
-    assert capsys.readouterr().out == 'name: no local push for rst2html webpages\n'
-    testobj.is_gitrepo, testobj.is_private, testobj.is_web = True, False, False
+    testobj.is_gitrepo, testobj.is_private = True, False
     assert testobj.execute_push('name', 'root', 'pwd') == 'ready.\n'
     assert capsys.readouterr().out == 'git push  origin master\n'
-    testobj.is_gitrepo, testobj.is_private, testobj.is_web = False, False, True
-    assert testobj.execute_push('name', 'root', 'pwd') == 'web repo name not processed\n'
-    assert capsys.readouterr().out == 'name: no local push for rst2html webpages\n'
-    testobj.is_gitrepo, testobj.is_private, testobj.is_web = False, False, False
+    testobj.is_gitrepo, testobj.is_private = False, False
     assert testobj.execute_push('name', 'root', 'pwd') == 'ready.\nready.\n'
     assert capsys.readouterr().out == 'hg push\nhg up\n'
     testobj = testee.Check(c, 'remote')
-    testobj.is_gitrepo, testobj.is_private, testobj.is_web = True, True, True
-    assert testobj.execute_push('name', 'root', 'pwd') == 'web repo name not processed\n'
-    assert capsys.readouterr().out == 'name: use FTP to "push" rst2html webpages\n'
-    testobj.is_gitrepo, testobj.is_private, testobj.is_web = True, True, False
+    testobj.is_gitrepo, testobj.is_private = True, True
     assert testobj.execute_push('name', 'root', 'pwd') == 'ready.\n'
     assert capsys.readouterr().out == 'git push -u origin master\n'
-    testobj.is_gitrepo, testobj.is_private, testobj.is_web = False, True, True
-    assert testobj.execute_push('name', 'root', 'pwd') == 'web repo name not processed\n'
-    assert capsys.readouterr().out == 'name: use FTP to "push" rst2html webpages\n'
-    testobj.is_gitrepo, testobj.is_private, testobj.is_web = False, True, False
+    testobj.is_gitrepo, testobj.is_private = False, True
     assert testobj.execute_push('name', 'root', 'pwd') == 'ready.\n'
     assert capsys.readouterr().out == 'git push -u origin master\n'
-    testobj.is_gitrepo, testobj.is_private, testobj.is_web = True, False, True
-    assert testobj.execute_push('name', 'root', 'pwd') == 'web repo name not processed\n'
-    assert capsys.readouterr().out == 'name: use FTP to "push" rst2html webpages\n'
-    testobj.is_gitrepo, testobj.is_private, testobj.is_web = True, False, False
+    testobj.is_gitrepo, testobj.is_private = True, False
     assert testobj.execute_push('name', 'root', 'pwd') == 'ready.\n'
     assert capsys.readouterr().out == 'git push -u origin master\n'
-    testobj.is_gitrepo, testobj.is_private, testobj.is_web = False, False, True
-    assert testobj.execute_push('name', 'root', 'pwd') == 'web repo name not processed\n'
-    assert capsys.readouterr().out == 'name: use FTP to "push" rst2html webpages\n'
-    testobj.is_gitrepo, testobj.is_private, testobj.is_web = False, False, False
+    testobj.is_gitrepo, testobj.is_private = False, False
     assert testobj.execute_push('name', 'root', 'pwd') == 'ready.\n'
     assert capsys.readouterr().out == 'hg push\nhg tip > root/name_tip\n'
     monkeypatch.setattr(MockContext, 'run', mock_run_2)
@@ -458,7 +445,7 @@ def test_check_local_changes(monkeypatch, capsys):
     c = MockContext()
     testee.check_local_changes(c)
     assert capsys.readouterr().out == ("called run with args"
-                                       " ('tview /tmp/repo_local_changes',) {} in ~/projects\n")
+                                       f" ('tview {testee.LOCALCHG}',) {{}} in ~/projects\n")
 
 
 def test_check_local_notes(monkeypatch, capsys):
@@ -986,15 +973,15 @@ def test_find_gui_test_errors(monkeypatch, capsys, tmp_path):
     (tmp_path / 'rrr' / '.rurc').touch()
     testee.find_gui_test_errors(c, 'wx')
     assert capsys.readouterr().out == (
-        "called path.exists with arg /tmp/repoguitesterr.txt\n"
+        f"called path.exists with arg {tmp_path}/repoguitesterr.txt\n"
         f"called path.exists with arg {tmp_path}/qqq/.rurc\n"
         f"called path.exists with arg {tmp_path}/rrr/.rurc\n")
     (tmp_path / 'rrr' / '.rurc').write_text('oink\n\n[testscripts]\ngui_wx\nqt_gui\ntkgui\n\nzz.py')
     # monkeypatch.setattr(testee.pathlib.Path, 'exists', mock_exists_2)
     testee.find_gui_test_errors(c, 'wx')
     assert capsys.readouterr().out == (
-        "called path.exists with arg /tmp/repoguitesterr.txt\n"
-        "called path.unlink with arg /tmp/repoguitesterr.txt\n"
+        f"called path.exists with arg {tmp_path}/repoguitesterr.txt\n"
+        f"called path.unlink with arg {tmp_path}/repoguitesterr.txt\n"
         f"called path.exists with arg {tmp_path}/qqq/.rurc\n"
         f"called path.exists with arg {tmp_path}/rrr/.rurc\n"
         "=== running tests for rrr gui_wx\n"
@@ -1004,15 +991,15 @@ def test_find_gui_test_errors(monkeypatch, capsys, tmp_path):
         "called run with args ('run-unittests -p rrr gui_wx | grep ^FAILED',)"
         " {'warn': True, 'hide': 'out'}\n"
         "2 tests failed\n"
-        "output captured in /tmp/repoguitesterr.txt\n")
+        f"output captured in {tmp_path}/repoguitesterr.txt\n")
     (tmp_path / 'qqq').mkdir()
     (tmp_path / 'qqq' / '.rurc') .write_text("oink\n\n[testscripts]\ngui_wx\nqt_gui\ntkgui\n"
                                              "[testees]\ncc.py")
     # monkeypatch.setattr(testee.pathlib.Path, 'exists', mock_exists_3)
     testee.find_gui_test_errors(c, 'tk')
     assert capsys.readouterr().out == (
-        "called path.exists with arg /tmp/repoguitesterr.txt\n"
-        "called path.unlink with arg /tmp/repoguitesterr.txt\n"
+        f"called path.exists with arg {tmp_path}/repoguitesterr.txt\n"
+        f"called path.unlink with arg {tmp_path}/repoguitesterr.txt\n"
         f"called path.exists with arg {tmp_path}/qqq/.rurc\n"
         "=== running tests for qqq tkgui\n"
         "called run with args ('run-unittests -p qqq tkgui | grep -B 2 ^ERROR',)"
@@ -1029,12 +1016,12 @@ def test_find_gui_test_errors(monkeypatch, capsys, tmp_path):
         "called run with args ('run-unittests -p rrr tkgui | grep ^FAILED',)"
         " {'warn': True, 'hide': 'out'}\n"
         "2 tests failed\n"
-        "output captured in /tmp/repoguitesterr.txt\n")
+        f"output captured in {tmp_path}/repoguitesterr.txt\n")
     monkeypatch.setattr(MockContext, 'run', mock_run_2)
     testee.find_gui_test_errors(c, 'qt')
     assert capsys.readouterr().out == (
-        "called path.exists with arg /tmp/repoguitesterr.txt\n"
-        "called path.unlink with arg /tmp/repoguitesterr.txt\n"
+        f"called path.exists with arg {tmp_path}/repoguitesterr.txt\n"
+        f"called path.unlink with arg {tmp_path}/repoguitesterr.txt\n"
         f"called path.exists with arg {tmp_path}/qqq/.rurc\n"
         "=== running tests for qqq qt_gui\n"
         "called run with args ('run-unittests -p qqq qt_gui | grep -B 2 ^ERROR',)"
@@ -1068,6 +1055,42 @@ def test_find_gui_test_errors(monkeypatch, capsys, tmp_path):
         " {'warn': True, 'hide': 'out'}\n"
         "called run with args ('run-unittests -p scripts check | grep ^FAILED',)"
         " {'warn': True, 'hide': 'out'}\n")
+    testee.find_gui_test_errors(c, 'all')
+    assert capsys.readouterr().out == (
+        f"called path.exists with arg {tmp_path}/repoguitesterr.txt\n"
+        f"called path.unlink with arg {tmp_path}/repoguitesterr.txt\n"
+        f"called path.exists with arg {tmp_path}/qqq/.rurc\n"
+        "=== running tests for qqq gui_wx\n"
+        "called run with args"
+        " ('run-unittests -p qqq gui_wx | grep -B 2 ^ERROR',) {'warn': True, 'hide': 'out'}\n"
+        "called run with args"
+        " ('run-unittests -p qqq gui_wx | grep ^FAILED',) {'warn': True, 'hide': 'out'}\n"
+        "=== running tests for qqq qt_gui\n"
+        "called run with args"
+        " ('run-unittests -p qqq qt_gui | grep -B 2 ^ERROR',) {'warn': True, 'hide': 'out'}\n"
+        "called run with args"
+        " ('run-unittests -p qqq qt_gui | grep ^FAILED',) {'warn': True, 'hide': 'out'}\n"
+        "=== running tests for qqq tkgui\n"
+        "called run with args"
+        " ('run-unittests -p qqq tkgui | grep -B 2 ^ERROR',) {'warn': True, 'hide': 'out'}\n"
+        "called run with args"
+        " ('run-unittests -p qqq tkgui | grep ^FAILED',) {'warn': True, 'hide': 'out'}\n"
+        f"called path.exists with arg {tmp_path}/rrr/.rurc\n"
+        "=== running tests for rrr gui_wx\n"
+        "called run with args"
+        " ('run-unittests -p rrr gui_wx | grep -B 2 ^ERROR',) {'warn': True, 'hide': 'out'}\n"
+        "called run with args"
+        " ('run-unittests -p rrr gui_wx | grep ^FAILED',) {'warn': True, 'hide': 'out'}\n"
+        "=== running tests for rrr qt_gui\n"
+        "called run with args"
+        " ('run-unittests -p rrr qt_gui | grep -B 2 ^ERROR',) {'warn': True, 'hide': 'out'}\n"
+        "called run with args"
+        " ('run-unittests -p rrr qt_gui | grep ^FAILED',) {'warn': True, 'hide': 'out'}\n"
+        "=== running tests for rrr tkgui\n"
+        "called run with args"
+        " ('run-unittests -p rrr tkgui | grep -B 2 ^ERROR',) {'warn': True, 'hide': 'out'}\n"
+        "called run with args"
+        " ('run-unittests -p rrr tkgui | grep ^FAILED',) {'warn': True, 'hide': 'out'}\n")
 
 
 def test_find_test_stats(monkeypatch, capsys):

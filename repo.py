@@ -12,9 +12,9 @@ from settings import (PROJECTS_BASE, GITLOC, get_project_dir,
 HOME = os.path.expanduser('~')
 TODAY = datetime.datetime.today()
 FILELIST = '/tmp/~~pfind'
-P2ULOG = '/tmp/pushthru_log'
-REPOCHG = '/tmp/repo_changes'
-LOCALCHG = '/tmp/repo_local_changes'
+P2ULOG = f'{GITLOC}/pushthru_log'
+REPOCHG = f'{GITLOC}/repo_changes'
+LOCALCHG = f'{PROJECTS_BASE}/repo_changes'
 
 
 def get_repofiles(c, reponame):
@@ -81,6 +81,10 @@ class Check:
                 self.is_web = name in r2h_repos
                 pwd, root = self.get_locations(name)
                 stats = []
+                if self.is_web and self.push:
+                    msg = 'use FTP to "push"' if self.context == 'remote' else 'no local push for'
+                    print(f'{name}: {msg} rst2html webpages')
+                    continue
                 uncommitted, stats_append, writestuff = self.register_uncommitted(pwd)
                 if stats_append:
                     stats.append(stats_append)
@@ -90,7 +94,7 @@ class Check:
                 if stats_append:
                     stats.append(stats_append)
                 if writestuff:
-                    _out.write(writestuff)
+                    _out.write('\n---' + writestuff)
                 if stats:
                     print(' and '.join(stats) + f' for {name}')
                 elif self.verbose:
@@ -192,10 +196,6 @@ class Check:
     def execute_push(self, name, root, pwd):
         """"actually push the commit
         """
-        if self.is_web:
-            msg = 'use FTP to "push"' if self.context == 'remote' else 'no local push for'
-            print(f'{name}: {msg} rst2html webpages')
-            return f'web repo {name} not processed\n'
         not_hg = self.is_gitrepo or self.is_private
         if not_hg:
             ref = '-u' if self.context == 'remote' else ''
@@ -473,12 +473,10 @@ def find_test_errors(c, name=''):
             c.run(f"run-unittests -p {project} all | grep -B 2 ^ERROR", warn=True)
 
 
-@task(help={'name': 'gui toolkit short name (qt, wx or tk'})
+@task(help={'name': 'gui toolkit short name (qt, wx, tki or all for all toolkits'})
 def find_gui_test_errors(c, name):
     """execute unittests and report the tests that have errors
     """
-    outfile = pathlib.Path('/tmp/repoguitesterr.txt')
-    messages = False
     def run_guitests(project, test):
         "run specific testmodules"
         nonlocal messages
@@ -494,7 +492,9 @@ def find_gui_test_errors(c, name):
             messages = True
         with outfile.open('a') as f:
             f.write('\n'.join(("", text, result.stdout, result_f.stdout)))
-    if name not in ('qt', 'wx', 'tk'):
+    outfile = pathlib.Path(PROJECTS_BASE) / 'repoguitesterr.txt'
+    messages = False
+    if name not in ('qt', 'wx', 'tk', 'all'):
         print('invalid toolkit name')
         return
     if outfile.exists():
@@ -510,7 +510,11 @@ def find_gui_test_errors(c, name):
                 if not line or 'testees' in line:
                     break
                 test = line.split()[0]
-                if name in test:
+                if name == 'all':
+                    for x in ('qt', 'wx', 'tk'):
+                        if x in test:
+                            run_guitests(project, test)
+                elif name in test:
                     run_guitests(project, test)
             elif 'testscripts' in line:
                 reading = True
