@@ -9,6 +9,7 @@ if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
   exit
 fi   
 todo=${@:2}
+geo='';
 if [ "$1" = "-l" ]; then
   geo='--geometry=+2+0'; 
 elif [ "$1" = "-r" ]; then
@@ -19,6 +20,7 @@ elif [ "$1" = "-ml" ]; then
   geo='--geometry=+224+0'; 
 elif [ -z $2 ]; then 
   todo=$1;
-  geo='';
+else 
+  todo=$@;
 fi
 gnome-terminal --profile='Code Editor Shell' $geo -- vim $todo &
