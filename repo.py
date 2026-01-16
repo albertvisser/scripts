@@ -470,7 +470,7 @@ def find_test_errors(c, name=''):
     for project in names:
         if project not in frozen_repos:
             print(f'=== running tests for {project}')
-            c.run(f"run-unittests -p {project} all | grep -B 2 ^ERROR", warn=True)
+            c.run(f"run-unittests -p {project} all | grep ^ERROR", warn=True)
 
 
 @task(help={'name': 'gui toolkit short name (qt, wx, tki or all for all toolkits'})
