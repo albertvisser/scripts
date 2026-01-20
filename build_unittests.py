@@ -27,9 +27,10 @@ class Main:
         else:
             conf = None
             testdir = 'unittests'
-        testscriptname = self.create_testscript(root, project, testdir, testee)
+        testscriptname = self.create_testscript(root, project, testdir, testee, rebuild)
         if rebuild:
-            print(f'`{testscriptname}` in {root}/{testdir} rebuilt')
+            # print(f'`{testscriptname}` in {root}/{testdir} rebuilt')
+            print(f'{testscriptname} rebuilt')
             return
         create_conf = update_conf = False
         if not conf:
@@ -46,37 +47,69 @@ class Main:
         if create_conf or update_conf:
             with open(testconfig, 'w') as _out:
                 conf.write(_out)
-        print(f'created file `{testscriptname}` in {root}/{testdir}')
+        # print(f'created file `{testscriptname}` in {root}/{testdir}')
+        print(f'created file {testscriptname}')
 
-    def create_testscript(self, root, project, testdir, name):
+    def create_testscript(self, root, project, testdir, name, rebuild):
         """Lees de testee, maak per functie / class / methode een test en schrijf de testmodule
         """
-        self.testscriptlines = [f'"""unittests for ./{name}\n"""\n']
-        with open(os.path.join(root, name)) as _in:
-            data = _in.readlines()
         where, what = os.path.split(name)
         self.testee = what = what.removesuffix('.py')
+        testscript = os.path.join(root, testdir, f'test_{what}.py')
+        oldscriptlines = {}
+        if os.path.exists(testscript):
+            if rebuild:
+                oldscriptlines = build_oldversiondict(testscript)
+            # shutil.copyfile(testscript, testscript + '~')
+            os.rename(testscript, f'{testscript}~')
+        with open(os.path.join(root, name)) as _in:
+            data = _in.readlines()
         for seq, text in enumerate(('qt_gui', 'gui_qt', 'wx_gui', 'gui_wx', 'gtk_gui', 'gui_gtk')):
             if text == what:
                 what = ('qtgui', 'qtgui', 'wxgui', 'wxgui', 'gtkgui', 'gtkgui')[seq]
                 break
         fromwhere = f"from {where.replace('/', '.')} "  if where else ''
-        self.testscriptlines.append(f"{fromwhere}import {self.testee} as testee\n")
+        key = ('', '')
+        if oldscriptlines.get(key, []):
+            self.testscriptlines = oldscriptlines[key]
+        else:
+            self.testscriptlines = [f'"""unittests for ./{name}\n"""\n']
+            self.testscriptlines.append(f"{fromwhere}import {self.testee} as testee\n")
         classname = ''
         self.new_class = False
+        # for key in oldscriptlines:
+        #     print(f'{key}')
+        # print()
         for line in data:
             if line.startswith('def '):
-                self.add_lines_for_function(line)
+                key = ('', line.split('(')[0])
+                # print(f'{key}')
+                if oldscriptlines.get(key, []):
+                    self.insert_oldlines(oldscriptlines[key])
+                else:
+                    self.add_lines_for_function(line)
             elif line.startswith('class '):
-                classname = self.add_lines_for_class(line)
+                classname = get_classname(line)
+                key = (classname, '')
+                # print(f'{key}')
+                if oldscriptlines.get(key, []):
+                    self.insert_oldlines(oldscriptlines[key])
+                else:
+                    self.add_lines_for_class(line)
             elif line.startswith('    def '):
-                self.add_lines_for_method(line, classname)
-        testscript = f'test_{what}.py'
-        if os.path.exists(testscript):
-            shutil.copyfile(testscript, testscript + '~')
-        with open(os.path.join(root, testdir, testscript), 'w') as _out:
+                key = (classname, line.split('(')[0])
+                # print(f'{key}')
+                if oldscriptlines.get(key, []):
+                    self.insert_oldlines(oldscriptlines[key])
+                else:
+                    self.add_lines_for_method(line, classname)
+        with open(testscript, 'w') as _out:
             _out.writelines(self.testscriptlines)
         return testscript
+
+    def insert_oldlines(self, lines):
+        "insert lines from old testscript"
+        self.testscriptlines.extend(lines)
 
     def add_lines_for_function(self, line):
         "write unittest for function"
@@ -91,8 +124,7 @@ class Main:
     def add_lines_for_class(self, line):
         "write class header for unittests"
         self.new_class = True
-        classname = line[6:].rstrip().removesuffix(':')
-        classname = classname.split('(', 1)[0]
+        classname = get_classname(line)
         self.testscriptlines.extend([
             f'\n\nclass Test{classname}:\n',
             f'    """unittests for {self.testee}.{classname}\n    """\n',
@@ -133,6 +165,60 @@ class Main:
         if method_name != '__init__':
             self.testscriptlines.append(f'        assert testobj.{sig} == "expected_result"\n')
         self.testscriptlines.append('        assert capsys.readouterr().out == ("")\n')
+
+
+def build_oldversiondict(testscript):
+    """turn the original script into a dict so that it can be easily searched with dict.get()
+    """
+    result = {}
+    with open(testscript) as oldfile:
+        classname, funname = '', ''
+        result[(classname, funname)] = []
+        for line in oldfile:
+            if line.startswith('def test'):
+                classname, funname = '', line.replace('test_', '').split('(')[0]
+                result[(classname, funname)] = [line]
+            elif line.startswith('def _test'):
+                classname, funname = '', line.replace('_test_', '').split('(')[0]
+                result[(classname, funname)] = [line]
+            elif line.startswith('def'):
+                classname, funname = '', ''
+                result[(classname, funname)].append(line)
+            elif line.startswith('class Test'):
+                classname, funname = get_classname(line).replace('Test', ''), ''
+                result[(classname, funname)] = [line]
+            elif line.startswith('class _Test'):
+                classname, funname = get_classname(line).replace('_Test', ''), ''
+                result[(classname, funname)] = [line]
+            elif line.startswith('class'):
+                classname, funname = '', ''
+                result[(classname, funname)].append(line)
+            elif line.startswith('    def test'):
+                # breakpoint()
+                funname = line.replace('test_', '').split('(')[0]
+                if funname == '    def init':
+                    funname = '    def __init__'
+                result[(classname, funname)] = [line]
+            elif line.startswith('    def _test'):
+                # breakpoint()
+                funname = line.replace('_test_', '').split('(')[0]
+                if funname == '    def init':
+                    funname = '    def __init__'
+                result[(classname, funname)] = [line]
+            elif line.startswith('    def'):
+                classname, funname == '', ''
+                result[(classname, funname)].append(line)
+            else:
+                result[(classname, funname)].append(line)
+    return result
+
+
+def get_classname(line):
+    "extract the class name from the line and return it"
+    classname = line[6:].rstrip().removesuffix(':')
+    classname = classname.split('(', 1)[0]
+    return classname
+
 
 if __name__ == '__main__':
     if not len(sys.argv) == 4:
