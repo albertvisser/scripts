@@ -25,6 +25,7 @@ www = test_www.py
 xmlp = test_xmlp.py
 csv = test_format_csv.py
 build = test_build_bin_scripts.py
+unit = test_build_unittests.py
 
 [testees]
 check = check_repo.py
@@ -50,4 +51,5 @@ www = www.py
 xmlp = xmlp.py
 csv = format_csv.py
 build = build_bin_scripts.py
+unit = build_unittests.py
 
