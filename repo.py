@@ -398,9 +398,11 @@ def rebuild_filenamelist(c, mode):
             continue
         path, files = get_repofiles(c, repo)
         if mode == 'test':
-            files = [x for x in files if os.path.basename(x).startswith('test_')]
+            files = [x for x in files if os.path.basename(x).startswith('test_')
+                     and os.path.exists(os.path.join(path, x))]
         elif mode == 'prog':
-            files = [x for x in files if not os.path.basename(x).startswith('test_')]
+            files = [x for x in files if not os.path.basename(x).startswith('test_')
+                     and os.path.exists(os.path.join(path, x))]
         all_files.extend([os.path.join(path, x) for x in files])
     with open(f'{FILELIST}-{mode}', 'w') as out:
         for line in sorted(all_files):
