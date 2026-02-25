@@ -11,17 +11,16 @@ def test_sort_file_help():
     """
     result = subprocess.run(['python', 'sort_file.py', '--help'], capture_output=True)
     assert result.returncode == 0
-    assert result.stdout.decode() == ("usage: sort_file.py [-h] [-c COLUMN] [-o OUTPUT] file\n\n"
-                                      "Simple file sorting program\n\n"
-                                      "positional arguments:\n"
-                                      "  file                  Name of file to sort\n\n"
-                                      "options:\n"
-                                      "  -h, --help            show this help message and exit\n"
-                                      "  -c COLUMN, --column COLUMN\n"
-                                      "                        Column from which to start sorting\n"
-                                      "  -o OUTPUT, --output OUTPUT\n"
-                                      "                        output filename (default is adding"
-                                      " '-sorted' to the input filename\n")
+    assert result.stdout.decode() == (
+            "usage: sort_file.py [-h] [-c COLUMN] [-o OUTPUT] file\n\n"
+            "Simple file sorting program\n\n"
+            "positional arguments:\n"
+            "  file                 Name of file to sort\n\n"
+            "options:\n"
+            "  -h, --help           show this help message and exit\n"
+            "  -c, --column COLUMN  Column from which to start sorting\n"
+            "  -o, --output OUTPUT  output filename"
+            " (default is adding '-sorted' to the input filename\n")
     assert result.stderr.decode() == ''
 
 

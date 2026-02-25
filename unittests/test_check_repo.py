@@ -328,7 +328,7 @@ class TestCheckTextDialog:
         assert capsys.readouterr().out == (
             'called dialog.__init__()\n'
             'called CheckBox.__init__\n'
-            'called LineEdit.__init__\n'
+            'called LineEdit.__init__ with args ()\n'
             'called CheckBox.setChecked with arg True\n'
             'called LineEdit.setText with arg `text`\n'
             'called CheckBox.isChecked\n'

@@ -15,7 +15,7 @@ called Label.__init__ with args ('Modify the commit message if needed:', {testob
 called HBox.addWidget with arg MockLabel
 called VBox.addLayout with arg MockHBoxLayout
 called HBox.__init__
-called LineEdit.__init__
+called LineEdit.__init__ with args ({testobj},)
 called LineEdit.setText with arg `message`
 called HBox.addWidget with arg MockLineEdit
 called VBox.addLayout with arg MockHBoxLayout
