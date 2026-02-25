@@ -17,7 +17,7 @@ treedocs-stable
 # miscellaneous
 mdi.py
 *vivaldi*
-
+vless
 # scripts present in bin-scripts.conf
 cssedit
 afrift
@@ -76,7 +76,7 @@ cgit
 comparer_from_dc
 dc4sdv
 gitweb
-pfind
+repofind
 preadme
 tickets
 viref
