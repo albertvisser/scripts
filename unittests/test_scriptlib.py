@@ -1,5 +1,6 @@
 """unittests for ./scriptlib.py
 """
+import os
 import types
 import scriptlib as testee
 from invoke import MockContext
@@ -204,6 +205,10 @@ def test_check(monkeypatch, capsys):
     testee.check(c, 'name')
     assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
                                        'no difference\n')
+    monkeypatch.setattr(testee, 'check_file', lambda *x: ('in_lib', 'n/a'))
+    testee.check(c, 'name')
+    assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
+                                       'bestandsversie is verwijderd\n')
     monkeypatch.setattr(testee, 'check_file', lambda *x: (None, None))
     testee.check(c, 'name')
     assert capsys.readouterr().out == ("called ScriptLib.__init__\n"
@@ -222,6 +227,8 @@ def test_check_all(monkeypatch, capsys):
         counter += 1
         if counter == 2:
             return 'equal', 'equal'
+        if counter == 3:
+            return 'in_lib', 'n/a'
         return 'in_lib', 'actual'
     monkeypatch.setattr(testee, 'ScriptLib', MockLib)
     monkeypatch.setattr(testee, 'check_file', mock_check)
@@ -239,7 +246,7 @@ def test_check_all(monkeypatch, capsys):
                                        " <class 'test_scriptlib.MockLib'> sally\n"
                                        'verschillen gevonden voor:\n'
                                        'tom\n'
-                                       'harry\n'
+                                       'harry - bestandsversie is verwijderd\n'
                                        'sally\n')
     monkeypatch.setattr(testee, 'check_file', lambda *x: ('equal', 'equal'))
     testee.check(c, 'all')
@@ -281,7 +288,7 @@ def test_update_all(monkeypatch, capsys):
         nonlocal counter
         print(f'called check_and_update with args {type(lib)} {name}')
         counter += 1
-        return counter % 2
+        return name if counter % 2 else ''
     monkeypatch.setattr(testee, 'ScriptLib', MockLib)
     monkeypatch.setattr(testee, 'check_and_update', mock_check)
     c = MockContext()
@@ -791,6 +798,35 @@ def test_enable(monkeypatch, capsys):
                                        'key3 enabled\n')
 
 
+def test_delete(monkeypatch, capsys, tmp_path):
+    """unittest for scriptlib.delete
+    """
+    def mock_remove(self, *args):
+        print('called ConfigParser.remove_option with args', args)
+    monkeypatch.setattr(testee.ConfigParser, 'remove_option', mock_remove)
+    monkeypatch.setattr(testee, 'binpath', tmp_path)
+    monkeypatch.setattr(testee, 'ScriptLib', MockLib)
+    c = MockContext()
+    testee.delete(c, 'key2')
+    assert capsys.readouterr().out == (
+            "called ScriptLib.__init__\n"
+            "called ScriptLib.find with arg `key2`\n"
+            "called ConfigParser.remove_option with args ('section1', 'key2')\n"
+            "called ScriptLib.update\n"
+            "key2 verwijderd uit library\n")
+    (tmp_path / 'key2').touch()
+    monkeypatch.setattr(testee.pathlib.Path, 'exists', lambda *x: True)
+    # breakpoint()
+    testee.delete(c, 'key2')
+    # door de monkeypatch hierboven moet ik dit nu zo controleren
+    assert not os.path.exists(str(tmp_path / 'key2'))
+    assert capsys.readouterr().out == (
+            "called ScriptLib.__init__\n"
+            "called ScriptLib.find with arg `key2`\n"
+            "called ConfigParser.remove_option with args ('section1', 'key2')\n"
+            "called ScriptLib.update\n"
+            "key2 verwijderd uit library en uit directory\n")
+
 def test_list_active(monkeypatch, capsys):
     """unittest for scriptlib.list_active
     """
@@ -928,11 +964,18 @@ def test_check_and_update(monkeypatch, capsys):
         """
         print('called check_file with args', args)
         return 'old', 'old'
+    def mock_check_3(*args):
+        """stub
+        """
+        print('called check_file with args', args)
+        return 'old', 'n/a'
     def mock_find(*args):
         """stub
         """
         print('called ScriptLib.find with args', args)
         return 'here'
+    def mock_remove(*args):
+        print('called Scriptlib.data.remove_option with args', args)
     monkeypatch.setattr(testee, 'check_file', mock_check)
     lib = types.SimpleNamespace(find=mock_find, data={'here': {'this': 'old'}})
     origlib = types.SimpleNamespace(find=mock_find, data={'here': {'this': 'old'}})
@@ -947,8 +990,19 @@ def test_check_and_update(monkeypatch, capsys):
     assert lib.data == {'here': {'this': 'old'}}
     assert capsys.readouterr().out == f"called check_file with args ({origlib}, 'this')\n"
 
+    lib = types.SimpleNamespace(find=mock_find,
+                                data=types.SimpleNamespace(remove_option=mock_remove))
+    origlib = types.SimpleNamespace(find=mock_find,
+                                    data=types.SimpleNamespace(remove_option=mock_remove))
+    monkeypatch.setattr(testee, 'check_file', mock_check_3)
+    testee.check_and_update(lib, 'this')
+    assert capsys.readouterr().out == (
+            f"called check_file with args ({origlib}, 'this')\n"
+            "called ScriptLib.find with args ('this',)\n"
+            "called Scriptlib.data.remove_option with args ('here', 'this')\n")
 
-def test_check_file(monkeypatch, capsys):
+
+def test_check_file(monkeypatch, capsys, tmp_path):
     """unittest for scriptlib.check_file
     """
     def mock_readlink(*args):
@@ -981,12 +1035,17 @@ def test_check_file(monkeypatch, capsys):
 
     lib = types.SimpleNamespace(find=lambda *x: 'symlinks', basepath=testee.pathlib.Path('bin'),
                                 data={'symlinks': {'here': 'old'}})
-    assert testee.check_file(lib, 'here') == ('old', 'called Path.readlink for bin/here')
+    assert testee.check_file(lib, 'here') == ('old', 'n/a')
+    assert capsys.readouterr().out == ''
+    (tmp_path / 'here').touch()
+    lib = types.SimpleNamespace(find=lambda *x: 'symlinks', basepath=tmp_path,
+                                data={'symlinks': {'here': 'old'}})
+    assert testee.check_file(lib, 'here') == ('old', f'called Path.readlink for {tmp_path}/here')
     assert capsys.readouterr().out == ''
 
     monkeypatch.setattr(testee.pathlib.Path, 'readlink', mock_read_error)
-    assert testee.check_file(lib, 'here') == ('old',
-                                              'not a symlink:\ncalled Path.read_text for bin/here')
+    assert testee.check_file(lib, 'here') == ('old', 'not a symlink:\n'
+                                              f'called Path.read_text for {tmp_path}/here')
     assert capsys.readouterr().out == ''
 
     monkeypatch.setattr(testee.pathlib.Path, 'readlink', lambda *x: '../../../absolute_path')
@@ -995,17 +1054,22 @@ def test_check_file(monkeypatch, capsys):
 
     lib = types.SimpleNamespace(find=lambda *x: 'qqq', basepath=testee.pathlib.Path('bin'),
                                 data={'qqq': {'here': 'old'}})
-    assert testee.check_file(lib, 'here') == ('old', 'called Path.read_text for bin/here')
+    assert testee.check_file(lib, 'here') == ('old', 'n/a')
+    assert capsys.readouterr().out == ""
+    lib = types.SimpleNamespace(find=lambda *x: 'qqq', basepath=tmp_path,
+                                data={'qqq': {'here': 'old'}})
+    assert testee.check_file(lib, 'here') == ('old', f'called Path.read_text for {tmp_path}/here')
     assert capsys.readouterr().out == ""
 
-    lib = types.SimpleNamespace(find=lambda *x: 'qqq', basepath=testee.pathlib.Path('bin'),
-                                data={'qqq': {'here': 'old'}})
+    # lib = types.SimpleNamespace(find=lambda *x: 'qqq', basepath=testee.pathlib.Path('bin'),
+    #                             data={'qqq': {'here': 'old'}})
     monkeypatch.setattr(testee.pathlib.Path, 'read_text', mock_read_2)
     assert testee.check_file(lib, 'here') == ('old', 'contents')
-    assert capsys.readouterr().out == "called Path.read_text on bin/here\n"
+    assert capsys.readouterr().out == f"called Path.read_text on {tmp_path}/here\n"
 
-    lib = types.SimpleNamespace(find=lambda *x: 'disabled', basepath=testee.pathlib.Path('bin'),
-                                data={'qqq': {'here': 'old'}})
+    # lib = types.SimpleNamespace(find=lambda *x: 'disabled', basepath=testee.pathlib.Path('bin'),
+    #                             data={'qqq': {'here': 'old'}})
+    lib.find = lambda *x: 'disabled'
     assert testee.check_file(lib, 'here') == ('ignore', 'ignore')
     assert capsys.readouterr().out == ''
 

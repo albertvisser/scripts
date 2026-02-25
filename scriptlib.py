@@ -57,7 +57,9 @@ def check(c, name):
         diffs = []
         for name in lib.get_all_names():
             in_lib, actual = check_file(lib, name)
-            if in_lib != actual:
+            if actual == 'n/a':
+                diffs.append(f'{name} - bestandsversie is verwijderd')
+            elif in_lib != actual:
                 diffs.append(name)
         if diffs:
             print('verschillen gevonden voor:')
@@ -71,6 +73,8 @@ def check(c, name):
             print('not found in library')
         elif in_lib == actual:
             print('no difference')
+        elif actual == 'n/a':
+            print('bestandsversie is verwijderd')
         else:
             print('--- library version:')
             print(in_lib)
@@ -87,7 +91,7 @@ def update(c, name):
         for name in lib.get_all_names():
             diff = check_and_update(lib, name)
             if diff:
-                diffs.append(name)
+                diffs.append(diff)
         if diffs:
             lib.update()
             print('verschillen gevonden en bijgewerkt voor:')
@@ -112,7 +116,7 @@ def rename(c, oldname, newname, library_only=False):
     gebruik de -l switch als hernoemen alleen in de library nodig is
     """
     lib = ScriptLib()
-    old_exists = (binpath / oldname).exists()
+    # old_exists = (binpath / oldname).exists()
     new_exists = (binpath / newname).exists()
     old_in_lib = lib.find(oldname)
     new_in_lib = lib.find(newname)
@@ -191,7 +195,7 @@ def revert(c, name):
         print('"revert" is not implemented for symlinks')
         return
     library_version, actual_version = check_file(lib, name)
-    if library_version != actual_version:
+    if library_version != actual_version:  # gaat dit goed als actual_version == 'n/a'?
         shutil.copyfile(name, str(filename.with_suffix('.orig')))
         filename.write_text(library_version)
         print(f'{name} reverted to scriptlib version')
@@ -264,6 +268,21 @@ def enable(c, name):
     lib.data.set(section, name, scriptlet)
     lib.update()
     print(f'{name} enabled')
+
+
+@task(help={'name': 'name of the script or symlink to remove'})
+def delete(c, name):
+    "remove a scriptlet"
+    lib = ScriptLib()
+    section = lib.find(name)
+    lib.data.remove_option(section, name)
+    result = f'{name} verwijderd uit library'
+    path = pathlib.Path(binpath / name)
+    if path.exists():
+        path.unlink()
+        result += ' en uit directory'
+    lib.update()
+    print(result)
 
 
 @task(help={'filter': 'scriptlib category'})
@@ -340,6 +359,10 @@ def lint(c, name):
 def check_and_update(lib, name):
     "if the library version and the actual version of a script or symlink differ, replace in library"
     library_version, actual_version = check_file(lib, name)
+    if actual_version == 'n/a':
+        section = lib.find(name)
+        lib.data.remove_option(section, name)
+        return f'{name} (removed)'
     if library_version != actual_version:
         section = lib.find(name)
         lib.data[section][name] = actual_version
@@ -356,6 +379,8 @@ def check_file(lib, name):
         return 'ignore', 'ignore'
     library_version = lib.data[section][name]
     path = lib.basepath / name
+    if not path.exists():
+        return library_version, 'n/a'
     if section.startswith('symlinks'):
         library_version = str(pathlib.Path(library_version).expanduser())
         try:
