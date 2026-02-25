@@ -108,7 +108,7 @@ def test_get_branchname(monkeypatch, capsys):
 
 
 def test_check_init(monkeypatch):
-    """unittest for repo.check_init
+    """unittest for repo.Check.__init__
     """
     monkeypatch.setattr(testee, 'frozen_repos', ['do-not-process'])
     monkeypatch.setattr(testee, 'all_repos', ['a', 'b'])
@@ -137,8 +137,22 @@ def test_check_init(monkeypatch):
     assert not checker.is_private
 
 
+def test_when(monkeypatch, capsys, tmp_path):
+    """unittest for repo.Check.when
+    """
+    monkeypatch.setattr(testee, 'REPOCHG', tmp_path / 'changes')
+    monkeypatch.setattr(testee, 'LOCALCHG', tmp_path / 'local-changes')
+    testee.REPOCHG.write_text('xxx on yyy.zzz')
+    testee.LOCALCHG.write_text('aaa on bbb.ccc')
+    c = MockContext()
+    assert testee.Check(c).when() == 'bbb'
+    assert capsys.readouterr().out == ("")
+    assert testee.Check(c, 'remote').when() == 'yyy'
+    assert capsys.readouterr().out == ("")
+
+
 def test_check_run(monkeypatch, capsys, tmp_path):
-    """unittest for repo.check_run
+    """unittest for repo.Check.run
 
     eigenlijk test op de sturing binnen de run() methode
     """
@@ -161,17 +175,20 @@ def test_check_run(monkeypatch, capsys, tmp_path):
     testee.Check(c, verbose=True).run()
     with open(testee.LOCALCHG) as f:
         data = f.read()
-    assert data == 'check local repos on today\n\n'
-    assert capsys.readouterr().out == 'no changes for check-it\n\nno change details\n'
+    assert data == 'check local repos on today\npreviously checked on today\n\n\n'
+    assert capsys.readouterr().out == ("previous check was on today\n\n\n"
+                                       "no changes for check-it\n\n"
+                                       "no change details\n")
 
     monkeypatch.setattr(testee.Check, 'register_uncommitted', lambda *x: (True, 'xxx', 'aaa\n'))
     monkeypatch.setattr(testee.Check, 'register_outgoing', lambda *x: (False, '', '\n'))
     testee.Check(c).run()
     with open(testee.LOCALCHG) as f:
         data = f.read()
-    assert data == 'check local repos on today\n\naaa\n\n---\n'
-    assert capsys.readouterr().out == (
-            f'xxx for check-it\n\nfor details see {tmp_path}/local-changes\n')
+    assert data == 'check local repos on today\npreviously checked on today\n\n\naaa\n\n---\n'
+    assert capsys.readouterr().out == ("previous check was on today\n\n\n"
+                                       "xxx for check-it\n\n"
+                                       f"for details see {tmp_path}/local-changes\n")
 
     monkeypatch.setattr(testee.Check, 'register_uncommitted', lambda *x: (False, '', '\n'))
     monkeypatch.setattr(testee.Check, 'register_outgoing', lambda *x: (True, 'yyy', 'bbb\n'))
@@ -180,22 +197,25 @@ def test_check_run(monkeypatch, capsys, tmp_path):
     testee.Check(c, push=True).run()
     with open(testee.LOCALCHG) as f:
         data = f.read()
-    assert data == 'check local repos on today\n\n'
-    assert capsys.readouterr().out == ('check-it: no local push for rst2html webpages\n\n'
+    assert data == 'check local repos on today\npreviously checked on today\n\n\n'
+    assert capsys.readouterr().out == ("previous check was on today\n\n\n"
+                                       'check-it: no local push for rst2html webpages\n\n'
                                        'no change details\n')
     monkeypatch.setattr(testee, 'r2h_repos', [])
     testee.Check(c, push=True).run()
     with open(testee.LOCALCHG) as f:
         data = f.read()
-    assert data == 'check local repos on today\n\n\n\n---bbb\nccc'
-    assert capsys.readouterr().out == ('yyy for check-it\n\n'
+    assert data == 'check local repos on today\npreviously checked on today\n\n\n\n\n---bbb\nccc'
+    assert capsys.readouterr().out == ('previous check was on today\n\n\n'
+                                       'yyy for check-it\n\n'
                                        f'for details see {tmp_path}/local-changes\n')
     monkeypatch.setattr(testee.Check, 'execute_push', lambda *x: '')
     testee.Check(c, push=True).run()
     with open(testee.LOCALCHG) as f:
         data = f.read()
-    assert data == 'check local repos on today\n\n\n\n---bbb\n'
-    assert capsys.readouterr().out == ('yyy for check-it\n\n'
+    assert data == 'check local repos on today\npreviously checked on today\n\n\n\n\n---bbb\n'
+    assert capsys.readouterr().out == ('previous check was on today\n\n\n'
+                                       'yyy for check-it\n\n'
                                        f'for details see {tmp_path}/local-changes\n')
 
     monkeypatch.setattr(testee.Check, 'register_uncommitted', lambda *x: (True, 'xxx', 'aaa\n'))
@@ -210,7 +230,7 @@ def test_check_run(monkeypatch, capsys, tmp_path):
 
 
 def test_get_locations(monkeypatch):
-    """unittest for repo.get_locations
+    """unittest for repo.Check.get_locations
     """
     monkeypatch.setattr(testee, 'HOME', 'homedir')
     monkeypatch.setattr(testee, 'git_repos', ['name'])
@@ -247,8 +267,8 @@ def test_get_locations(monkeypatch):
     assert testobj.get_locations('name') == ('homedir/hg_repos/name', 'homedir/hg_repos')
 
 
-def test_register_changes(monkeypatch, capsys):
-    """unittest for repo.register_changes
+def test_register_uncommitted(monkeypatch, capsys):
+    """unittest for repo.Check.register_uncommitted
     """
     def mock_run(c, *args, **kwargs):
         """stub
@@ -288,7 +308,7 @@ def test_register_changes(monkeypatch, capsys):
 
 
 def test_register_outgoing(monkeypatch, capsys):
-    """unittest for repo.register_outgoing
+    """unittest for repo.Check.register_outgoing
     """
     def mock_run(c, *args, **kwargs):
         """stub
@@ -363,7 +383,7 @@ def test_register_outgoing(monkeypatch, capsys):
 
 
 def test_execute_push(monkeypatch, capsys):
-    """unittest for repo.execute_push
+    """unittest for repo.Check.execute_push
     """
     def mock_run(c, *args, **kwargs):
         """stub
@@ -411,8 +431,14 @@ def test_execute_push(monkeypatch, capsys):
     assert capsys.readouterr().out == 'git push  origin master\n'
 
 
+def _test_get_branchname():
+    """unittest for repo.Check.get_branchname
+    """
+    # wordt blijkbaar al ergens in meegetest
+
+
 def test_get_tipfilename():
-    """unittest for repo.get_tipfilename
+    """unittest for repo.Check.get_tipfilename
     """
     c = MockContext()
     testobj = testee.Check(c)
@@ -436,6 +462,25 @@ def test_check_local(monkeypatch, capsys):
                                        "    'binfab repo.check-local-changes` (or `repolog`)"
                                        " for log\n"
                                        "    'binfab repo.check-local-notes` for remarks\n")
+
+
+def test_check_when(monkeypatch, capsys):
+    """unittest for repo.check_when
+    """
+    class MockCheck:
+        "stub"
+        def __init__(self, *args):
+            print('called Check.__init__')
+        def when(self):
+            print('called Check.when')
+            return 'ever'
+    monkeypatch.setattr(MockContext, 'run', mock_run)
+    c = MockContext()
+    monkeypatch.setattr(testee, 'Check', MockCheck)
+    testee.check_when(c)
+    assert capsys.readouterr().out == ("called Check.__init__\n"
+                                       "called Check.when\n"
+                                       "local repos last checked on ever\n")
 
 
 def test_check_local_changes(monkeypatch, capsys):
@@ -757,27 +802,30 @@ def test_rebuild_filenamelist(monkeypatch, capsys, tmp_path):
         """stub
         """
         print(f'called get_repofiles() for `{args[1]}`')
-        return 'path_to_repo', ['file2', 'test_file1', 'file1', 'test_file2']
+        return str(tmp_path), ['file2', 'test_file1', 'file1', 'test_file2']
     monkeypatch.setattr(testee, 'FILELIST', str(tmp_path / 'filelist'))
     monkeypatch.setattr(testee, 'all_repos', ['repo1', 'repo2'])
     monkeypatch.setattr(testee, 'frozen_repos', ['repo2'])
     monkeypatch.setattr(testee, 'get_repofiles', mock_get_repofiles)
+    (tmp_path / 'file2').touch()
+    (tmp_path / 'test_file1').touch()
     c = MockContext()
     testee.rebuild_filenamelist(c, 'prog')
     with open(f'{testee.FILELIST}-prog') as f:
         data = f.read()
-    assert data == 'path_to_repo/file1\npath_to_repo/file2\n'
+    assert data == f'{tmp_path}/file2\n'  # 'path_to_repo/file1\npath_to_repo/file2\n'
     assert capsys.readouterr().out == 'called get_repofiles() for `repo1`\n'
     testee.rebuild_filenamelist(c, mode='test')
     with open(f'{testee.FILELIST}-test') as f:
         data = f.read()
-    assert data == 'path_to_repo/test_file1\npath_to_repo/test_file2\n'
+    assert data == f'{tmp_path}/test_file1\n'  # 'path_to_repo/test_file1\npath_to_repo/test_file2\n'
     assert capsys.readouterr().out == 'called get_repofiles() for `repo1`\n'
     testee.rebuild_filenamelist(c, 'x')
     with open(f'{testee.FILELIST}-x') as f:
         data = f.read()
-    assert data == ('path_to_repo/file1\npath_to_repo/file2\n'
-                    'path_to_repo/test_file1\npath_to_repo/test_file2\n')
+    assert data == f'{tmp_path}/file2\n{tmp_path}/test_file1\n'
+                   # ('path_to_repo/file1\npath_to_repo/file2\n'
+                   #  'path_to_repo/test_file1\npath_to_repo/test_file2\n')
     assert capsys.readouterr().out == 'called get_repofiles() for `repo1`\n'
 
 
@@ -924,17 +972,17 @@ def test_find_test_errors(monkeypatch, capsys):
     testee.find_test_errors(c)
     assert capsys.readouterr().out == (
             "=== running tests for xxx\n"
-            "called run with args ('run-unittests -p xxx all | grep -B 2 ^ERROR',) {'warn': True}\n"
+            "called run with args ('run-unittests -p xxx all | grep ^ERROR',) {'warn': True}\n"
             "=== running tests for zzz\n"
-            "called run with args ('run-unittests -p zzz all | grep -B 2 ^ERROR',) {'warn': True}\n")
+            "called run with args ('run-unittests -p zzz all | grep ^ERROR',) {'warn': True}\n")
     testee.find_test_errors(c, 'xxx')
     assert capsys.readouterr().out == (
             "=== running tests for xxx\n"
-            "called run with args ('run-unittests -p xxx all | grep -B 2 ^ERROR',) {'warn': True}\n")
+            "called run with args ('run-unittests -p xxx all | grep ^ERROR',) {'warn': True}\n")
     testee.find_test_errors(c, 'xxx,yyy')
     assert capsys.readouterr().out == (
             "=== running tests for xxx\n"
-            "called run with args ('run-unittests -p xxx all | grep -B 2 ^ERROR',) {'warn': True}\n")
+            "called run with args ('run-unittests -p xxx all | grep ^ERROR',) {'warn': True}\n")
 
 
 def test_find_gui_test_errors(monkeypatch, capsys, tmp_path):

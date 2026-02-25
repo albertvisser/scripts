@@ -66,13 +66,33 @@ class Check:
             self.exclude += exclude.split(',')
         self.is_gitrepo = self.is_private = False
 
+    def when(self):
+        """read the last checkdate
+        """
+        outfile = REPOCHG if self.context == 'remote' else LOCALCHG
+        with open(outfile) as _out:
+            dateline = _out.readline()
+        date = dateline.split('on ', 1)[1].split('.', 1)[0]
+        return date
+
     def run(self):
         """main line; loop through selected repositories
         """
         outfile = REPOCHG if self.context == 'remote' else LOCALCHG
+        if os.path.exists(outfile):
+            with open(outfile) as _out:
+                dateline = _out.readline()
+            date = dateline.split('on ', 1)[1].split('.', 1)[0]
+            print(f'previous check was on {date}')
+            print()
+        else:
+            date = ''
         changes = False
         with open(outfile, 'w') as _out:
-            _out.write(f'check {self.context} repos on {TODAY}\n\n')
+            _out.write(f'check {self.context} repos on {TODAY}\n')
+            if date:
+                _out.write(f'previously checked on {date}\n')
+            _out.write('\n')
             for name in self.include:
                 if name in self.exclude:
                     continue
@@ -105,7 +125,7 @@ class Check:
                     writestuff = self.execute_push(name, root, pwd)
                     if writestuff:
                         _out.write(writestuff)
-        print()
+            print()
         if changes:
             print(f'for details see {outfile}')
         else:
@@ -249,6 +269,13 @@ def check_local(c):  # , dry_run=False):
         print("use 'check-repo <reponame>' to inspect changes")
         print("    'binfab repo.check-local-changes` (or `repolog`) for log")
         print("    'binfab repo.check-local-notes` for remarks")
+
+
+@task
+def check_when(c):
+    "show date of last repo check"
+    date = Check(c).when()
+    print(f'local repos last checked on {date}')
 
 
 @task
@@ -397,12 +424,11 @@ def rebuild_filenamelist(c, mode):
         if repo in frozen_repos:
             continue
         path, files = get_repofiles(c, repo)
+        files = [x for x in files if os.path.exists(os.path.join(path, x))]
         if mode == 'test':
-            files = [x for x in files if os.path.basename(x).startswith('test_')
-                     and os.path.exists(os.path.join(path, x))]
+            files = [x for x in files if os.path.basename(x).startswith('test_')]
         elif mode == 'prog':
-            files = [x for x in files if not os.path.basename(x).startswith('test_')
-                     and os.path.exists(os.path.join(path, x))]
+            files = [x for x in files if not os.path.basename(x).startswith('test_')]
         all_files.extend([os.path.join(path, x) for x in files])
     with open(f'{FILELIST}-{mode}', 'w') as out:
         for line in sorted(all_files):
