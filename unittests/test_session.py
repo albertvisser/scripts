@@ -115,7 +115,8 @@ def test_start(monkeypatch, capsys, tmp_path):
             """
             print('called ConfigParser.read() with args', *args)
             self['env'] = {}
-            self['options'] = {'predit': 'y', 'dtree': 'y', 'prfind': 'y', 'check-repo': 'y'}
+            self['options'] = {'predit': 'y', 'dtree': 'y', 'prfind': 'y', 'check-repo': 'y',
+                               'startapp': 'xxx'}
         def sections(self):
             """stub
             """
@@ -179,23 +180,25 @@ def test_start(monkeypatch, capsys, tmp_path):
     testee.start(c, 'project_name', force=True)
     with open(f'{testee.sessionfile_root}/project_name-session-pids-start-at-12345') as f:
         data = f.read()
-    assert data == '12345\n12345\n12345\n12345'
+    assert data == '12345\n12345\n12345\n12345\n12345'
     assert capsys.readouterr().out == ('called ConfigParser.read() with args project/.sessionrc\n'
                                        f"['predit'] {{'cwd': 'project', 'env': {newenv}}}\n"
                                        f"['dtree'] {{'cwd': 'project', 'env': {newenv}}}\n"
                                        f"['prfind'] {{'cwd': 'project', 'env': {newenv}}}\n"
-                                       f"['check-repo'] {{'cwd': 'project', 'env': {newenv}}}\n")
+                                       f"['check-repo'] {{'cwd': 'project', 'env': {newenv}}}\n"
+                                       "['binfab', 'www.startapp', 'xxx'] {}\n")
 
     os.remove(f'{testee.sessionfile_root}/project_name-session-pids-start-at-12345')
     testee.start(c, 'project_name', True)
     with open(f'{testee.sessionfile_root}/project_name-session-pids-start-at-12345') as f:
         data = f.read()
-    assert data == '12345\n12345\n12345\n12345'
+    assert data == '12345\n12345\n12345\n12345\n12345'
     assert capsys.readouterr().out == ('called ConfigParser.read() with args project/.sessionrc\n'
                                        f"['tredit'] {{'cwd': 'project', 'env': {newenv}}}\n"
                                        f"['dtree'] {{'cwd': 'project', 'env': {newenv}}}\n"
                                        f"['prfind'] {{'cwd': 'project', 'env': {newenv}}}\n"
-                                       f"['check-repo'] {{'cwd': 'project', 'env': {newenv}}}\n")
+                                       f"['check-repo'] {{'cwd': 'project', 'env': {newenv}}}\n"
+                                       "['binfab', 'www.startapp', 'xxx'] {}\n")
 
     os.remove(f'{testee.sessionfile_root}/project_name-session-pids-start-at-12345')
     monkeypatch.setattr(testee.configparser, 'ConfigParser', MockParser4)
@@ -528,7 +531,7 @@ def test_select_name_for_session(monkeypatch, capsys):
         counter += 1
         if counter == 1:
             return ''
-        elif counter == 2:
+        if counter == 2:
             return 'x'
         return 0
     def mock_input_2(prompt):

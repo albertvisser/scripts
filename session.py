@@ -85,6 +85,9 @@ def start(c, name, light_background=False, force=False):
         if item in runcommands and str(conf['options'][item]).lower() == 'y':
             pr = subprocess.Popen(runcommands[item], cwd=path, env=myenv)
             proc_pids.append(pr.pid)
+        elif item == 'startapp':
+            pr = subprocess.Popen(['binfab', 'www.startapp', conf['options'][item]])
+            proc_pids.append(pr.pid)
     if proc_pids:
         with open(f'{sessionfile_root}/{name}-session-pids-start-at-{proc_pids[0]}', 'w') as f:
             f.write('\n'.join([str(x) for x in proc_pids]))
