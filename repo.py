@@ -4,6 +4,7 @@ as well as various utilities related to working with software projects
 import os
 import pathlib  # makkelijk unittesten van add2gitweb, ook bruikbaar voor andere
 import datetime
+import json
 import configparser
 from invoke import task
 from settings import (PROJECTS_BASE, GITLOC, get_project_dir,
@@ -35,6 +36,31 @@ def get_repofiles(c, reponame):
         result = c.run(command, hide=True)
     files = [x for x in result.stdout.split('\n') if os.path.splitext(x)[1] == '.py']
     return path, files
+
+
+class Notes:
+    """notities m.b.t. projects
+
+    in eerste instantie bedoeld om bij te houden waarom ik nog even wacht met committen
+    """
+    def __init__(self):
+        self.loc = f'{PROJECTS_BASE}/reponotes.json'
+
+    def read(self):
+        "read the notes file and return its contents as a dict"
+        data = {}
+        if os.path.exists(self.loc):
+            with open(self.loc) as inputfile:
+                data = json.load(inputfile)
+        return data
+
+    def write(self, data):
+        "write the cdict back to the notes file"
+        if data:
+            with open(self.loc, 'w') as outputfile:
+                json.dump(data, outputfile)
+        elif os.path.exists(self.loc):
+            os.unlink(self.loc)
 
 
 class Check:
@@ -79,6 +105,8 @@ class Check:
         """main line; loop through selected repositories
         """
         outfile = REPOCHG if self.context == 'remote' else LOCALCHG
+        if self.context == 'local':
+            self.reponotes = Notes().read()
         if os.path.exists(outfile):
             with open(outfile) as _out:
                 dateline = _out.readline()
@@ -105,9 +133,12 @@ class Check:
                     msg = 'use FTP to "push"' if self.context == 'remote' else 'no local push for'
                     print(f'{name}: {msg} rst2html webpages')
                     continue
+                note = ''
                 uncommitted, stats_append, writestuff = self.register_uncommitted(pwd)
                 if stats_append:
                     stats.append(stats_append)
+                    if self.context == 'local':
+                        note = self.reponotes.get(name, '')
                 if writestuff:
                     _out.write(writestuff)
                 outgoing, stats_append, writestuff = self.register_outgoing(name, root, pwd)
@@ -116,7 +147,8 @@ class Check:
                 if writestuff:
                     _out.write('\n---' + writestuff)
                 if stats:
-                    print(' and '.join(stats) + f' for {name}')
+                    print(' and '.join(stats) + f' for {name}', end='')
+                    print(f' - {note}' if note else '')
                 elif self.verbose:
                     print(f'no changes for {name}')
                 if uncommitted or outgoing:
@@ -398,11 +430,27 @@ def qgit(c, name=''):
 
 @task
 def mee_bezig(c):  # , name=''):
-    "Open Doing list for a project using a-propos"
+    "Open Doing notesfile for all projects using treedocs"
+    # "Open Doing list for a project using a-propos"
     # check_and_run_for_project(c, name, "a-propos -n 'Mee Bezig ({})' -f mee_bezig.apo".format(
     #     name or os.path.basename(os.getcwd())))
     c.run('treedocs ~/projects/projects.trd')
     # c.run('treedocs-stable ~/projects/projects.trd')
+
+
+@task(help={'project': 'repository name', 'clear': 'flag to remove note', 'note': 'contents of note'})
+def note(c, project, clear=False, note=''):
+    """add or remove a note about committing for a give project
+    """
+    notes = Notes()
+    data = notes.read()
+    if clear:
+        data.pop(project)
+    elif not note:
+        return
+    else:
+        data[project] = note.replace('-', ' ')
+    notes.write(data)
 
 
 @task(help={'name': 'repository name'})

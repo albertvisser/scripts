@@ -340,6 +340,9 @@ This script creates the following symlinks and short starter scripts for my own 
     shortcut for ``binfab repo.check-local``, to check for changes in local repos
 **repolog**
     shortcut for ``binfab repo.check-local-changes``, to view the extended output of the previous
+**reponote**
+    shortcut for ``binfab repo.note``, to add or remove short notes about deferring commits.
+    They are shown when executing ``repocheck``.
 **repopush**
     shortcut for ``binfab repo.push-local push-remote``, to migrate all committed changes 
 **repotesterr**
